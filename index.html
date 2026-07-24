@@ -38,19 +38,6 @@
     font-family:'Overpass',sans-serif;font-size:14px;margin-bottom:14px;background:var(--paper);
   }
   .gateCard input:focus{outline:none;border-color:var(--moss);}
-  .nameQuickPicks{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
-  .namePickBtn{
-    width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:3px;background:var(--paper);
-    color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;font-family:'Overpass',sans-serif;
-    text-align:left;transition:border-color .15s ease, background .15s ease;
-  }
-  .namePickBtn:hover{border-color:var(--moss);background:#F0EEE3;}
-  .nameOtherBtn{color:var(--ink-soft);font-weight:500;font-style:italic;}
-  #nameOtherRow{margin-top:10px;}
-  #nameOtherRow input{
-    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:3px;
-    font-family:'Overpass',sans-serif;font-size:14px;margin-bottom:10px;background:var(--paper);
-  }
   .gateCard button{
     width:100%;padding:10px 12px;border:none;border-radius:3px;background:var(--moss);
     color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'Overpass',sans-serif;
@@ -266,17 +253,9 @@
 <div id="nameGate">
   <div class="gateCard">
     <h2>Who's reviewing?</h2>
-    <p>Tap your name — it goes with every select and comment so the team can see who picked what.</p>
-    <div id="nameQuickPicks" class="nameQuickPicks">
-      <button class="namePickBtn" data-name="Peter">Peter</button>
-      <button class="namePickBtn" data-name="Kate">Kate</button>
-      <button class="namePickBtn" data-name="Emily">Emily</button>
-      <button class="namePickBtn nameOtherBtn" id="nameOtherToggle">+ Add your name</button>
-    </div>
-    <div id="nameOtherRow" style="display:none;">
-      <input id="nameInput" type="text" placeholder="Your name" maxlength="40">
-      <button id="nameSubmit">Start reviewing</button>
-    </div>
+    <p>Your name goes with every select and comment so the team can see who picked what. Remembered on this device going forward.</p>
+    <input id="nameInput" type="text" placeholder="e.g. Kate" maxlength="40" autofocus>
+    <button id="nameSubmit">Start reviewing</button>
   </div>
 </div>
 
@@ -400,16 +379,8 @@ async function init(){
 
   document.getElementById('nameSubmit').addEventListener('click', submitName);
   document.getElementById('nameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') submitName(); });
-  document.querySelectorAll('.namePickBtn[data-name]').forEach(btn=>{
-    btn.addEventListener('click', ()=>selectName(btn.dataset.name));
-  });
-  document.getElementById('nameOtherToggle').addEventListener('click', ()=>{
-    document.getElementById('nameOtherRow').style.display = 'block';
-    document.getElementById('nameInput').focus();
-  });
   document.getElementById('whoami').addEventListener('click', ()=>{
     document.getElementById('nameGate').classList.remove('hidden');
-    document.getElementById('nameOtherRow').style.display = 'block';
     document.getElementById('nameInput').value = myName || '';
     document.getElementById('nameInput').focus();
   });
@@ -460,7 +431,6 @@ async function selectName(val){
   setLocalName(val);
   document.getElementById('meName').textContent = myName;
   document.getElementById('nameGate').classList.add('hidden');
-  document.getElementById('nameOtherRow').style.display = 'none';
   await loadAllSelections();
   await loadAllComments();
   buildReviewerFilter();
