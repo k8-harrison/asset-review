@@ -80,13 +80,27 @@
   }
   #exportModal.open{display:flex;}
   .exportCard{
-    background:var(--card);border-radius:4px;padding:24px;width:560px;max-width:100%;
-    box-shadow:0 20px 60px rgba(0,0,0,0.35);
+    background:var(--card);border-radius:4px;padding:24px;width:640px;max-width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,0.35);max-height:88vh;overflow-y:auto;
   }
   .exportCard h3{margin:0 0 4px;font-size:16px;}
   .exportCard .sub{font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
+  #exportVisualList{
+    max-height:280px;overflow-y:auto;border:1px solid var(--line);border-radius:3px;
+    margin-bottom:14px;
+  }
+  .exportRow{
+    display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--line);
+  }
+  .exportRow:last-child{border-bottom:none;}
+  .exportRow img{
+    width:70px;height:70px;object-fit:cover;border-radius:2px;flex-shrink:0;background:var(--paper-dim);
+  }
+  .exportRow .exportInfo{flex:1;min-width:0;}
+  .exportRow .exportFname{font-size:12px;font-weight:700;margin-bottom:4px;word-break:break-all;}
+  .exportRow .exportComment{font-size:11px;color:var(--ink-soft);line-height:1.5;margin-top:2px;}
   #exportText{
-    width:100%;height:280px;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    width:100%;height:200px;font-family:'IBM Plex Mono',monospace;font-size:11px;
     border:1px solid var(--line);border-radius:3px;padding:12px;background:var(--paper);
     resize:vertical;line-height:1.6;
   }
@@ -293,7 +307,8 @@
 <div id="exportModal">
   <div class="exportCard">
     <h3>Export selected frames</h3>
-    <div class="sub">Plain list of selected photos and their comments — ready to share with the photographer.</div>
+    <div class="sub">Selected photos and their comments — ready to share with the photographer.</div>
+    <div id="exportVisualList"></div>
     <textarea id="exportText" readonly></textarea>
     <div class="exportActions">
       <button id="copyExportBtn">Copy to clipboard</button>
@@ -710,13 +725,17 @@ function closeLightbox(){
 }
 
 /* ====== EXPORT ====== */
-function buildExportText(){
-  const rows = IMAGES.map(img=>({
+function getSelectedRows(){
+  return IMAGES.map(img=>({
     img,
     names: selectorsFor(img.id),
     comments: commentsByImage[img.id] || []
   })).filter(r=>r.names.length>0)
-    .sort((a,b)=> frameLabel(a.img.id).localeCompare(frameLabel(b.img.id), undefined, {numeric:true}));
+    .sort((a,b)=> a.img.file.localeCompare(b.img.file, undefined, {numeric:true}));
+}
+
+function buildExportText(){
+  const rows = getSelectedRows();
 
   const lines = [];
   lines.push('26JUL BUR CHI — SELECTED FRAMES');
@@ -731,7 +750,7 @@ function buildExportText(){
   }
 
   rows.forEach(r=>{
-    lines.push('Frame ' + frameLabel(r.img.id) + '  (' + r.img.file + ')');
+    lines.push(r.img.file);
     if(r.comments.length){
       r.comments.forEach(c=>{
         lines.push('  - ' + c.text);
@@ -743,8 +762,26 @@ function buildExportText(){
   return lines.join('\n');
 }
 
+function renderExportVisualList(){
+  const rows = getSelectedRows();
+  const container = document.getElementById('exportVisualList');
+  if(rows.length === 0){
+    container.innerHTML = '<div style="padding:14px;font-size:12px;color:var(--ink-soft);">No frames selected yet.</div>';
+    return;
+  }
+  container.innerHTML = rows.map(r=>`
+    <div class="exportRow">
+      <img src="images/thumb/${r.img.file}">
+      <div class="exportInfo">
+        <div class="exportFname mono">${escapeHtml(r.img.file)}</div>
+        ${r.comments.map(c=>`<div class="exportComment">${escapeHtml(c.text)}</div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
 function openExportModal(){
   document.getElementById('exportText').value = buildExportText();
+  renderExportVisualList();
   document.getElementById('exportModal').classList.add('open');
 }
 
