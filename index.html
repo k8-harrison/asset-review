@@ -117,12 +117,12 @@
   /* ---- grid ---- */
   main{padding:20px 24px 60px;}
   #grid{
-    display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;
-    align-items:start;
+    column-width:200px;column-gap:14px;
   }
   .cell{
     background:var(--card);border:1px solid var(--line);border-radius:3px;overflow:hidden;
     cursor:pointer;position:relative;transition:box-shadow .15s ease, transform .1s ease;
+    break-inside:avoid;margin-bottom:14px;display:inline-block;width:100%;
   }
   .cell:hover{box-shadow:0 6px 18px rgba(0,0,0,0.12);}
   .cell.mine{box-shadow:0 0 0 3px var(--moss) inset;}
@@ -587,7 +587,7 @@ function renderGrid(list){
     grid.innerHTML = '';
     return;
   }
-  grid.style.display = 'grid';
+  grid.style.display = 'block';
   lbSourceList = list;
   grid.innerHTML = list.map((img, i)=>{
     const names = selectorsFor(img.id);
