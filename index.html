@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JUL26 BUR CHI - Asset Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F3EC;
+    --paper-dim:#EDE9DD;
+    --ink:#2B2B24;
+    --ink-soft:#6B6858;
+    --moss:#94944D;
+    --moss-dark:#6E6E39;
+    --line:#D9D4C4;
+    --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Overpass',sans-serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* ---- name gate ---- */
+  #nameGate{
+    position:fixed;inset:0;background:rgba(43,43,36,0.55);
+    display:flex;align-items:center;justify-content:center;z-index:200;
+  }
+  #nameGate.hidden{display:none;}
+  .gateCard{
+    background:var(--card);border:1px solid var(--line);border-radius:4px;
+    padding:32px 36px;width:340px;max-width:90vw;box-shadow:0 12px 40px rgba(0,0,0,0.25);
+  }
+  .gateCard h2{margin:0 0 6px;font-size:19px;font-weight:600;}
+  .gateCard p{margin:0 0 18px;font-size:13px;color:var(--ink-soft);line-height:1.5;}
+  .gateCard input{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:3px;
+    font-family:'Overpass',sans-serif;font-size:14px;margin-bottom:14px;background:var(--paper);
+  }
+  .gateCard input:focus{outline:none;border-color:var(--moss);}
+  .nameQuickPicks{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
+  .namePickBtn{
+    width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:3px;background:var(--paper);
+    color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;font-family:'Overpass',sans-serif;
+    text-align:left;transition:border-color .15s ease, background .15s ease;
+  }
+  .namePickBtn:hover{border-color:var(--moss);background:#F0EEE3;}
+  .nameOtherBtn{color:var(--ink-soft);font-weight:500;font-style:italic;}
+  #nameOtherRow{margin-top:10px;}
+  #nameOtherRow input{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:3px;
+    font-family:'Overpass',sans-serif;font-size:14px;margin-bottom:10px;background:var(--paper);
+  }
+  .gateCard button{
+    width:100%;padding:10px 12px;border:none;border-radius:3px;background:var(--moss);
+    color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'Overpass',sans-serif;
+  }
+  .gateCard button:hover{background:var(--moss-dark);}
+
+  /* ---- top bar ---- */
+  header{
+    position:sticky;top:0;z-index:50;background:var(--paper);
+    border-bottom:1px solid var(--line);padding:16px 24px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  }
+  .titleBlock h1{font-size:16px;margin:0;font-weight:700;letter-spacing:0.2px;}
+  .titleBlock .sub{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .titleBlock .sub span{color:var(--moss-dark);font-weight:600;}
+
+  .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .segmented{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--card);}
+  .segmented button{
+    border:none;background:transparent;padding:7px 13px;font-size:12px;cursor:pointer;
+    font-family:'Overpass',sans-serif;color:var(--ink-soft);font-weight:600;
+  }
+  .segmented button.active{background:var(--moss);color:#fff;}
+  .segmented button+button{border-left:1px solid var(--line);}
+
+  select#reviewerFilter{
+    padding:7px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card);
+    font-family:'Overpass',sans-serif;font-size:12px;color:var(--ink);
+  }
+
+  .exportBtn{
+    padding:7px 14px;border:1px solid var(--line);border-radius:4px;background:var(--card);
+    font-size:12px;font-weight:600;cursor:pointer;color:var(--ink-soft);font-family:'Overpass',sans-serif;
+  }
+  .exportBtn:hover{border-color:var(--moss);color:var(--moss-dark);}
+
+  #exportModal{
+    position:fixed;inset:0;background:rgba(20,19,15,0.6);display:none;
+    align-items:center;justify-content:center;z-index:180;padding:24px;
+  }
+  #exportModal.open{display:flex;}
+  .exportCard{
+    background:var(--card);border-radius:4px;padding:24px;width:560px;max-width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,0.35);
+  }
+  .exportCard h3{margin:0 0 4px;font-size:16px;}
+  .exportCard .sub{font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
+  #exportText{
+    width:100%;height:280px;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    border:1px solid var(--line);border-radius:3px;padding:12px;background:var(--paper);
+    resize:vertical;line-height:1.6;
+  }
+  .exportActions{display:flex;gap:10px;margin-top:14px;}
+  .exportActions button{
+    flex:1;padding:10px;border-radius:3px;font-size:13px;font-weight:700;cursor:pointer;
+    font-family:'Overpass',sans-serif;border:1px solid var(--moss);
+  }
+  #copyExportBtn{background:var(--moss);color:#fff;border:none;}
+  #copyExportBtn:hover{background:var(--moss-dark);}
+  #downloadExportBtn{background:transparent;color:var(--moss-dark);}
+  #closeExportBtn{background:transparent;color:var(--ink-soft);border-color:var(--line);}
+
+  .whoami{
+    display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-soft);cursor:pointer;
+    padding:6px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card);
+  }
+  .whoami .dot{width:8px;height:8px;border-radius:50%;background:var(--moss);}
+  .whoami b{color:var(--ink);}
+
+  /* ---- stats strip ---- */
+  #statsStrip{
+    padding:10px 24px;font-size:11px;color:var(--ink-soft);border-bottom:1px solid var(--line);
+    display:flex;gap:20px;flex-wrap:wrap;
+  }
+  #statsStrip b{color:var(--ink);}
+
+  /* ---- grid ---- */
+  main{padding:20px 24px 60px;}
+  #grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;
+    align-items:start;
+  }
+  .cell{
+    background:var(--card);border:1px solid var(--line);border-radius:3px;overflow:hidden;
+    cursor:pointer;position:relative;transition:box-shadow .15s ease, transform .1s ease;
+  }
+  .cell:hover{box-shadow:0 6px 18px rgba(0,0,0,0.12);}
+  .cell.mine{box-shadow:0 0 0 3px var(--moss) inset;}
+  .frameNum{
+    position:absolute;top:6px;left:6px;background:rgba(43,43,36,0.62);color:#fff;
+    font-size:10px;padding:2px 6px;border-radius:2px;letter-spacing:0.3px;z-index:2;
+  }
+  .checkBadge{
+    position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;
+    background:rgba(43,43,36,0.55);color:#fff;display:flex;align-items:center;justify-content:center;
+    font-size:13px;z-index:3;transition:background .15s ease, transform .1s ease;cursor:pointer;
+  }
+  .checkBadge:hover{transform:scale(1.12);}
+  .cell.mine .checkBadge{background:var(--moss);}
+  .commentBadge{
+    position:absolute;top:6px;right:36px;min-width:24px;height:24px;background:rgba(43,43,36,0.55);
+    color:#fff;border-radius:12px;z-index:3;display:flex;align-items:center;justify-content:center;
+    gap:3px;padding:0 6px;cursor:pointer;transition:background .15s ease, transform .1s ease;
+  }
+  .commentBadge:hover{background:var(--moss-dark);transform:scale(1.12);}
+  .commentBadge span{font-size:10px;font-weight:700;line-height:1;}
+  .commentBadge svg{flex-shrink:0;}
+  .thumbWrap{width:100%;background:var(--paper-dim);cursor:pointer;}
+  .thumbWrap img{width:100%;height:auto;display:block;}
+  .tallyPill{
+    position:absolute;bottom:6px;left:6px;background:rgba(255,255,255,0.92);color:var(--ink);
+    font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;z-index:2;
+    display:flex;align-items:center;gap:4px;
+  }
+  .tallyPill .n{color:var(--moss-dark);}
+  .namesRow{
+    position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(43,43,36,0.82),transparent);
+    color:#fff;font-size:9px;padding:14px 6px 4px;opacity:0;transition:opacity .15s ease;z-index:1;
+    text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .cell:hover .namesRow{opacity:1;}
+
+  /* tally view */
+  #tallyList{display:flex;flex-direction:column;gap:8px;max-width:720px;}
+  .tRow{
+    display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);
+    border-radius:3px;padding:8px 12px;cursor:pointer;
+  }
+  .tRow img{width:52px;height:78px;object-fit:contain;background:var(--paper-dim);border-radius:2px;flex-shrink:0;}
+  .tRow .fname{font-size:12px;font-weight:600;flex:1;}
+  .tRow .names{font-size:11px;color:var(--ink-soft);flex:2;}
+  .tRow .count{
+    font-size:13px;font-weight:700;color:#fff;background:var(--moss);border-radius:10px;
+    padding:3px 10px;flex-shrink:0;
+  }
+
+  #emptyMsg{display:none;padding:60px 0;text-align:center;color:var(--ink-soft);font-size:13px;}
+  #continueBar{
+    margin-top:36px;padding-top:28px;border-top:1px solid var(--line);text-align:center;
+  }
+  #continueBar a{
+    display:inline-block;padding:12px 28px;background:var(--moss);color:#fff;text-decoration:none;
+    border-radius:4px;font-size:14px;font-weight:700;transition:background .15s ease;
+  }
+  #continueBar a:hover{background:var(--moss-dark);}
+  #continueBar .doneMsg{font-size:14px;color:var(--ink-soft);}
+
+  /* lightbox */
+  #lightbox{
+    position:fixed;inset:0;background:rgba(20,19,15,0.92);display:none;
+    align-items:center;justify-content:center;z-index:150;padding:30px;
+  }
+  #lightbox.open{display:flex;}
+  #lightbox img{max-width:min(80vw,700px);max-height:78vh;object-fit:contain;border-radius:2px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+  #lbImageArea{position:relative;display:flex;align-items:center;justify-content:center;flex:1;min-width:0;}
+  #lightboxPanel{
+    background:var(--card);border-radius:4px;padding:20px;width:260px;margin-left:20px;flex-shrink:0;
+  }
+  #lightboxPanel .fname{font-size:13px;font-weight:700;margin-bottom:4px;}
+  #lightboxPanel .frame{font-size:11px;color:var(--ink-soft);margin-bottom:16px;}
+  #lightboxPanel button{
+    width:100%;padding:10px;border:1px solid var(--moss);border-radius:3px;background:transparent;
+    color:var(--moss-dark);font-weight:700;font-size:13px;cursor:pointer;margin-bottom:16px;
+  }
+  #lightboxPanel button.active{background:var(--moss);color:#fff;}
+  #lightboxPanel .selNames{font-size:12px;color:var(--ink-soft);line-height:1.7;margin-bottom:16px;}
+  #lightboxPanel .selNames b{color:var(--ink);}
+  #lightboxPanel .commentsHeading{
+    font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;
+    color:var(--ink-soft);margin-bottom:8px;
+  }
+  #lbComments{max-height:180px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:10px;}
+  .commentItem{font-size:12px;line-height:1.5;border-bottom:1px solid var(--line);padding-bottom:8px;}
+  .commentItem .cName{font-weight:700;color:var(--ink);}
+  .commentItem .cTime{font-size:10px;color:var(--ink-soft);margin-left:6px;}
+  .commentItem .cDelete{
+    font-size:10px;color:var(--ink-soft);float:right;cursor:pointer;text-decoration:underline;
+  }
+  .commentItem .cDelete:hover{color:var(--moss-dark);}
+  .commentItem .cText{color:var(--ink);margin-top:2px;}
+  #noComments{font-size:12px;color:var(--ink-soft);margin-bottom:10px;}
+  #lbCommentInput{
+    width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:3px;
+    font-family:'Overpass',sans-serif;font-size:12px;background:var(--paper);resize:vertical;
+    min-height:52px;margin-bottom:8px;
+  }
+  #lbCommentInput:focus{outline:none;border-color:var(--moss);}
+  #lbCommentSubmit{
+    width:100%;padding:9px;border:none;border-radius:3px;background:var(--moss);
+    color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Overpass',sans-serif;
+  }
+  #lbCommentSubmit:hover{background:var(--moss-dark);}
+  #closeLightbox{
+    position:absolute;top:20px;right:26px;color:#fff;font-size:26px;cursor:pointer;line-height:1;
+  }
+  #lbNavPrev,#lbNavNext{
+    position:absolute;top:50%;transform:translateY(-50%);color:#fff;font-size:34px;cursor:pointer;
+    padding:10px;user-select:none;opacity:0.7;z-index:2;
+  }
+  #lbNavPrev:hover,#lbNavNext:hover{opacity:1;}
+  #lbNavPrev{left:0;}
+  #lbNavNext{right:0;}
+  @media (max-width:800px){
+    #lightbox{flex-direction:column;padding:14px;}
+    #lightboxPanel{margin-left:0;margin-top:14px;width:100%;max-width:400px;}
+  }
+
+  ::selection{background:var(--moss);color:#fff;}
+</style>
+</head>
+<body>
+
+<div id="nameGate">
+  <div class="gateCard">
+    <h2>Who's reviewing?</h2>
+    <p>Tap your name — it goes with every select and comment so the team can see who picked what.</p>
+    <div id="nameQuickPicks" class="nameQuickPicks">
+      <button class="namePickBtn" data-name="Peter">Peter</button>
+      <button class="namePickBtn" data-name="Kate">Kate</button>
+      <button class="namePickBtn" data-name="Emily">Emily</button>
+      <button class="namePickBtn nameOtherBtn" id="nameOtherToggle">+ Add your name</button>
+    </div>
+    <div id="nameOtherRow" style="display:none;">
+      <input id="nameInput" type="text" placeholder="Your name" maxlength="40">
+      <button id="nameSubmit">Start reviewing</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="titleBlock">
+    <h1>JUL26 BUR CHI - Asset Review</h1>
+    <div class="sub"><span id="photoCount">180</span> images · click to shortlist for edit</div>
+  </div>
+  <div class="controls">
+    <div class="segmented" id="viewToggle">
+      <button data-view="grid" class="active">Grid</button>
+      <button data-view="mine">My picks</button>
+      <button data-view="tally">Tally</button>
+    </div>
+    <select id="reviewerFilter">
+      <option value="">All reviewers</option>
+    </select>
+    <button id="exportBtn" class="exportBtn">Export</button>
+    <div class="whoami" id="whoami"><span class="dot"></span><b id="meName">—</b></div>
+  </div>
+</header>
+
+<div id="statsStrip">
+  <div><b id="statTotal">0</b> selects so far</div>
+  <div><b id="statReviewers">0</b> reviewers</div>
+  <div><b id="statTop">—</b> most-picked frame</div>
+</div>
+
+<main>
+  <div id="grid"></div>
+  <div id="tallyList" style="display:none;"></div>
+  <div id="emptyMsg">Nothing here yet.</div>
+
+
+<div id="exportModal">
+  <div class="exportCard">
+    <h3>Export selects & feedback</h3>
+    <div class="sub">Plain-text summary, sorted by most-picked frame. Copy or download to paste into Asana/Slack.</div>
+    <textarea id="exportText" readonly></textarea>
+    <div class="exportActions">
+      <button id="copyExportBtn">Copy to clipboard</button>
+      <button id="downloadExportBtn">Download .txt</button>
+      <button id="closeExportBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="lightbox">
+  <span id="closeLightbox">&times;</span>
+  <div id="lbImageArea">
+    <span id="lbNavPrev">&#8249;</span>
+    <img id="lightboxImg" src="">
+    <span id="lbNavNext">&#8250;</span>
+  </div>
+  <div id="lightboxPanel">
+    <div class="fname" id="lbFname"></div>
+    <div class="frame mono" id="lbFrame"></div>
+    <button id="lbSelectBtn">Select for edit</button>
+    <div class="selNames" id="lbNames"></div>
+    <div class="commentsHeading">Feedback</div>
+    <div id="lbComments"></div>
+    <div id="noComments" style="display:none;">No comments yet.</div>
+    <textarea id="lbCommentInput" placeholder="Add feedback on this frame..."></textarea>
+    <button id="lbCommentSubmit">Post comment</button>
+  </div>
+</div>
+
+<script>
+/* ====== DATA ====== */
+const IMAGES = [{"id": "530A6385-2", "file": "530A6385-2.jpg"}, {"id": "530A6427", "file": "530A6427.jpg"}, {"id": "530A6439", "file": "530A6439.jpg"}, {"id": "530A6450", "file": "530A6450.jpg"}, {"id": "530A6464", "file": "530A6464.jpg"}, {"id": "530A6466", "file": "530A6466.jpg"}, {"id": "530A6469", "file": "530A6469.jpg"}, {"id": "530A6470", "file": "530A6470.jpg"}, {"id": "530A6471", "file": "530A6471.jpg"}, {"id": "530A6472", "file": "530A6472.jpg"}, {"id": "530A6473", "file": "530A6473.jpg"}, {"id": "530A6474", "file": "530A6474.jpg"}, {"id": "530A6479", "file": "530A6479.jpg"}, {"id": "530A6481", "file": "530A6481.jpg"}, {"id": "530A6485", "file": "530A6485.jpg"}, {"id": "530A6486", "file": "530A6486.jpg"}, {"id": "530A6488", "file": "530A6488.jpg"}, {"id": "530A6489", "file": "530A6489.jpg"}, {"id": "530A6491", "file": "530A6491.jpg"}, {"id": "530A6493", "file": "530A6493.jpg"}, {"id": "530A6530", "file": "530A6530.jpg"}, {"id": "530A6531", "file": "530A6531.jpg"}, {"id": "530A6532", "file": "530A6532.jpg"}, {"id": "530A6536", "file": "530A6536.jpg"}, {"id": "530A6537", "file": "530A6537.jpg"}, {"id": "530A6538", "file": "530A6538.jpg"}, {"id": "530A6551", "file": "530A6551.jpg"}, {"id": "530A6557", "file": "530A6557.jpg"}, {"id": "530A6563", "file": "530A6563.jpg"}, {"id": "530A6571", "file": "530A6571.jpg"}, {"id": "530A6576", "file": "530A6576.jpg"}, {"id": "530A6586", "file": "530A6586.jpg"}, {"id": "530A6587", "file": "530A6587.jpg"}, {"id": "530A6588", "file": "530A6588.jpg"}, {"id": "530A6589", "file": "530A6589.jpg"}, {"id": "530A6590", "file": "530A6590.jpg"}, {"id": "530A6591", "file": "530A6591.jpg"}, {"id": "530A6592", "file": "530A6592.jpg"}, {"id": "530A6593", "file": "530A6593.jpg"}, {"id": "530A6600", "file": "530A6600.jpg"}, {"id": "530A6602", "file": "530A6602.jpg"}, {"id": "530A6618", "file": "530A6618.jpg"}, {"id": "530A6619", "file": "530A6619.jpg"}, {"id": "530A6622", "file": "530A6622.jpg"}, {"id": "530A6624", "file": "530A6624.jpg"}, {"id": "530A6625", "file": "530A6625.jpg"}, {"id": "530A6627", "file": "530A6627.jpg"}, {"id": "530A6630", "file": "530A6630.jpg"}, {"id": "530A6634", "file": "530A6634.jpg"}, {"id": "530A6635", "file": "530A6635.jpg"}, {"id": "530A6637", "file": "530A6637.jpg"}, {"id": "530A6638", "file": "530A6638.jpg"}, {"id": "530A6639", "file": "530A6639.jpg"}, {"id": "530A6640", "file": "530A6640.jpg"}, {"id": "530A6641", "file": "530A6641.jpg"}, {"id": "530A6642", "file": "530A6642.jpg"}, {"id": "530A6644", "file": "530A6644.jpg"}, {"id": "530A6645", "file": "530A6645.jpg"}, {"id": "530A6646", "file": "530A6646.jpg"}, {"id": "530A6662", "file": "530A6662.jpg"}, {"id": "530A6663", "file": "530A6663.jpg"}, {"id": "530A6664", "file": "530A6664.jpg"}, {"id": "530A6665", "file": "530A6665.jpg"}, {"id": "530A6666", "file": "530A6666.jpg"}, {"id": "530A6667", "file": "530A6667.jpg"}, {"id": "530A6668", "file": "530A6668.jpg"}, {"id": "530A6669", "file": "530A6669.jpg"}, {"id": "530A6670", "file": "530A6670.jpg"}, {"id": "530A6671", "file": "530A6671.jpg"}, {"id": "530A6674", "file": "530A6674.jpg"}, {"id": "530A6676", "file": "530A6676.jpg"}, {"id": "530A6677", "file": "530A6677.jpg"}, {"id": "530A6678", "file": "530A6678.jpg"}, {"id": "530A6679", "file": "530A6679.jpg"}, {"id": "530A6681", "file": "530A6681.jpg"}, {"id": "530A6682", "file": "530A6682.jpg"}, {"id": "530A6683", "file": "530A6683.jpg"}, {"id": "530A6684", "file": "530A6684.jpg"}, {"id": "530A6685", "file": "530A6685.jpg"}, {"id": "530A6687", "file": "530A6687.jpg"}, {"id": "530A6688", "file": "530A6688.jpg"}, {"id": "530A6689", "file": "530A6689.jpg"}, {"id": "530A6692", "file": "530A6692.jpg"}, {"id": "530A6693", "file": "530A6693.jpg"}, {"id": "530A6694", "file": "530A6694.jpg"}, {"id": "530A6695", "file": "530A6695.jpg"}, {"id": "530A6696", "file": "530A6696.jpg"}, {"id": "530A6698", "file": "530A6698.jpg"}, {"id": "530A6699", "file": "530A6699.jpg"}, {"id": "530A6700", "file": "530A6700.jpg"}, {"id": "530A6701", "file": "530A6701.jpg"}, {"id": "530A6714", "file": "530A6714.jpg"}, {"id": "530A6715", "file": "530A6715.jpg"}, {"id": "530A6716", "file": "530A6716.jpg"}, {"id": "530A6717", "file": "530A6717.jpg"}, {"id": "530A6718", "file": "530A6718.jpg"}, {"id": "530A6719", "file": "530A6719.jpg"}, {"id": "530A6720", "file": "530A6720.jpg"}, {"id": "530A6721", "file": "530A6721.jpg"}, {"id": "530A6722", "file": "530A6722.jpg"}, {"id": "530A6723", "file": "530A6723.jpg"}, {"id": "530A6725", "file": "530A6725.jpg"}, {"id": "530A6726", "file": "530A6726.jpg"}, {"id": "530A6727", "file": "530A6727.jpg"}, {"id": "530A6731", "file": "530A6731.jpg"}, {"id": "530A6732", "file": "530A6732.jpg"}, {"id": "530A6733", "file": "530A6733.jpg"}, {"id": "530A6736", "file": "530A6736.jpg"}, {"id": "530A6739", "file": "530A6739.jpg"}, {"id": "530A6740", "file": "530A6740.jpg"}, {"id": "530A6741", "file": "530A6741.jpg"}, {"id": "530A6742", "file": "530A6742.jpg"}, {"id": "530A6743", "file": "530A6743.jpg"}, {"id": "530A6744", "file": "530A6744.jpg"}, {"id": "530A6745", "file": "530A6745.jpg"}, {"id": "530A6746", "file": "530A6746.jpg"}, {"id": "530A6747", "file": "530A6747.jpg"}, {"id": "530A6748", "file": "530A6748.jpg"}, {"id": "530A6749", "file": "530A6749.jpg"}, {"id": "530A6750", "file": "530A6750.jpg"}, {"id": "530A6754", "file": "530A6754.jpg"}, {"id": "530A6755", "file": "530A6755.jpg"}, {"id": "530A6757", "file": "530A6757.jpg"}, {"id": "530A6758", "file": "530A6758.jpg"}, {"id": "530A6759", "file": "530A6759.jpg"}, {"id": "530A6765", "file": "530A6765.jpg"}, {"id": "530A6767", "file": "530A6767.jpg"}, {"id": "530A6768", "file": "530A6768.jpg"}, {"id": "530A6769", "file": "530A6769.jpg"}, {"id": "530A6770", "file": "530A6770.jpg"}, {"id": "530A6773", "file": "530A6773.jpg"}, {"id": "530A6774", "file": "530A6774.jpg"}, {"id": "530A6775", "file": "530A6775.jpg"}, {"id": "530A6776", "file": "530A6776.jpg"}, {"id": "530A6777", "file": "530A6777.jpg"}, {"id": "530A6783", "file": "530A6783.jpg"}, {"id": "530A6792", "file": "530A6792.jpg"}, {"id": "530A6793", "file": "530A6793.jpg"}, {"id": "530A6794", "file": "530A6794.jpg"}, {"id": "530A6795", "file": "530A6795.jpg"}, {"id": "530A6796", "file": "530A6796.jpg"}, {"id": "530A6798", "file": "530A6798.jpg"}, {"id": "530A6800", "file": "530A6800.jpg"}, {"id": "530A6804", "file": "530A6804.jpg"}, {"id": "530A6805", "file": "530A6805.jpg"}, {"id": "530A6808", "file": "530A6808.jpg"}, {"id": "530A6809", "file": "530A6809.jpg"}, {"id": "530A6810", "file": "530A6810.jpg"}, {"id": "530A6814", "file": "530A6814.jpg"}, {"id": "530A6818", "file": "530A6818.jpg"}, {"id": "530A6820", "file": "530A6820.jpg"}, {"id": "530A6833", "file": "530A6833.jpg"}, {"id": "530A6835", "file": "530A6835.jpg"}, {"id": "530A6836", "file": "530A6836.jpg"}, {"id": "530A6850", "file": "530A6850.jpg"}, {"id": "530A6854", "file": "530A6854.jpg"}, {"id": "530A6855", "file": "530A6855.jpg"}, {"id": "530A6856", "file": "530A6856.jpg"}, {"id": "530A6857", "file": "530A6857.jpg"}, {"id": "530A6858", "file": "530A6858.jpg"}, {"id": "530A6859", "file": "530A6859.jpg"}, {"id": "530A6862", "file": "530A6862.jpg"}, {"id": "530A6863", "file": "530A6863.jpg"}, {"id": "530A6865", "file": "530A6865.jpg"}, {"id": "530A6867", "file": "530A6867.jpg"}, {"id": "530A6869", "file": "530A6869.jpg"}, {"id": "530A6870", "file": "530A6870.jpg"}, {"id": "530A6874", "file": "530A6874.jpg"}, {"id": "530A6875", "file": "530A6875.jpg"}, {"id": "530A6876", "file": "530A6876.jpg"}, {"id": "530A6877", "file": "530A6877.jpg"}, {"id": "530A6878", "file": "530A6878.jpg"}, {"id": "530A6881", "file": "530A6881.jpg"}, {"id": "530A6885", "file": "530A6885.jpg"}, {"id": "530A6888", "file": "530A6888.jpg"}, {"id": "530A6892", "file": "530A6892.jpg"}, {"id": "530A6893", "file": "530A6893.jpg"}, {"id": "530A6899", "file": "530A6899.jpg"}, {"id": "530A6900", "file": "530A6900.jpg"}, {"id": "530A6901", "file": "530A6901.jpg"}];
+
+/* ====== STATE ====== */
+let myName = null;
+let selectionsByReviewer = {}; // { name: Set(ids) }
+let commentsByImage = {}; // { imageId: [{name, text, ts}] }
+let currentView = 'grid';
+let filterReviewer = '';
+let lbIndex = -1;
+let lbSourceList = [];
+
+/* ====== STORAGE HELPERS ====== */
+async function storageGet(key, shared){
+  try{
+    const r = await window.storage.get(key, shared);
+    return r ? r.value : null;
+  }catch(e){ return null; }
+}
+async function storageSet(key, value, shared){
+  try{ await window.storage.set(key, value, shared); }catch(e){ console.error('storage set failed', e); }
+}
+async function storageList(prefix, shared){
+  try{
+    const r = await window.storage.list(prefix, shared);
+    return r ? r.keys : [];
+  }catch(e){ return []; }
+}
+
+/* ====== INIT ====== */
+async function init(){
+  document.getElementById('photoCount').textContent = IMAGES.length;
+  const savedName = await storageGet('reviewer_name', false);
+  if(savedName){
+    myName = savedName;
+    document.getElementById('nameGate').classList.add('hidden');
+    document.getElementById('meName').textContent = myName;
+  }
+  await loadAllSelections();
+  await loadAllComments();
+  buildReviewerFilter();
+  render();
+
+  document.getElementById('nameSubmit').addEventListener('click', submitName);
+  document.getElementById('nameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') submitName(); });
+  document.querySelectorAll('.namePickBtn[data-name]').forEach(btn=>{
+    btn.addEventListener('click', ()=>selectName(btn.dataset.name));
+  });
+  document.getElementById('nameOtherToggle').addEventListener('click', ()=>{
+    document.getElementById('nameOtherRow').style.display = 'block';
+    document.getElementById('nameInput').focus();
+  });
+  document.getElementById('whoami').addEventListener('click', ()=>{
+    document.getElementById('nameGate').classList.remove('hidden');
+    document.getElementById('nameOtherRow').style.display = 'block';
+    document.getElementById('nameInput').value = myName || '';
+    document.getElementById('nameInput').focus();
+  });
+  document.querySelectorAll('#viewToggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#viewToggle button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentView = btn.dataset.view;
+      render();
+    });
+  });
+  document.getElementById('reviewerFilter').addEventListener('change', e=>{
+    filterReviewer = e.target.value;
+    render();
+  });
+  document.getElementById('closeLightbox').addEventListener('click', closeLightbox);
+  document.getElementById('lightbox').addEventListener('click', e=>{ if(e.target.id==='lightbox') closeLightbox(); });
+  document.getElementById('lbSelectBtn').addEventListener('click', ()=>{
+    const img = lbSourceList[lbIndex];
+    if(img) toggleSelect(img.id);
+  });
+  document.getElementById('lbCommentSubmit').addEventListener('click', postComment);
+  document.getElementById('exportBtn').addEventListener('click', openExportModal);
+  document.getElementById('closeExportBtn').addEventListener('click', ()=>{
+    document.getElementById('exportModal').classList.remove('open');
+  });
+  document.getElementById('copyExportBtn').addEventListener('click', copyExportText);
+  document.getElementById('downloadExportBtn').addEventListener('click', downloadExportText);
+  document.getElementById('lbNavPrev').addEventListener('click', ()=>navLightbox(-1));
+  document.getElementById('lbNavNext').addEventListener('click', ()=>navLightbox(1));
+  document.addEventListener('keydown', e=>{
+    if(!document.getElementById('lightbox').classList.contains('open')) return;
+    if(e.key==='Escape') closeLightbox();
+    if(e.key==='ArrowLeft') navLightbox(-1);
+    if(e.key==='ArrowRight') navLightbox(1);
+  });
+}
+
+async function submitName(){
+  const val = document.getElementById('nameInput').value.trim();
+  if(!val) return;
+  await selectName(val);
+}
+
+async function selectName(val){
+  if(!val) return;
+  myName = val;
+  await storageSet('reviewer_name', val, false);
+  document.getElementById('meName').textContent = myName;
+  document.getElementById('nameGate').classList.add('hidden');
+  document.getElementById('nameOtherRow').style.display = 'none';
+  await loadAllSelections();
+  await loadAllComments();
+  buildReviewerFilter();
+  render();
+}
+
+async function loadAllComments(){
+  commentsByImage = {};
+  const keys = await storageList('comments::', true);
+  for(const k of keys){
+    const id = k.slice('comments::'.length);
+    const val = await storageGet(k, true);
+    let arr = [];
+    try{ arr = JSON.parse(val) || []; }catch(e){ arr = []; }
+    commentsByImage[id] = arr;
+  }
+}
+
+async function postComment(){
+  if(!myName){
+    document.getElementById('nameGate').classList.remove('hidden');
+    document.getElementById('nameInput').focus();
+    return;
+  }
+  const input = document.getElementById('lbCommentInput');
+  const text = input.value.trim();
+  if(!text) return;
+  const img = lbSourceList[lbIndex];
+  if(!img) return;
+  const arr = commentsByImage[img.id] || [];
+  arr.push({name: myName, text, ts: Date.now()});
+  commentsByImage[img.id] = arr;
+  await storageSet('comments::' + img.id, JSON.stringify(arr), true);
+  input.value = '';
+  renderComments(img.id);
+  render();
+}
+
+function renderComments(id){
+  const arr = commentsByImage[id] || [];
+  const list = document.getElementById('lbComments');
+  const empty = document.getElementById('noComments');
+  if(arr.length === 0){
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = arr.map((c,i)=>`
+    <div class="commentItem">
+      <span class="cName">${escapeHtml(c.name)}</span><span class="cTime">${timeAgo(c.ts)}</span>
+      ${myName === c.name ? `<span class="cDelete" data-idx="${i}">Delete</span>` : ''}
+      <div class="cText">${escapeHtml(c.text)}</div>
+    </div>`).join('');
+  list.querySelectorAll('.cDelete').forEach(btn=>{
+    btn.addEventListener('click', ()=>deleteComment(id, parseInt(btn.dataset.idx)));
+  });
+}
+
+async function deleteComment(imageId, idx){
+  const arr = commentsByImage[imageId] || [];
+  arr.splice(idx, 1);
+  commentsByImage[imageId] = arr;
+  await storageSet('comments::' + imageId, JSON.stringify(arr), true);
+  renderComments(imageId);
+  render();
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function timeAgo(ts){
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if(s < 60) return 'just now';
+  const m = Math.floor(s/60); if(m < 60) return m + 'm ago';
+  const h = Math.floor(m/60); if(h < 24) return h + 'h ago';
+  const dd = Math.floor(h/24); return dd + 'd ago';
+}
+
+async function loadAllSelections(){
+  selectionsByReviewer = {};
+  const keys = await storageList('sel::', true);
+  for(const k of keys){
+    const name = k.slice('sel::'.length);
+    const val = await storageGet(k, true);
+    let ids = [];
+    try{ ids = JSON.parse(val) || []; }catch(e){ ids = []; }
+    selectionsByReviewer[name] = new Set(ids);
+  }
+  if(myName && !(myName in selectionsByReviewer)) selectionsByReviewer[myName] = new Set();
+}
+
+function buildReviewerFilter(){
+  const sel = document.getElementById('reviewerFilter');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All reviewers</option>';
+  Object.keys(selectionsByReviewer).sort().forEach(name=>{
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    sel.appendChild(opt);
+  });
+  sel.value = current;
+}
+
+function selectorsFor(id){
+  const names = [];
+  for(const [name, set] of Object.entries(selectionsByReviewer)){
+    if(set.has(id)) names.push(name);
+  }
+  return names;
+}
+
+async function toggleSelect(id){
+  if(!myName){
+    document.getElementById('nameGate').classList.remove('hidden');
+    document.getElementById('nameInput').focus();
+    return;
+  }
+  if(!selectionsByReviewer[myName]) selectionsByReviewer[myName] = new Set();
+  const set = selectionsByReviewer[myName];
+  if(set.has(id)) set.delete(id); else set.add(id);
+  await storageSet('sel::' + myName, JSON.stringify(Array.from(set)), true);
+  buildReviewerFilter();
+  render();
+  if(document.getElementById('lightbox').classList.contains('open')) updateLightboxPanel();
+}
+
+/* ====== RENDER ====== */
+function render(){
+  updateStats();
+  document.getElementById('grid').style.display = 'none';
+  document.getElementById('tallyList').style.display = 'none';
+  document.getElementById('emptyMsg').style.display = 'none';
+
+  if(currentView === 'tally'){ renderTally(); return; }
+
+  let list = IMAGES;
+  if(currentView === 'mine'){
+    const mySet = (myName && selectionsByReviewer[myName]) || new Set();
+    list = IMAGES.filter(img=>mySet.has(img.id));
+  }
+  if(filterReviewer){
+    const set = selectionsByReviewer[filterReviewer] || new Set();
+    list = list.filter(img=>set.has(img.id));
+  }
+  renderGrid(list);
+}
+
+function renderGrid(list){
+  const grid = document.getElementById('grid');
+  if(list.length === 0){
+    document.getElementById('emptyMsg').style.display = 'block';
+    grid.innerHTML = '';
+    return;
+  }
+  grid.style.display = 'grid';
+  lbSourceList = list;
+  grid.innerHTML = list.map((img, i)=>{
+    const names = selectorsFor(img.id);
+    const mine = myName && names.includes(myName);
+    const commentCount = (commentsByImage[img.id] || []).length;
+    return `
+      <div class="cell ${mine?'mine':''}" data-idx="${i}">
+        <div class="frameNum mono">${frameLabel(img.id)}</div>
+        <div class="commentBadge" data-action="comment" title="Add a comment">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-4.5 4V17H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          ${commentCount ? `<span>${commentCount}</span>` : ''}
+        </div>
+        <div class="checkBadge" data-action="select" title="${mine ? 'Remove from shortlist' : 'Select for edit'}">${mine ? '&#10003;' : ''}</div>
+        <div class="thumbWrap" data-action="view"><img loading="lazy" src="images/thumb/${img.file}"></div>
+        ${names.length ? `<div class="tallyPill">&#9679;<span class="n">${names.length}</span></div>` : ''}
+        ${names.length ? `<div class="namesRow">${names.join(', ')}</div>` : ''}
+      </div>`;
+  }).join('');
+  grid.querySelectorAll('.cell').forEach(cell=>{
+    const idx = parseInt(cell.dataset.idx);
+    const img = list[idx];
+    cell.querySelector('[data-action="select"]').addEventListener('click', e=>{
+      e.stopPropagation();
+      toggleSelect(img.id);
+    });
+    cell.querySelector('[data-action="comment"]').addEventListener('click', e=>{
+      e.stopPropagation();
+      openLightbox(idx, true);
+    });
+    cell.querySelector('[data-action="view"]').addEventListener('click', ()=>openLightbox(idx));
+  });
+}
+
+function renderTally(){
+  const rows = IMAGES.map(img=>({img, names: selectorsFor(img.id)}))
+    .filter(r=>r.names.length>0)
+    .sort((a,b)=>b.names.length - a.names.length);
+  const container = document.getElementById('tallyList');
+  if(rows.length===0){
+    document.getElementById('emptyMsg').style.display='block';
+    container.innerHTML=''; container.style.display='none';
+    return;
+  }
+  container.style.display = 'flex';
+  lbSourceList = rows.map(r=>r.img);
+  container.innerHTML = rows.map((r,i)=>{
+    const cCount = (commentsByImage[r.img.id] || []).length;
+    return `
+    <div class="tRow" data-idx="${i}">
+      <img src="images/thumb/${r.img.file}">
+      <div class="fname mono">${frameLabel(r.img.id)}</div>
+      <div class="names">${r.names.join(', ')}${cCount ? ' · &#128172;' + cCount : ''}</div>
+      <div class="count">${r.names.length}</div>
+    </div>`;
+  }).join('');
+  container.querySelectorAll('.tRow').forEach(row=>{
+    row.addEventListener('click', ()=>openLightbox(parseInt(row.dataset.idx)));
+  });
+}
+
+function frameLabel(id){
+  // e.g. 530A6820 -> 6820
+  const m = id.match(/(\d{3,4})(?:-\d+)?$/);
+  return m ? m[1] : id;
+}
+
+function updateStats(){
+  const reviewers = Object.keys(selectionsByReviewer).filter(n=>selectionsByReviewer[n].size>0);
+  let total = 0;
+  const counts = {};
+  reviewers.forEach(n=>{
+    selectionsByReviewer[n].forEach(id=>{ total++; counts[id]=(counts[id]||0)+1; });
+  });
+  let topId = null, topCount = 0;
+  Object.entries(counts).forEach(([id,c])=>{ if(c>topCount){topCount=c; topId=id;} });
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statReviewers').textContent = reviewers.length;
+  document.getElementById('statTop').textContent = topId ? (frameLabel(topId) + ' (' + topCount + ')') : '—';
+}
+
+/* ====== LIGHTBOX ====== */
+function openLightbox(idx, focusComment){
+  lbIndex = idx;
+  const img = lbSourceList[idx];
+  if(!img) return;
+  document.getElementById('lightboxImg').src = 'images/full/' + img.file;
+  document.getElementById('lbFname').textContent = img.file;
+  document.getElementById('lbFrame').textContent = 'Frame ' + frameLabel(img.id);
+  document.getElementById('lightbox').classList.add('open');
+  updateLightboxPanel();
+  if(focusComment){
+    requestAnimationFrame(()=>{
+      const input = document.getElementById('lbCommentInput');
+      input.scrollIntoView({block:'nearest'});
+      input.focus();
+    });
+  }
+}
+function updateLightboxPanel(){
+  const img = lbSourceList[lbIndex];
+  if(!img) return;
+  const names = selectorsFor(img.id);
+  const mine = myName && names.includes(myName);
+  const btn = document.getElementById('lbSelectBtn');
+  btn.textContent = mine ? 'Selected — remove' : 'Select for edit';
+  btn.classList.toggle('active', mine);
+  document.getElementById('lbNames').innerHTML = names.length
+    ? '<b>Selected by:</b><br>' + names.join('<br>')
+    : 'No one has selected this yet.';
+  renderComments(img.id);
+}
+function navLightbox(dir){
+  let next = lbIndex + dir;
+  if(next < 0) next = lbSourceList.length - 1;
+  if(next >= lbSourceList.length) next = 0;
+  openLightbox(next);
+}
+function closeLightbox(){
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+/* ====== EXPORT ====== */
+function buildExportText(){
+  const rows = IMAGES.map(img=>({
+    img,
+    names: selectorsFor(img.id),
+    comments: commentsByImage[img.id] || []
+  })).filter(r=>r.names.length>0 || r.comments.length>0)
+    .sort((a,b)=> b.names.length - a.names.length);
+
+  const lines = [];
+  lines.push("THE ARTIST'S LOFT — ASSET REVIEW EXPORT");
+  lines.push('Generated ' + new Date().toLocaleString());
+  lines.push('');
+  const totalSelected = rows.filter(r=>r.names.length>0).length;
+  lines.push(totalSelected + ' frame(s) selected · ' + rows.length + ' frame(s) with activity');
+  lines.push('----------------------------------------');
+  lines.push('');
+
+  if(rows.length === 0){
+    lines.push('No selects or comments yet.');
+  }
+
+  rows.forEach(r=>{
+    lines.push('Frame ' + frameLabel(r.img.id) + '  (' + r.img.file + ')');
+    lines.push('  Picks (' + r.names.length + '): ' + (r.names.length ? r.names.join(', ') : 'none'));
+    if(r.comments.length){
+      lines.push('  Comments:');
+      r.comments.forEach(c=>{
+        lines.push('    - ' + c.name + ': "' + c.text + '"  (' + new Date(c.ts).toLocaleString() + ')');
+      });
+    }
+    lines.push('');
+  });
+
+  return lines.join('\n');
+}
+
+function openExportModal(){
+  document.getElementById('exportText').value = buildExportText();
+  document.getElementById('exportModal').classList.add('open');
+}
+
+async function copyExportText(){
+  const text = document.getElementById('exportText').value;
+  try{
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById('copyExportBtn');
+    const original = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(()=>{ btn.textContent = original; }, 1500);
+  }catch(e){
+    const ta = document.getElementById('exportText');
+    ta.select();
+    document.execCommand('copy');
+  }
+}
+
+function downloadExportText(){
+  const text = document.getElementById('exportText').value;
+  const blob = new Blob([text], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = 'artists-loft-asset-review-' + stamp + '.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ====== IMAGE LOADING WITH FALLBACK ====== */
+function imgWithFallback(candidates){
+  const encoded = encodeURIComponent(JSON.stringify(candidates.slice(1)));
+  return `src="${candidates[0]}" data-fallback="${encoded}" onerror="tryNextImageSrc(this)"`;
+}
+function tryNextImageSrc(el){
+  let remaining = [];
+  try{ remaining = JSON.parse(decodeURIComponent(el.dataset.fallback || '[]')); }catch(e){}
+  if(remaining.length === 0){ el.onerror = null; return; }
+  const next = remaining[0];
+  el.dataset.fallback = encodeURIComponent(JSON.stringify(remaining.slice(1)));
+  el.src = next;
+}
+
+init();
+</script>
+</body>
+</html>
