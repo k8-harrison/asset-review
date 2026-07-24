@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JUL26 BUR CHI - Asset Review</title>
+<title>26JUL BUR CHI - Asset Review</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -261,7 +261,7 @@
 
 <header>
   <div class="titleBlock">
-    <h1>JUL26 BUR CHI - Asset Review</h1>
+    <h1>26JUL BUR CHI - Asset Review</h1>
     <div class="sub"><span id="photoCount">180</span> images · click to shortlist for edit</div>
   </div>
   <div class="controls">
@@ -292,8 +292,8 @@
 
 <div id="exportModal">
   <div class="exportCard">
-    <h3>Export selects & feedback</h3>
-    <div class="sub">Plain-text summary, sorted by most-picked frame. Copy or download to paste into Asana/Slack.</div>
+    <h3>Export selected frames</h3>
+    <div class="sub">Plain list of selected photos and their comments — ready to share with the photographer.</div>
     <textarea id="exportText" readonly></textarea>
     <div class="exportActions">
       <button id="copyExportBtn">Copy to clipboard</button>
@@ -715,29 +715,26 @@ function buildExportText(){
     img,
     names: selectorsFor(img.id),
     comments: commentsByImage[img.id] || []
-  })).filter(r=>r.names.length>0 || r.comments.length>0)
-    .sort((a,b)=> b.names.length - a.names.length);
+  })).filter(r=>r.names.length>0)
+    .sort((a,b)=> frameLabel(a.img.id).localeCompare(frameLabel(b.img.id), undefined, {numeric:true}));
 
   const lines = [];
-  lines.push("THE ARTIST'S LOFT — ASSET REVIEW EXPORT");
+  lines.push('26JUL BUR CHI — SELECTED FRAMES');
   lines.push('Generated ' + new Date().toLocaleString());
   lines.push('');
-  const totalSelected = rows.filter(r=>r.names.length>0).length;
-  lines.push(totalSelected + ' frame(s) selected · ' + rows.length + ' frame(s) with activity');
+  lines.push(rows.length + ' frame(s) selected');
   lines.push('----------------------------------------');
   lines.push('');
 
   if(rows.length === 0){
-    lines.push('No selects or comments yet.');
+    lines.push('No frames selected yet.');
   }
 
   rows.forEach(r=>{
     lines.push('Frame ' + frameLabel(r.img.id) + '  (' + r.img.file + ')');
-    lines.push('  Picks (' + r.names.length + '): ' + (r.names.length ? r.names.join(', ') : 'none'));
     if(r.comments.length){
-      lines.push('  Comments:');
       r.comments.forEach(c=>{
-        lines.push('    - ' + c.name + ': "' + c.text + '"  (' + new Date(c.ts).toLocaleString() + ')');
+        lines.push('  - ' + c.text);
       });
     }
     lines.push('');
@@ -773,7 +770,7 @@ function downloadExportText(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = 'artists-loft-asset-review-' + stamp + '.txt';
+  a.download = '26jul-bur-chi-selected-frames-' + stamp + '.txt';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
