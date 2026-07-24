@@ -94,7 +94,7 @@
   }
   .exportRow:last-child{border-bottom:none;}
   .exportRow img{
-    width:70px;height:70px;object-fit:cover;border-radius:2px;flex-shrink:0;background:var(--paper-dim);
+    height:70px;width:auto;max-width:100px;object-fit:contain;border-radius:2px;flex-shrink:0;background:var(--paper-dim);
   }
   .exportRow .exportInfo{flex:1;min-width:0;}
   .exportRow .exportFname{font-size:12px;font-weight:700;margin-bottom:4px;word-break:break-all;}
@@ -861,7 +861,7 @@ async function downloadVisualExport(){
   h1{font-size:18px;margin:0 0 4px;}
   .sub{font-size:13px;color:#6B6858;margin-bottom:24px;}
   .row{display:flex;gap:16px;align-items:flex-start;background:#fff;border:1px solid #D9D4C4;border-radius:4px;padding:14px;margin-bottom:12px;}
-  .row img{width:110px;height:110px;object-fit:cover;border-radius:3px;flex-shrink:0;background:#EDE9DD;}
+  .row img{height:110px;width:auto;max-width:160px;object-fit:contain;border-radius:3px;flex-shrink:0;background:#EDE9DD;}
   .info{flex:1;}
   .fname{font-family:'Courier New',monospace;font-size:13px;font-weight:700;margin-bottom:6px;}
   .c{font-size:13px;color:#2B2B24;line-height:1.5;margin-bottom:4px;}
