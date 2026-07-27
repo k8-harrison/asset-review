@@ -190,6 +190,24 @@
   }
 
   #emptyMsg{display:none;padding:60px 0;text-align:center;color:var(--ink-soft);font-size:13px;}
+  #finalsList{display:flex;flex-direction:column;gap:8px;max-width:720px;}
+  #finalsIntro{
+    font-size:12px;color:var(--ink-soft);margin-bottom:14px;max-width:640px;line-height:1.6;
+  }
+  .fRow{
+    display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);
+    border-radius:3px;padding:8px 12px;transition:border-color .15s ease;
+  }
+  .fRow.isFinal{border-color:#C9A227;box-shadow:0 0 0 1px #C9A227 inset;}
+  .fRow img{width:52px;height:78px;object-fit:contain;background:var(--paper-dim);border-radius:2px;flex-shrink:0;cursor:pointer;}
+  .fRow .fname{font-size:12px;font-weight:600;flex:1;cursor:pointer;}
+  .fRow .names{font-size:11px;color:var(--ink-soft);flex:2;cursor:pointer;}
+  .fRow .starBtn{
+    flex-shrink:0;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
+    background:var(--paper);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .fRow.isFinal .starBtn{background:#C9A227;border-color:#C9A227;color:#fff;}
   #continueBar{
     margin-top:36px;padding-top:28px;border-top:1px solid var(--line);text-align:center;
   }
@@ -218,6 +236,8 @@
     color:var(--moss-dark);font-weight:700;font-size:13px;cursor:pointer;margin-bottom:16px;
   }
   #lightboxPanel button.active{background:var(--moss);color:#fff;}
+  #lbFinalBtn{border-color:#C9A227;color:#C9A227;}
+  #lbFinalBtn.active{background:#C9A227;color:#fff;border-color:#C9A227;}
   #lightboxPanel .selNames{font-size:12px;color:var(--ink-soft);line-height:1.7;margin-bottom:16px;}
   #lightboxPanel .selNames b{color:var(--ink);}
   #lightboxPanel .commentsHeading{
@@ -284,6 +304,7 @@
       <button data-view="grid" class="active">Grid</button>
       <button data-view="mine">My picks</button>
       <button data-view="tally">Tally</button>
+      <button data-view="finals">Finals</button>
     </div>
     <select id="batchFilter"></select>
     <select id="reviewerFilter">
@@ -303,13 +324,18 @@
 <main>
   <div id="grid"></div>
   <div id="tallyList" style="display:none;"></div>
+  <div id="finalsList" style="display:none;"></div>
   <div id="emptyMsg">Nothing here yet.</div>
-
+</main>
 
 <div id="exportModal">
   <div class="exportCard">
-    <h3>Export selected frames</h3>
-    <div class="sub">Selected photos and their comments — ready to share with the photographer.</div>
+    <h3>Export</h3>
+    <div class="segmented" id="exportScopeToggle" style="margin-bottom:14px;">
+      <button data-scope="team" class="active">Team Shortlist</button>
+      <button data-scope="final">Final Selects</button>
+    </div>
+    <div class="sub" id="exportSub">Selected photos and their comments — ready to share with the photographer.</div>
     <div id="exportVisualList"></div>
     <textarea id="exportText" readonly></textarea>
     <div class="exportActions">
@@ -332,6 +358,7 @@
     <div class="fname" id="lbFname"></div>
     <div class="frame mono" id="lbFrame"></div>
     <button id="lbSelectBtn">Select for edit</button>
+    <button id="lbFinalBtn">&#9733; Mark as final</button>
     <div class="selNames" id="lbNames"></div>
     <div class="commentsHeading">Feedback</div>
     <div id="lbComments"></div>
@@ -353,6 +380,7 @@ const IMAGES = [{"id": "530A6385-2", "file": "530A6385-2.jpg", "batch": "set1"},
 let myName = null;
 let selectionsByReviewer = {}; // { name: Set(ids) }
 let commentsByImage = {}; // { imageId: [{name, text, ts}] }
+let finalSelects = new Set(); // curated final picks (creative director)
 let currentView = 'grid';
 let filterReviewer = '';
 let currentBatch = BATCHES[0].id;
@@ -398,6 +426,7 @@ async function init(){
   }
   await loadAllSelections();
   await loadAllComments();
+  await loadFinals();
   buildReviewerFilter();
   render();
 
@@ -430,8 +459,22 @@ async function init(){
     const img = lbSourceList[lbIndex];
     if(img) toggleSelect(img.id);
   });
+  document.getElementById('lbFinalBtn').addEventListener('click', ()=>{
+    const img = lbSourceList[lbIndex];
+    if(img) toggleFinal(img.id).then(updateLightboxPanel);
+  });
   document.getElementById('lbCommentSubmit').addEventListener('click', postComment);
   document.getElementById('exportBtn').addEventListener('click', openExportModal);
+  document.querySelectorAll('#exportScopeToggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#exportScopeToggle button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      exportScope = btn.dataset.scope;
+      document.getElementById('exportText').value = buildExportText();
+      renderExportVisualList();
+      updateExportSub();
+    });
+  });
   document.getElementById('closeExportBtn').addEventListener('click', ()=>{
     document.getElementById('exportModal').classList.remove('open');
   });
@@ -469,6 +512,17 @@ async function selectName(val){
 async function loadAllComments(){
   const data = await fbGet('comments');
   commentsByImage = data || {};
+}
+
+async function loadFinals(){
+  const data = await fbGet('finalSelects');
+  finalSelects = new Set(data || []);
+}
+
+async function toggleFinal(id){
+  if(finalSelects.has(id)) finalSelects.delete(id); else finalSelects.add(id);
+  await fbSet('finalSelects', Array.from(finalSelects));
+  render();
 }
 
 async function postComment(){
@@ -600,9 +654,11 @@ function render(){
   updateStats();
   document.getElementById('grid').style.display = 'none';
   document.getElementById('tallyList').style.display = 'none';
+  document.getElementById('finalsList').style.display = 'none';
   document.getElementById('emptyMsg').style.display = 'none';
 
   if(currentView === 'tally'){ renderTally(); return; }
+  if(currentView === 'finals'){ renderFinals(); return; }
 
   let list = IMAGES;
   if(currentBatch !== 'all'){
@@ -691,6 +747,50 @@ function renderTally(){
   });
 }
 
+function renderFinals(){
+  let baseList = IMAGES;
+  if(currentBatch !== 'all'){
+    baseList = baseList.filter(img=>img.batch === currentBatch);
+  }
+  const rows = baseList.map(img=>({img, names: selectorsFor(img.id)}))
+    .filter(r=>r.names.length>0)
+    .sort((a,b)=>b.names.length - a.names.length);
+  const container = document.getElementById('finalsList');
+  if(rows.length===0){
+    document.getElementById('emptyMsg').style.display='block';
+    document.getElementById('emptyMsg').textContent = 'No team selects yet — nothing to narrow down to finals.';
+    container.innerHTML=''; container.style.display='none';
+    return;
+  }
+  document.getElementById('emptyMsg').textContent = 'Nothing here yet.';
+  container.style.display = 'flex';
+  lbSourceList = rows.map(r=>r.img);
+  const finalCount = rows.filter(r=>finalSelects.has(r.img.id)).length;
+  container.innerHTML = `<div id="finalsIntro">Browsing the team's shortlist (${rows.length} photos). Tap the star to mark a photo as a final pick — <b>${finalCount} marked final</b> right now. Use Export → Final Selects to share just those with the photographer.</div>` +
+    rows.map((r,i)=>{
+    const isFinal = finalSelects.has(r.img.id);
+    return `
+    <div class="fRow ${isFinal?'isFinal':''}" data-idx="${i}">
+      <img data-action="view" src="images/thumb/${r.img.file}">
+      <div class="fname mono" data-action="view">${frameLabel(r.img.id)}</div>
+      <div class="names" data-action="view">${r.names.join(', ')}</div>
+      <button class="starBtn" data-action="star" title="${isFinal ? 'Remove from finals' : 'Mark as final'}">&#9733;</button>
+    </div>`;
+  }).join('');
+  container.querySelectorAll('.fRow').forEach(row=>{
+    const idx = parseInt(row.dataset.idx);
+    const img = rows[idx].img;
+    row.querySelector('[data-action="view"]').closest('.fRow');
+    row.querySelectorAll('[data-action="view"]').forEach(el=>{
+      el.addEventListener('click', ()=>openLightbox(idx));
+    });
+    row.querySelector('[data-action="star"]').addEventListener('click', e=>{
+      e.stopPropagation();
+      toggleFinal(img.id);
+    });
+  });
+}
+
 function frameLabel(id){
   // e.g. 530A6820 -> 6820
   const m = id.match(/(\d{3,4})(?:-\d+)?$/);
@@ -748,6 +848,10 @@ function updateLightboxPanel(){
   const btn = document.getElementById('lbSelectBtn');
   btn.textContent = mine ? 'Selected — remove' : 'Select for edit';
   btn.classList.toggle('active', mine);
+  const isFinal = finalSelects.has(img.id);
+  const finalBtn = document.getElementById('lbFinalBtn');
+  finalBtn.innerHTML = isFinal ? '&#9733; Final pick — remove' : '&#9733; Mark as final';
+  finalBtn.classList.toggle('active', isFinal);
   document.getElementById('lbNames').innerHTML = names.length
     ? '<b>Selected by:</b><br>' + names.join('<br>')
     : 'No one has selected this yet.';
@@ -764,6 +868,8 @@ function closeLightbox(){
 }
 
 /* ====== EXPORT ====== */
+let exportScope = 'team';
+
 function getSelectedRows(){
   return IMAGES.map(img=>({
     img,
@@ -773,19 +879,34 @@ function getSelectedRows(){
     .sort((a,b)=> a.img.file.localeCompare(b.img.file, undefined, {numeric:true}));
 }
 
+function getFinalRows(){
+  return IMAGES.map(img=>({
+    img,
+    names: selectorsFor(img.id),
+    comments: commentsByImage[img.id] || []
+  })).filter(r=>finalSelects.has(r.img.id))
+    .sort((a,b)=> a.img.file.localeCompare(b.img.file, undefined, {numeric:true}));
+}
+
+function getRowsForScope(){
+  return exportScope === 'final' ? getFinalRows() : getSelectedRows();
+}
+
 function buildExportText(){
-  const rows = getSelectedRows();
+  const rows = getRowsForScope();
+  const heading = exportScope === 'final' ? '26JUL BUR CHI — FINAL SELECTS' : '26JUL BUR CHI — SELECTED FRAMES';
+  const countLabel = exportScope === 'final' ? ' frame(s) — final selects' : ' frame(s) selected';
 
   const lines = [];
-  lines.push('26JUL BUR CHI — SELECTED FRAMES');
+  lines.push(heading);
   lines.push('Generated ' + new Date().toLocaleString());
   lines.push('');
-  lines.push(rows.length + ' frame(s) selected');
+  lines.push(rows.length + countLabel);
   lines.push('----------------------------------------');
   lines.push('');
 
   if(rows.length === 0){
-    lines.push('No frames selected yet.');
+    lines.push(exportScope === 'final' ? 'No final selects marked yet.' : 'No frames selected yet.');
   }
 
   rows.forEach(r=>{
@@ -802,10 +923,10 @@ function buildExportText(){
 }
 
 function renderExportVisualList(){
-  const rows = getSelectedRows();
+  const rows = getRowsForScope();
   const container = document.getElementById('exportVisualList');
   if(rows.length === 0){
-    container.innerHTML = '<div style="padding:14px;font-size:12px;color:var(--ink-soft);">No frames selected yet.</div>';
+    container.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--ink-soft);">${exportScope === 'final' ? 'No final selects marked yet.' : 'No frames selected yet.'}</div>`;
     return;
   }
   container.innerHTML = rows.map(r=>`
@@ -821,7 +942,14 @@ function renderExportVisualList(){
 function openExportModal(){
   document.getElementById('exportText').value = buildExportText();
   renderExportVisualList();
+  updateExportSub();
   document.getElementById('exportModal').classList.add('open');
+}
+
+function updateExportSub(){
+  document.getElementById('exportSub').textContent = exportScope === 'final'
+    ? "The creative director's curated final picks — ready to share with the photographer."
+    : 'Everything the team has shortlisted so far, with comments.';
 }
 
 async function copyExportText(){
@@ -845,8 +973,9 @@ function downloadExportText(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
+  const label = exportScope === 'final' ? 'final-selects' : 'selected-frames';
   a.href = url;
-  a.download = '26jul-bur-chi-selected-frames-' + stamp + '.txt';
+  a.download = '26jul-bur-chi-' + label + '-' + stamp + '.txt';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -872,7 +1001,7 @@ async function downloadVisualExport(){
   btn.textContent = 'Building...';
   btn.disabled = true;
 
-  const rows = getSelectedRows();
+  const rows = getRowsForScope();
   const rowsHtml = [];
   for(const r of rows){
     const dataUrl = await imageToDataURL('images/thumb/' + r.img.file);
@@ -889,9 +1018,10 @@ async function downloadVisualExport(){
       </div>`);
   }
 
+  const heading = exportScope === 'final' ? '26JUL BUR CHI - Final Selects' : '26JUL BUR CHI - Selected Frames';
   const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
-<title>26JUL BUR CHI - Selected Frames</title>
+<title>${heading}</title>
 <style>
   body{font-family:-apple-system,Helvetica,Arial,sans-serif;background:#F6F3EC;color:#2B2B24;margin:0;padding:32px;}
   h1{font-size:18px;margin:0 0 4px;}
@@ -904,8 +1034,8 @@ async function downloadVisualExport(){
   .c.empty{color:#6B6858;font-style:italic;}
 </style></head>
 <body>
-  <h1>26JUL BUR CHI — Selected Frames</h1>
-  <div class="sub">${rows.length} frame(s) selected · exported ${new Date().toLocaleString()}</div>
+  <h1>${heading}</h1>
+  <div class="sub">${rows.length}${exportScope === 'final' ? ' final select(s)' : ' frame(s) selected'} · exported ${new Date().toLocaleString()}</div>
   ${rowsHtml.join('')}
 </body></html>`;
 
@@ -913,8 +1043,9 @@ async function downloadVisualExport(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
+  const dlLabel = exportScope === 'final' ? 'final-selects' : 'selected-frames';
   a.href = url;
-  a.download = '26jul-bur-chi-selected-frames-' + stamp + '.html';
+  a.download = '26jul-bur-chi-' + dlLabel + '-' + stamp + '.html';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
