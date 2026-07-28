@@ -194,24 +194,34 @@
   }
 
   #emptyMsg{display:none;padding:60px 0;text-align:center;color:var(--ink-soft);font-size:13px;}
-  #finalsList{display:flex;flex-direction:column;gap:8px;max-width:720px;}
+  #finalsList{display:flex;flex-wrap:wrap;gap:14px;}
   #finalsIntro{
     font-size:12px;color:var(--ink-soft);margin-bottom:14px;max-width:640px;line-height:1.6;
+    flex-basis:100%;
   }
-  .fRow{
-    display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);
-    border-radius:3px;padding:8px 12px;transition:border-color .15s ease;
+  .fCard{
+    background:var(--card);border:1px solid var(--line);border-radius:3px;overflow:hidden;
+    transition:border-color .15s ease, box-shadow .15s ease;width:190px;
   }
-  .fRow.isFinal{border-color:#C9A227;box-shadow:0 0 0 1px #C9A227 inset;}
-  .fRow img{width:52px;height:78px;object-fit:contain;background:var(--paper-dim);border-radius:2px;flex-shrink:0;cursor:pointer;}
-  .fRow .fname{font-size:12px;font-weight:600;flex:1;cursor:pointer;}
-  .fRow .names{font-size:11px;color:var(--ink-soft);flex:2;cursor:pointer;}
-  .fRow .starBtn{
-    flex-shrink:0;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
-    background:var(--paper);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;
-    transition:background .15s ease, border-color .15s ease;
+  .fCard.isFinal{border-color:#C9A227;box-shadow:0 0 0 2px #C9A227 inset;}
+  .fCard .fThumbWrap{
+    position:relative;width:100%;height:190px;background:var(--paper-dim);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
   }
-  .fRow.isFinal .starBtn{background:#C9A227;border-color:#C9A227;color:#fff;}
+  .fCard .fThumbWrap img{width:100%;height:100%;object-fit:contain;display:block;}
+  .fCard .fFrameNum{
+    position:absolute;top:6px;left:6px;background:rgba(43,43,36,0.62);color:#fff;
+    font-size:10px;padding:2px 6px;border-radius:2px;letter-spacing:0.3px;
+  }
+  .fCard .starBtn{
+    position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:none;
+    background:rgba(43,43,36,0.55);color:#fff;cursor:pointer;font-size:15px;display:flex;
+    align-items:center;justify-content:center;transition:background .15s ease;
+  }
+  .fCard.isFinal .starBtn{background:#C9A227;}
+  .fCard .fCaption{padding:8px 10px;}
+  .fCard .fCaption .names{font-size:11px;color:var(--ink-soft);line-height:1.4;}
+  .fCard .fCaption .names b{color:var(--ink);}
   #continueBar{
     margin-top:36px;padding-top:28px;border-top:1px solid var(--line);text-align:center;
   }
@@ -811,11 +821,13 @@ function renderFinals(){
     rows.map((r,i)=>{
     const isFinal = finalSelects.has(r.img.id);
     return `
-    <div class="fRow ${isFinal?'isFinal':''}" data-idx="${i}">
-      <img data-action="view" src="images/thumb/${r.img.file}">
-      <div class="fname mono" data-action="view">${frameLabel(r.img.id)}</div>
-      <div class="names" data-action="view">${r.names.join(', ')}</div>
-      <button class="starBtn" data-action="star" title="${isFinal ? 'Remove from finals' : 'Mark as final'}">&#9733;</button>
+    <div class="fCard ${isFinal?'isFinal':''}" data-idx="${i}">
+      <div class="fThumbWrap" data-action="view">
+        <div class="fFrameNum mono">${frameLabel(r.img.id)}</div>
+        <button class="starBtn" data-action="star" title="${isFinal ? 'Remove from finals' : 'Mark as final'}">&#9733;</button>
+        <img src="images/thumb/${r.img.file}">
+      </div>
+      <div class="fCaption"><div class="names"><b>Picked by:</b> ${r.names.join(', ')}</div></div>
     </div>`;
   }).join('');
   container.querySelectorAll('#finalsTalentToggle button').forEach(btn=>{
@@ -824,14 +836,11 @@ function renderFinals(){
       renderFinals();
     });
   });
-  container.querySelectorAll('.fRow').forEach(row=>{
-    const idx = parseInt(row.dataset.idx);
+  container.querySelectorAll('.fCard').forEach(card=>{
+    const idx = parseInt(card.dataset.idx);
     const img = rows[idx].img;
-    row.querySelector('[data-action="view"]').closest('.fRow');
-    row.querySelectorAll('[data-action="view"]').forEach(el=>{
-      el.addEventListener('click', ()=>openLightbox(idx));
-    });
-    row.querySelector('[data-action="star"]').addEventListener('click', e=>{
+    card.querySelector('[data-action="view"]').addEventListener('click', ()=>openLightbox(idx));
+    card.querySelector('[data-action="star"]').addEventListener('click', e=>{
       e.stopPropagation();
       toggleFinal(img.id);
     });
