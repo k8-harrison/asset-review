@@ -85,19 +85,46 @@
   }
   .exportCard h3{margin:0 0 4px;font-size:16px;}
   .exportCard .sub{font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
+  .exportQuickRow{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;
+    font-size:11px;color:var(--ink-soft);
+  }
+  .exportQuickActions button{
+    background:none;border:none;color:var(--moss-dark);font-weight:700;font-size:11px;
+    cursor:pointer;text-decoration:underline;padding:0;margin-left:12px;font-family:'Overpass',sans-serif;
+  }
   #exportVisualList{
     max-height:400px;overflow-y:auto;border:1px solid var(--line);border-radius:3px;
     margin-bottom:14px;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;
   }
   .exportRow{
     display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid var(--line);border-radius:3px;
+    position:relative;transition:opacity .15s ease;
   }
+  .exportRow.excluded{opacity:0.35;}
   .exportRow img{
     width:100%;height:110px;object-fit:contain;border-radius:2px;background:var(--paper-dim);
   }
   .exportRow .exportInfo{min-width:0;}
   .exportRow .exportFname{font-size:10px;font-weight:700;margin-bottom:2px;word-break:break-all;}
   .exportRow .exportComment{font-size:10px;color:var(--ink-soft);line-height:1.4;margin-top:2px;}
+  .exportCheck{
+    position:absolute;top:4px;left:4px;z-index:2;width:20px;height:20px;cursor:pointer;
+  }
+  .exportCheck input{
+    position:absolute;opacity:0;width:20px;height:20px;margin:0;cursor:pointer;
+  }
+  .exportCheck span{
+    display:block;width:20px;height:20px;border-radius:3px;background:rgba(255,255,255,0.9);
+    border:1px solid var(--line);
+  }
+  .exportCheck input:checked + span{
+    background:var(--moss);border-color:var(--moss);
+  }
+  .exportCheck input:checked + span::after{
+    content:'';display:block;width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;
+    transform:rotate(45deg);margin:2px auto;
+  }
   #exportText{
     width:100%;height:200px;font-family:'IBM Plex Mono',monospace;font-size:11px;
     border:1px solid var(--line);border-radius:3px;padding:12px;background:var(--paper);
@@ -354,6 +381,13 @@
       <button data-scope="final">Final Selects</button>
     </div>
     <div class="sub" id="exportSub">Selected photos and their comments — ready to share with the photographer.</div>
+    <div class="exportQuickRow">
+      <span id="exportCountLabel"></span>
+      <span class="exportQuickActions">
+        <button id="exportSelectAll" type="button">Check all</button>
+        <button id="exportSelectNone" type="button">Uncheck all</button>
+      </span>
+    </div>
     <div id="exportVisualList"></div>
     <textarea id="exportText" readonly></textarea>
     <div class="exportActions">
@@ -494,11 +528,22 @@ async function init(){
   });
   document.getElementById('lbCommentSubmit').addEventListener('click', postComment);
   document.getElementById('exportBtn').addEventListener('click', openExportModal);
+  document.getElementById('exportSelectAll').addEventListener('click', ()=>{
+    exportIncluded = new Set(getRowsForScope().map(r=>r.img.id));
+    document.getElementById('exportText').value = buildExportText();
+    renderExportVisualList();
+  });
+  document.getElementById('exportSelectNone').addEventListener('click', ()=>{
+    exportIncluded = new Set();
+    document.getElementById('exportText').value = buildExportText();
+    renderExportVisualList();
+  });
   document.querySelectorAll('#exportScopeToggle button').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       document.querySelectorAll('#exportScopeToggle button').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       exportScope = btn.dataset.scope;
+      exportIncluded = new Set(getRowsForScope().map(r=>r.img.id));
       document.getElementById('exportText').value = buildExportText();
       renderExportVisualList();
       updateExportSub();
@@ -964,8 +1009,10 @@ function getRowsForScope(){
   return exportScope === 'final' ? getFinalRows() : getSelectedRows();
 }
 
+let exportIncluded = new Set(); // ids currently checked for this export session
+
 function buildExportText(){
-  const rows = getRowsForScope();
+  const rows = getRowsForScope().filter(r=>exportIncluded.has(r.img.id));
   const heading = exportScope === 'final' ? '26JUL BUR CHI — FINAL SELECTS' : '26JUL BUR CHI — SELECTED FRAMES';
   const countLabel = exportScope === 'final' ? ' frame(s) — final selects' : ' frame(s) selected';
 
@@ -973,12 +1020,12 @@ function buildExportText(){
   lines.push(heading);
   lines.push('Generated ' + new Date().toLocaleString());
   lines.push('');
-  lines.push(rows.length + countLabel);
+  lines.push(rows.length + countLabel + ' (this round)');
   lines.push('----------------------------------------');
   lines.push('');
 
   if(rows.length === 0){
-    lines.push(exportScope === 'final' ? 'No final selects marked yet.' : 'No frames selected yet.');
+    lines.push('Nothing checked for export yet.');
   }
 
   rows.forEach(r=>{
@@ -1001,17 +1048,44 @@ function renderExportVisualList(){
     container.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--ink-soft);">${exportScope === 'final' ? 'No final selects marked yet.' : 'No frames selected yet.'}</div>`;
     return;
   }
-  container.innerHTML = rows.map(r=>`
-    <div class="exportRow">
+  container.innerHTML = rows.map(r=>{
+    const checked = exportIncluded.has(r.img.id);
+    return `
+    <div class="exportRow ${checked ? '' : 'excluded'}" data-id="${r.img.id}">
+      <label class="exportCheck">
+        <input type="checkbox" data-action="toggleInclude" ${checked ? 'checked' : ''}>
+        <span></span>
+      </label>
       <img src="images/thumb/${r.img.file}">
       <div class="exportInfo">
         <div class="exportFname mono">${escapeHtml(r.img.file)}</div>
         ${r.comments.map(c=>`<div class="exportComment">${escapeHtml(c.text)}</div>`).join('')}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+  container.querySelectorAll('[data-action="toggleInclude"]').forEach(cb=>{
+    cb.addEventListener('change', e=>{
+      const cell = e.target.closest('.exportRow');
+      const id = cell.dataset.id;
+      if(e.target.checked){ exportIncluded.add(id); cell.classList.remove('excluded'); }
+      else { exportIncluded.delete(id); cell.classList.add('excluded'); }
+      document.getElementById('exportText').value = buildExportText();
+      updateExportCount();
+    });
+  });
+  updateExportCount();
+}
+
+function updateExportCount(){
+  const total = getRowsForScope().length;
+  const checked = getRowsForScope().filter(r=>exportIncluded.has(r.img.id)).length;
+  const el = document.getElementById('exportCountLabel');
+  if(el) el.textContent = checked + ' of ' + total + ' checked for this round';
 }
 
 function openExportModal(){
+  // default: everything in scope is checked when the modal opens fresh
+  exportIncluded = new Set(getRowsForScope().map(r=>r.img.id));
   document.getElementById('exportText').value = buildExportText();
   renderExportVisualList();
   updateExportSub();
@@ -1020,8 +1094,8 @@ function openExportModal(){
 
 function updateExportSub(){
   document.getElementById('exportSub').textContent = exportScope === 'final'
-    ? "The creative director's curated final picks — ready to share with the photographer."
-    : 'Everything the team has shortlisted so far, with comments.';
+    ? "The creative director's curated final picks — uncheck any already sent to the photographer."
+    : 'Everything the team has shortlisted so far — uncheck any already sent to the photographer.';
 }
 
 async function copyExportText(){
@@ -1073,7 +1147,7 @@ async function downloadVisualExport(){
   btn.textContent = 'Building...';
   btn.disabled = true;
 
-  const rows = getRowsForScope();
+  const rows = getRowsForScope().filter(r=>exportIncluded.has(r.img.id));
   const rowsHtml = [];
   for(const r of rows){
     const dataUrl = await imageToDataURL('images/thumb/' + r.img.file);
