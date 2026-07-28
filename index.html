@@ -125,6 +125,7 @@
     display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#fff;
     padding:6px 12px;border-radius:4px;background:#C9A227;white-space:nowrap;
   }
+  .finalCounterBreakdown{font-weight:500;font-size:11px;opacity:0.9;margin-left:2px;}
 
   /* ---- stats strip ---- */
   #statsStrip{
@@ -325,7 +326,10 @@
       <option value="">All reviewers</option>
     </select>
     <button id="exportBtn" class="exportBtn">Export</button>
-    <div class="finalCounter" id="finalCounterBadge" title="Final picks so far">&#9733; <span id="finalCounterNum">0</span> final</div>
+    <div class="finalCounter" id="finalCounterBadge" title="Final picks so far">
+      &#9733; <span id="finalCounterNum">0</span> final
+      <span id="finalCounterBreakdown" class="finalCounterBreakdown"></span>
+    </div>
     <div class="whoami" id="whoami"><span class="dot"></span><b id="meName">—</b></div>
   </div>
 </header>
@@ -448,10 +452,10 @@ async function init(){
 
   setInterval(async ()=>{
     const data = await fbGet('finalSelects');
-    const count = (data || []).length;
-    updateFinalCounter(count);
+    const freshSet = new Set(data || []);
+    updateFinalCounter(freshSet);
     if(currentView === 'finals'){
-      finalSelects = new Set(data || []);
+      finalSelects = freshSet;
       render();
     }
   }, 5000);
@@ -543,18 +547,32 @@ async function loadAllComments(){
 async function loadFinals(){
   const data = await fbGet('finalSelects');
   finalSelects = new Set(data || []);
-  updateFinalCounter(finalSelects.size);
+  updateFinalCounter(finalSelects);
 }
 
-function updateFinalCounter(count){
-  const el = document.getElementById('finalCounterNum');
-  if(el) el.textContent = count;
+function updateFinalCounter(selectedIdsSet){
+  const count = selectedIdsSet.size;
+  const numEl = document.getElementById('finalCounterNum');
+  if(numEl) numEl.textContent = count;
+
+  let talentCount = 0, noTalentCount = 0, untagged = 0;
+  selectedIdsSet.forEach(id=>{
+    const img = IMAGES.find(i=>i.id===id);
+    if(!img || img.talent === undefined) untagged++;
+    else if(img.talent === true) talentCount++;
+    else noTalentCount++;
+  });
+  const parts = [];
+  if(talentCount || noTalentCount) parts.push(talentCount + ' talent / ' + noTalentCount + ' no-talent');
+  if(untagged) parts.push(untagged + ' untagged');
+  const bEl = document.getElementById('finalCounterBreakdown');
+  if(bEl) bEl.textContent = parts.length ? '(' + parts.join(', ') + ')' : '';
 }
 
 async function toggleFinal(id){
   if(finalSelects.has(id)) finalSelects.delete(id); else finalSelects.add(id);
   await fbSet('finalSelects', Array.from(finalSelects));
-  updateFinalCounter(finalSelects.size);
+  updateFinalCounter(finalSelects);
   render();
 }
 
@@ -796,8 +814,7 @@ function renderFinals(){
   }
 
   const container = document.getElementById('finalsList');
-  const finalCount = finalSelects.size;
-  updateFinalCounter(finalCount);
+  updateFinalCounter(finalSelects);
 
   if(rows.length===0){
     document.getElementById('emptyMsg').style.display='block';
