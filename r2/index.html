@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>26JUL BUR CHI - Round 2 Edits (Ludlow Sofa)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F3EC; --paper-dim:#EDE9DD; --ink:#2B2B24; --ink-soft:#6B6858;
+    --moss:#94944D; --moss-dark:#6E6E39; --line:#D9D4C4; --card:#FFFFFF; --r2:#8A5A3B;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Overpass',sans-serif;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  #nameGate{position:fixed;inset:0;background:rgba(43,43,36,0.55);display:flex;align-items:center;justify-content:center;z-index:200;}
+  #nameGate.hidden{display:none;}
+  .gateCard{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:32px 36px;width:340px;max-width:90vw;box-shadow:0 12px 40px rgba(0,0,0,0.25);}
+  .gateCard h2{margin:0 0 6px;font-size:19px;font-weight:600;}
+  .gateCard p{margin:0 0 18px;font-size:13px;color:var(--ink-soft);line-height:1.5;}
+  .gateCard input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:3px;font-family:'Overpass',sans-serif;font-size:14px;margin-bottom:14px;background:var(--paper);}
+  .gateCard input:focus{outline:none;border-color:var(--r2);}
+  .gateCard button{width:100%;padding:10px 12px;border:none;border-radius:3px;background:var(--r2);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'Overpass',sans-serif;}
+
+  header{position:sticky;top:0;z-index:50;background:var(--paper);border-bottom:2px solid var(--r2);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .r2Badge{display:inline-block;background:var(--r2);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:0.4px;margin-right:8px;vertical-align:middle;}
+  .titleBlock h1{font-size:16px;margin:0;font-weight:700;letter-spacing:0.2px;display:flex;align-items:center;}
+  .titleBlock .sub{font-size:11px;color:var(--ink-soft);margin-top:4px;}
+  .whoami{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-soft);cursor:pointer;padding:6px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card);}
+  .whoami .dot{width:8px;height:8px;border-radius:50%;background:var(--r2);}
+  .whoami b{color:var(--ink);}
+  .backLink{font-size:12px;color:var(--ink-soft);text-decoration:none;border:1px solid var(--line);padding:6px 10px;border-radius:4px;background:var(--card);}
+  .backLink:hover{border-color:var(--r2);color:var(--r2);}
+
+  main{padding:20px 24px 60px;}
+  #grid{display:flex;flex-wrap:wrap;gap:16px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:4px;overflow:hidden;width:260px;}
+  .imgArea{position:relative;height:280px;background:var(--paper-dim);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .imgArea img{width:100%;height:100%;object-fit:contain;display:block;}
+  .stateLabel{
+    position:absolute;top:8px;left:8px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:3px;
+    color:#fff;letter-spacing:0.3px;
+  }
+  .stateLabel.edit{background:var(--r2);}
+  .stateLabel.original{background:rgba(43,43,36,0.65);}
+  .toggleBtn{
+    position:absolute;bottom:8px;right:8px;background:rgba(255,255,255,0.95);border:1px solid var(--line);
+    border-radius:20px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;color:var(--ink);
+    font-family:'Overpass',sans-serif;
+  }
+  .toggleBtn:hover{border-color:var(--r2);color:var(--r2);}
+  .cardFooter{padding:10px 12px;}
+  .cardFooter .fname{font-size:11px;font-weight:700;margin-bottom:6px;word-break:break-all;}
+  .checkBadge{
+    position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;
+    background:rgba(43,43,36,0.55);color:#fff;display:flex;align-items:center;justify-content:center;
+    font-size:13px;cursor:pointer;z-index:3;
+  }
+  .card.approved .checkBadge{background:var(--r2);}
+  .commentRow{margin-top:8px;}
+  .commentRow textarea{
+    width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:3px;font-family:'Overpass',sans-serif;
+    font-size:11px;background:var(--paper);resize:vertical;min-height:36px;margin-bottom:4px;
+  }
+  .commentRow button{
+    width:100%;padding:6px;border:none;border-radius:3px;background:var(--r2);color:#fff;font-size:11px;
+    font-weight:700;cursor:pointer;font-family:'Overpass',sans-serif;
+  }
+  .commentList{margin-bottom:6px;}
+  .commentItem{font-size:10px;line-height:1.4;color:var(--ink-soft);margin-bottom:3px;}
+  .commentItem b{color:var(--ink);}
+  .approvedCount{font-size:12px;color:var(--ink-soft);}
+</style>
+</head>
+<body>
+
+<div id="nameGate">
+  <div class="gateCard">
+    <h2>Who's reviewing?</h2>
+    <p>Your name goes with any comments here. Remembered on this device going forward.</p>
+    <input id="nameInput" type="text" placeholder="e.g. Kate" maxlength="40" autofocus>
+    <button id="nameSubmit">Start reviewing</button>
+  </div>
+</div>
+
+<header>
+  <div class="titleBlock">
+    <h1><span class="r2Badge">R2</span>26JUL BUR CHI — Round 2 Edits</h1>
+    <div class="sub">Ludlow sofa · <span id="approvedCount">0</span> of 21 approved · toggle each card to compare against the original</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <a class="backLink" href="../">&larr; Back to main review</a>
+    <div class="whoami" id="whoami"><span class="dot"></span><b id="meName">—</b></div>
+  </div>
+</header>
+
+<main>
+  <div id="grid"></div>
+</main>
+
+<script>
+const PAIRS = [{"r2": "ludlow-selects-1.jpg", "original": "530A6385-2.jpg"}, {"r2": "ludlow-selects-2.jpg", "original": "530A6427.jpg"}, {"r2": "ludlow-selects-3.jpg", "original": "530A6450.jpg"}, {"r2": "ludlow-selects-4.jpg", "original": "530A6464.jpg"}, {"r2": "ludlow-selects-5.jpg", "original": "530A6472.jpg"}, {"r2": "ludlow-selects-6.jpg", "original": "530A6439.jpg"}, {"r2": "ludlow-selects-7.jpg", "original": "530A6530.jpg"}, {"r2": "ludlow-selects-8.jpg", "original": "530A6531.jpg"}, {"r2": "ludlow-selects-9.jpg", "original": "530A6536.jpg"}, {"r2": "ludlow-selects-10.jpg", "original": "530A6634.jpg"}, {"r2": "ludlow-selects-11.jpg", "original": "530A6670.jpg"}, {"r2": "ludlow-selects-12.jpg", "original": "530A6671.jpg"}, {"r2": "ludlow-selects-13.jpg", "original": "530A6714.jpg"}, {"r2": "ludlow-selects-14.jpg", "original": "530A6740.jpg"}, {"r2": "ludlow-selects-15.jpg", "original": "530A6745.jpg"}, {"r2": "ludlow-selects-16.jpg", "original": "530A6746.jpg"}, {"r2": "ludlow-selects-17.jpg", "original": "530A6750.jpg"}, {"r2": "ludlow-selects-18.jpg", "original": "530A6758.jpg"}, {"r2": "ludlow-selects-19.jpg", "original": "530A6770.jpg"}, {"r2": "ludlow-selects-20.jpg", "original": "530A6485.jpg"}, {"r2": "ludlow-selects-21.jpg", "original": "530A6862.jpg"}];
+
+const FIREBASE_URL = 'https://asset-review-8bfb6-default-rtdb.firebaseio.com';
+let myName = null;
+let approvedSet = new Set();
+let commentsByR2 = {};
+let cardState = {}; // r2file -> 'edit' | 'original'
+
+function getLocalName(){ try{ return localStorage.getItem('reviewer_name'); }catch(e){ return null; } }
+function setLocalName(v){ try{ localStorage.setItem('reviewer_name', v); }catch(e){} }
+
+async function fbGet(path){
+  try{ const r = await fetch(FIREBASE_URL + '/' + path + '.json'); if(!r.ok) return null; return await r.json(); }
+  catch(e){ return null; }
+}
+async function fbSet(path, value){
+  try{ await fetch(FIREBASE_URL + '/' + path + '.json', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(value)}); }
+  catch(e){ console.error('firebase set failed', e); }
+}
+
+function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function r2Key(r2file){ return r2file.replace(/[.#$\[\]\/]/g, '_'); }
+
+async function init(){
+  PAIRS.forEach(p => cardState[p.r2] = 'edit');
+  const saved = getLocalName();
+  if(saved){ myName = saved; document.getElementById('nameGate').classList.add('hidden'); document.getElementById('meName').textContent = myName; }
+
+  const approvedData = await fbGet('r2_approved');
+  approvedSet = new Set(approvedData || []);
+  const commentsData = await fbGet('r2_comments');
+  commentsByR2 = commentsData || {};
+
+  render();
+
+  document.getElementById('nameSubmit').addEventListener('click', submitName);
+  document.getElementById('nameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') submitName(); });
+  document.getElementById('whoami').addEventListener('click', ()=>{
+    document.getElementById('nameGate').classList.remove('hidden');
+    document.getElementById('nameInput').value = myName || '';
+    document.getElementById('nameInput').focus();
+  });
+}
+
+async function submitName(){
+  const val = document.getElementById('nameInput').value.trim();
+  if(!val) return;
+  myName = val;
+  setLocalName(val);
+  document.getElementById('meName').textContent = myName;
+  document.getElementById('nameGate').classList.add('hidden');
+}
+
+function render(){
+  document.getElementById('approvedCount').textContent = approvedSet.size;
+  const grid = document.getElementById('grid');
+  grid.innerHTML = PAIRS.map(p=>{
+    const isApproved = approvedSet.has(p.r2);
+    const state = cardState[p.r2];
+    const src = state === 'edit' ? ('images/thumb/' + p.r2) : ('../images/thumb/' + p.original);
+    const comments = commentsByR2[r2Key(p.r2)] || [];
+    return `
+    <div class="card ${isApproved?'approved':''}" data-r2="${p.r2}">
+      <div class="imgArea">
+        <div class="stateLabel ${state}">${state === 'edit' ? 'R2 EDIT' : 'ORIGINAL'}</div>
+        <button class="checkBadge" data-action="approve" title="${isApproved?'Remove approval':'Approve this edit'}">${isApproved ? '&#10003;' : ''}</button>
+        <img src="${src}">
+        <button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'original' : 'R2 edit'}</button>
+      </div>
+      <div class="cardFooter">
+        <div class="fname mono">${escapeHtml(p.original)}</div>
+        <div class="commentList">
+          ${comments.map(c=>`<div class="commentItem"><b>${escapeHtml(c.name)}:</b> ${escapeHtml(c.text)}</div>`).join('')}
+        </div>
+        <div class="commentRow">
+          <textarea placeholder="Feedback on this edit..." data-role="commentInput"></textarea>
+          <button data-action="postComment">Post comment</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.card').forEach(card=>{
+    const r2file = card.dataset.r2;
+    card.querySelector('[data-action="toggle"]').addEventListener('click', ()=>{
+      cardState[r2file] = cardState[r2file] === 'edit' ? 'original' : 'edit';
+      render();
+    });
+    card.querySelector('[data-action="approve"]').addEventListener('click', ()=>toggleApprove(r2file));
+    card.querySelector('[data-action="postComment"]').addEventListener('click', ()=>{
+      const ta = card.querySelector('[data-role="commentInput"]');
+      postR2Comment(r2file, ta.value.trim());
+    });
+  });
+}
+
+async function toggleApprove(r2file){
+  if(!myName){
+    document.getElementById('nameGate').classList.remove('hidden');
+    document.getElementById('nameInput').focus();
+    return;
+  }
+  if(approvedSet.has(r2file)) approvedSet.delete(r2file); else approvedSet.add(r2file);
+  await fbSet('r2_approved', Array.from(approvedSet));
+  render();
+}
+
+async function postR2Comment(r2file, text){
+  if(!myName){
+    document.getElementById('nameGate').classList.remove('hidden');
+    document.getElementById('nameInput').focus();
+    return;
+  }
+  if(!text) return;
+  const arr = commentsByR2[r2Key(r2file)] || [];
+  arr.push({name: myName, text, ts: Date.now()});
+  commentsByR2[r2Key(r2file)] = arr;
+  await fbSet('r2_comments/' + r2Key(r2file), arr);
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
