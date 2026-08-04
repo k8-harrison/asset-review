@@ -515,21 +515,45 @@ async function handleSignedInUser(user){
   return true;
 }
 
+async function getAuthToken(){
+  const user = auth.currentUser;
+  if(!user) return null;
+  try{ return await user.getIdToken(); }catch(e){ return null; }
+}
+
 async function fbGet(path){
   try{
-    const r = await fetch(FIREBASE_URL + '/' + path + '.json');
-    if(!r.ok) return null;
+    const token = await getAuthToken();
+    const url = FIREBASE_URL + '/' + path + '.json' + (token ? '?auth=' + token : '');
+    const r = await fetch(url);
+    if(!r.ok){
+      console.error('firebase get failed', r.status, await r.text().catch(()=>''));
+      return null;
+    }
     return await r.json();
   }catch(e){ console.error('firebase get failed', e); return null; }
 }
 async function fbSet(path, value){
   try{
-    await fetch(FIREBASE_URL + '/' + path + '.json', {
+    const token = await getAuthToken();
+    const url = FIREBASE_URL + '/' + path + '.json' + (token ? '?auth=' + token : '');
+    const r = await fetch(url, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(value)
     });
-  }catch(e){ console.error('firebase set failed', e); }
+    if(!r.ok){
+      const errText = await r.text().catch(()=>'');
+      console.error('firebase set failed', r.status, errText);
+      alert('Could not save — ' + (r.status === 401 || r.status === 403 ? 'you may need to sign in again.' : 'something went wrong (status ' + r.status + ').'));
+      return false;
+    }
+    return true;
+  }catch(e){
+    console.error('firebase set failed', e);
+    alert('Could not save — check your connection and try again.');
+    return false;
+  }
 }
 
 /* ====== INIT ====== */
@@ -700,8 +724,9 @@ async function postComment(){
   if(!img) return;
   const arr = commentsByImage[img.id] || [];
   arr.push({name: myName, text, ts: Date.now()});
+  const ok = await fbSet('comments/' + img.id, arr);
+  if(!ok) return; // save failed — alert already shown, leave input text so it isn't lost
   commentsByImage[img.id] = arr;
-  await fbSet('comments/' + img.id, arr);
   notifySlack('💬 *' + myName + '* commented on `' + img.file + '`: "' + text + '"\n<https://k8-harrison.github.io/asset-review/|Open review>');
   input.value = '';
   renderComments(img.id);
