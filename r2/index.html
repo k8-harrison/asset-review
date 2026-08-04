@@ -153,6 +153,18 @@
 const FILES = ["530A6427.jpg", "530A6439.jpg", "530A6450.jpg", "530A6464.jpg", "530A6485.jpg", "530A6551.jpg", "530A6576.jpg", "530A6588.jpg", "530A6602.jpg", "530A6634.jpg", "530A6641.jpg", "530A6645.jpg", "530A6670.jpg", "530A6714.jpg", "530A6740.jpg", "530A6741.jpg", "530A6744.jpg", "530A6746.jpg", "530A6750.jpg", "530A6755.jpg", "530A6758.jpg"];
 
 const FIREBASE_URL = 'https://asset-review-8bfb6-default-rtdb.firebaseio.com';
+const SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/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';
+
+async function notifySlack(text){
+  try{
+    await fetch(SLACK_WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify({text})
+    });
+  }catch(e){ console.error('slack notify failed', e); }
+}
 let myName = null;
 let approvedSet = new Set();
 let commentsByFile = {};
@@ -348,6 +360,7 @@ async function postComment(){
   arr.push({name: myName, text, ts: Date.now()});
   commentsByFile[fKey(file)] = arr;
   await fbSet('r2_comments/' + fKey(file), arr);
+  notifySlack('💬 *' + myName + '* commented on R2 edit `' + file + '`: "' + text + '"\n<https://k8-harrison.github.io/asset-review/r2/|Open R2 review>');
   input.value = '';
   renderComments(file);
   render();

@@ -450,6 +450,18 @@ let lbSourceList = [];
 
 /* ====== STORAGE (Firebase Realtime Database + localStorage) ====== */
 const FIREBASE_URL = 'https://asset-review-8bfb6-default-rtdb.firebaseio.com';
+const SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/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';
+
+async function notifySlack(text){
+  try{
+    await fetch(SLACK_WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify({text})
+    });
+  }catch(e){ console.error('slack notify failed', e); }
+}
 
 function getLocalName(){
   try{ return localStorage.getItem('reviewer_name'); }catch(e){ return null; }
@@ -643,6 +655,7 @@ async function postComment(){
   arr.push({name: myName, text, ts: Date.now()});
   commentsByImage[img.id] = arr;
   await fbSet('comments/' + img.id, arr);
+  notifySlack('💬 *' + myName + '* commented on `' + img.file + '`: "' + text + '"\n<https://k8-harrison.github.io/asset-review/|Open review>');
   input.value = '';
   renderComments(img.id);
   render();
