@@ -262,8 +262,7 @@ async function init(){
 
   auth.onAuthStateChanged(async user=>{
     if(user){
-      const ok = await handleSignedInUser(user);
-      if(ok) startApp();
+      await handleSignedInUser(user);
     }else{
       myName = null;
       document.getElementById('nameGate').classList.remove('hidden');
@@ -290,6 +289,8 @@ async function init(){
     if(e.key==='ArrowLeft') navLightbox(-1);
     if(e.key==='ArrowRight') navLightbox(1);
   });
+
+  startApp();
 }
 
 async function startApp(){
