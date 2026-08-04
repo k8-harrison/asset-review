@@ -6,6 +6,8 @@
 <title>26JUL BUR CHI - Asset Review</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <style>
   :root{
     --paper:#F6F3EC;
@@ -43,6 +45,15 @@
     color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'Overpass',sans-serif;
   }
   .gateCard button:hover{background:var(--moss-dark);}
+  .googleBtn{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:#fff;color:var(--ink);border:1px solid var(--line);
+  }
+  .googleBtn:hover{background:#F7F7F7;}
+  #signInError{
+    margin-top:12px;font-size:12px;color:#B3261E;background:#FCE8E6;padding:10px 12px;
+    border-radius:3px;line-height:1.5;
+  }
 
   /* ---- top bar ---- */
   header{
@@ -335,10 +346,13 @@
 
 <div id="nameGate">
   <div class="gateCard">
-    <h2>Who's reviewing?</h2>
-    <p>Your name goes with every select and comment so the team can see who picked what. Remembered on this device going forward.</p>
-    <input id="nameInput" type="text" placeholder="e.g. Kate" maxlength="40" autofocus>
-    <button id="nameSubmit">Start reviewing</button>
+    <h2>Sign in to review</h2>
+    <p>Havenly team members only. Your name and email are attached to every select and comment.</p>
+    <button id="googleSignInBtn" class="googleBtn">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.5 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3c-7.8 0-14.5 4.4-17.7 11.7z"/><path fill="#4CAF50" d="M24 45c5.4 0 10.3-1.9 14-5.2l-6.5-5.5c-2 1.4-4.6 2.2-7.5 2.2-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 40.5 16.2 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.5 5.5C41.4 36 45 30.5 45 24c0-1.4-.1-2.7-.4-3.5z"/></svg>
+      Sign in with Google
+    </button>
+    <div id="signInError" style="display:none;"></div>
   </div>
 </div>
 
@@ -463,11 +477,42 @@ async function notifySlack(text){
   }catch(e){ console.error('slack notify failed', e); }
 }
 
-function getLocalName(){
-  try{ return localStorage.getItem('reviewer_name'); }catch(e){ return null; }
+const ALLOWED_DOMAIN = 'havenly.com';
+
+const firebaseApp = firebase.initializeApp({
+  apiKey: "AIzaSyCruCqUQi5HpPAroRTXs6Xxd-Ajf9ASB-o",
+  authDomain: "asset-review-8bfb6.firebaseapp.com",
+  databaseURL: "https://asset-review-8bfb6-default-rtdb.firebaseio.com",
+  projectId: "asset-review-8bfb6",
+  storageBucket: "asset-review-8bfb6.firebasestorage.app",
+  messagingSenderId: "895411644257",
+  appId: "1:895411644257:web:e5444ace279d996a258720"
+});
+const auth = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+googleProvider.setCustomParameters({ hd: ALLOWED_DOMAIN });
+
+function showSignInError(msg){
+  const el = document.getElementById('signInError');
+  el.textContent = msg;
+  el.style.display = 'block';
 }
-function setLocalName(val){
-  try{ localStorage.setItem('reviewer_name', val); }catch(e){}
+function clearSignInError(){
+  document.getElementById('signInError').style.display = 'none';
+}
+
+async function handleSignedInUser(user){
+  const email = user.email || '';
+  if(!email.toLowerCase().endsWith('@' + ALLOWED_DOMAIN)){
+    showSignInError('Please sign in with your @' + ALLOWED_DOMAIN + ' email. Signed-in account: ' + email);
+    await auth.signOut();
+    return false;
+  }
+  clearSignInError();
+  myName = user.displayName || email.split('@')[0];
+  document.getElementById('nameGate').classList.add('hidden');
+  document.getElementById('meName').textContent = myName;
+  return true;
 }
 
 async function fbGet(path){
@@ -491,12 +536,38 @@ async function fbSet(path, value){
 async function init(){
   document.getElementById('photoCount').textContent = IMAGES.length;
   buildBatchFilter();
-  const savedName = getLocalName();
-  if(savedName){
-    myName = savedName;
-    document.getElementById('nameGate').classList.add('hidden');
-    document.getElementById('meName').textContent = myName;
-  }
+
+  document.getElementById('googleSignInBtn').addEventListener('click', async ()=>{
+    clearSignInError();
+    try{
+      await auth.signInWithPopup(googleProvider);
+    }catch(e){
+      if(e.code !== 'auth/popup-closed-by-user'){
+        showSignInError('Sign-in failed: ' + (e.message || e.code));
+      }
+    }
+  });
+  document.getElementById('whoami').addEventListener('click', ()=>{
+    if(confirm('Sign out of the asset review?')){
+      auth.signOut();
+    }
+  });
+
+  auth.onAuthStateChanged(async user=>{
+    if(user){
+      const ok = await handleSignedInUser(user);
+      if(ok) startApp();
+    }else{
+      myName = null;
+      document.getElementById('nameGate').classList.remove('hidden');
+      document.getElementById('meName').textContent = '—';
+    }
+  });
+
+  wireStaticListeners();
+}
+
+async function startApp(){
   await loadAllSelections();
   await loadAllComments();
   await loadFinals();
@@ -512,17 +583,12 @@ async function init(){
       render();
     }
   }, 5000);
+}
 
+function wireStaticListeners(){
   document.getElementById('batchFilter').addEventListener('change', e=>{
     currentBatch = e.target.value;
     render();
-  });
-  document.getElementById('nameSubmit').addEventListener('click', submitName);
-  document.getElementById('nameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') submitName(); });
-  document.getElementById('whoami').addEventListener('click', ()=>{
-    document.getElementById('nameGate').classList.remove('hidden');
-    document.getElementById('nameInput').value = myName || '';
-    document.getElementById('nameInput').focus();
   });
   document.querySelectorAll('#viewToggle button').forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -585,24 +651,6 @@ async function init(){
   });
 }
 
-async function submitName(){
-  const val = document.getElementById('nameInput').value.trim();
-  if(!val) return;
-  await selectName(val);
-}
-
-async function selectName(val){
-  if(!val) return;
-  myName = val;
-  setLocalName(val);
-  document.getElementById('meName').textContent = myName;
-  document.getElementById('nameGate').classList.add('hidden');
-  await loadAllSelections();
-  await loadAllComments();
-  buildReviewerFilter();
-  render();
-}
-
 async function loadAllComments(){
   const data = await fbGet('comments');
   commentsByImage = data || {};
@@ -643,7 +691,6 @@ async function toggleFinal(id){
 async function postComment(){
   if(!myName){
     document.getElementById('nameGate').classList.remove('hidden');
-    document.getElementById('nameInput').focus();
     return;
   }
   const input = document.getElementById('lbCommentInput');
@@ -753,7 +800,6 @@ function selectorsFor(id){
 async function toggleSelect(id){
   if(!myName){
     document.getElementById('nameGate').classList.remove('hidden');
-    document.getElementById('nameInput').focus();
     return;
   }
   if(!selectionsByReviewer[myName]) selectionsByReviewer[myName] = new Set();
