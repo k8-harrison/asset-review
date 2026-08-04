@@ -74,6 +74,13 @@
   }
   .exportBtn:hover{border-color:var(--moss);color:var(--moss-dark);}
 
+  .r2LinkBtn{
+    padding:7px 14px;border:1px solid #8A5A3B;border-radius:4px;background:transparent;
+    font-size:12px;font-weight:700;cursor:pointer;color:#8A5A3B;font-family:'Overpass',sans-serif;
+    text-decoration:none;white-space:nowrap;transition:background .15s ease,color .15s ease;
+  }
+  .r2LinkBtn:hover{background:#8A5A3B;color:#fff;}
+
   #exportModal{
     position:fixed;inset:0;background:rgba(20,19,15,0.6);display:none;
     align-items:center;justify-content:center;z-index:180;padding:24px;
@@ -352,6 +359,7 @@
       <option value="">All reviewers</option>
     </select>
     <button id="exportBtn" class="exportBtn">Export</button>
+    <a href="r2/" class="r2LinkBtn">R2 Edits &rarr;</a>
     <div class="finalCounter" id="finalCounterBadge" title="Final picks so far">
       &#9733; <span id="finalCounterNum">0</span> final
       <span id="finalCounterBreakdown" class="finalCounterBreakdown"></span>
