@@ -945,7 +945,7 @@ function renderFinals(){
   }
   let rows = baseList.map(img=>({img, names: selectorsFor(img.id)}))
     .filter(r=>r.names.length>0)
-    .sort((a,b)=>b.names.length - a.names.length);
+    .sort((a,b)=>a.img.file.localeCompare(b.img.file, undefined, {numeric:true}));
 
   if(finalsTalentFilter === 'talent'){
     rows = rows.filter(r=>r.img.talent === true);
