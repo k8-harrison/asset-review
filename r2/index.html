@@ -194,6 +194,9 @@ const firebaseApp = firebase.initializeApp({
 });
 const auth = firebase.auth();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
+// Always show the Google account chooser, even if a session is already active/denied —
+// otherwise a rejected or wrong account gets silently reused on retry with no way to switch.
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 // No 'hd' hint set — hd only supports a single domain, but we allow multiple (see ALLOWED_DOMAINS below).
 
 function showSignInError(msg){
