@@ -279,19 +279,13 @@ async function init(){
   document.getElementById('googleSignInBtn').addEventListener('click', async ()=>{
     clearSignInError();
     try{
-      await auth.signInWithRedirect(googleProvider);
+      await auth.signInWithPopup(googleProvider);
     }catch(e){
-      showSignInError('Sign-in failed: ' + (e.message || e.code));
+      if(e.code !== 'auth/popup-closed-by-user'){
+        showSignInError('Sign-in failed: ' + (e.message || e.code));
+      }
     }
   });
-
-  // Surface any error from a completed redirect sign-in (popups don't work reliably
-  // in Safari / browsers with strict third-party cookie blocking, so we use redirect).
-  try{
-    await auth.getRedirectResult();
-  }catch(e){
-    showSignInError('Sign-in failed: ' + (e.message || e.code));
-  }
   document.getElementById('whoami').addEventListener('click', ()=>{
     if(confirm('Sign out of the R2 review?')){
       auth.signOut();
