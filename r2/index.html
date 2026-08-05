@@ -125,10 +125,11 @@
 <header>
   <div class="titleBlock">
     <h1><span class="r2Badge">R2</span>26JUL BUR CHI — Round 2 Edits</h1>
-    <div class="sub">Ludlow sofa · <span id="approvedCount">0</span> of 21 approved · click a photo to expand and compare</div>
+    <div class="sub">Ludlow sofa · <span id="approvedCount">0</span> of 21 approved · comparing R1 → R2 · click a photo to expand</div>
   </div>
   <div style="display:flex;gap:10px;align-items:center;">
-    <a class="backLink" href="../">&larr; Back to main review</a>
+    <a class="backLink" href="../r1/">&larr; R1</a>
+    <a class="backLink" href="../">Main review</a>
     <div class="whoami" id="whoami"><span class="dot"></span><b id="meName">—</b></div>
   </div>
 </header>
@@ -143,7 +144,7 @@
     <span id="lbNavPrev">&#8249;</span>
     <div id="lbStateLabel" class="edit">R2 EDIT</div>
     <img id="lightboxImg" src="">
-    <button id="lbToggleBtn">Show original</button>
+    <button id="lbToggleBtn">Show R1 edit</button>
     <span id="lbNavNext">&#8250;</span>
   </div>
   <div id="lightboxPanel">
@@ -321,9 +322,9 @@ async function init(){
 }
 
 async function startApp(){
-  const approvedData = await fbGet('r2_approved');
+  const approvedData = await fbGet('r3_approved');
   approvedSet = new Set(approvedData || []);
-  const commentsData = await fbGet('r2_comments');
+  const commentsData = await fbGet('r3_comments');
   commentsByFile = commentsData || {};
   render();
 }
@@ -334,15 +335,15 @@ function render(){
   grid.innerHTML = FILES.map((file, i)=>{
     const isApproved = approvedSet.has(file);
     const state = cardState[file];
-    const src = state === 'edit' ? ('images/thumb/' + file) : ('../images/thumb/' + file);
+    const src = state === 'edit' ? ('images/thumb/' + file) : ('../r1/images/thumb/' + file);
     const commentCount = (commentsByFile[fKey(file)] || []).length;
     return `
     <div class="card ${isApproved?'approved':''}" data-idx="${i}">
       <div class="imgArea" data-action="view">
-        <div class="stateLabel ${state}">${state === 'edit' ? 'R2 EDIT' : 'ORIGINAL'}</div>
+        <div class="stateLabel ${state}">${state === 'edit' ? 'R2 EDIT' : 'R1 EDIT'}</div>
         <button class="checkBadge" data-action="approve" title="${isApproved?'Remove approval':'Approve this edit'}">${isApproved ? '&#10003;' : ''}</button>
         <img src="${src}">
-        <button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'original' : 'R2 edit'}</button>
+        <button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'R1 edit' : 'R2 edit'}</button>
       </div>
       <div class="cardFooter">
         <div class="fname mono">${frameLabel(file)}</div>
@@ -373,7 +374,7 @@ async function toggleApprove(file, fromLightbox){
     return;
   }
   if(approvedSet.has(file)) approvedSet.delete(file); else approvedSet.add(file);
-  await fbSet('r2_approved', Array.from(approvedSet));
+  await fbSet('r3_approved', Array.from(approvedSet));
   render();
   if(fromLightbox) updateLightboxPanel();
 }
@@ -388,12 +389,12 @@ function openLightbox(idx){
 }
 function updateLightboxImage(){
   const file = FILES[lbIndex];
-  const src = lbState === 'edit' ? ('images/full/' + file) : ('../images/full/' + file);
+  const src = lbState === 'edit' ? ('images/full/' + file) : ('../r1/images/full/' + file);
   document.getElementById('lightboxImg').src = src;
   const label = document.getElementById('lbStateLabel');
-  label.textContent = lbState === 'edit' ? 'R2 EDIT' : 'ORIGINAL';
+  label.textContent = lbState === 'edit' ? 'R2 EDIT' : 'R1 EDIT';
   label.className = lbState;
-  document.getElementById('lbToggleBtn').textContent = 'Show ' + (lbState === 'edit' ? 'original' : 'R2 edit');
+  document.getElementById('lbToggleBtn').textContent = 'Show ' + (lbState === 'edit' ? 'R1 edit' : 'R2 edit');
 }
 function updateLightboxPanel(){
   const file = FILES[lbIndex];
@@ -437,7 +438,7 @@ async function postComment(){
   if(!file) return;
   const arr = commentsByFile[fKey(file)] || [];
   arr.push({name: myName, text, ts: Date.now()});
-  const ok = await fbSet('r2_comments/' + fKey(file), arr);
+  const ok = await fbSet('r3_comments/' + fKey(file), arr);
   if(!ok) return;
   commentsByFile[fKey(file)] = arr;
   notifySlack('💬 *' + myName + '* commented on R2 edit `' + file + '`: "' + text + '"\n<https://k8-harrison.github.io/asset-review/r2/|Open R2 review>');
@@ -449,7 +450,7 @@ async function deleteComment(file, idx){
   const arr = commentsByFile[fKey(file)] || [];
   arr.splice(idx, 1);
   commentsByFile[fKey(file)] = arr;
-  await fbSet('r2_comments/' + fKey(file), arr);
+  await fbSet('r3_comments/' + fKey(file), arr);
   renderComments(file);
   render();
 }
