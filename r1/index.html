@@ -180,7 +180,7 @@ let cardState = {}; // file -> 'edit' | 'original'  (grid card state)
 let lbIndex = -1;
 let lbState = 'edit'; // lightbox's own toggle state
 
-const ALLOWED_DOMAIN = 'havenly.com';
+const ALLOWED_DOMAINS = ['havenly.com', 'interiordefine.com'];
 
 const firebaseApp = firebase.initializeApp({
   apiKey: "AIzaSyCruCqUQi5HpPAroRTXs6Xxd-Ajf9ASB-o",
@@ -193,7 +193,7 @@ const firebaseApp = firebase.initializeApp({
 });
 const auth = firebase.auth();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
-googleProvider.setCustomParameters({ hd: ALLOWED_DOMAIN });
+// No 'hd' hint set — hd only supports a single domain, but we allow multiple (see ALLOWED_DOMAINS below).
 
 function showSignInError(msg){
   const el = document.getElementById('signInError');
@@ -206,8 +206,8 @@ function clearSignInError(){
 
 async function handleSignedInUser(user){
   const email = user.email || '';
-  if(!email.toLowerCase().endsWith('@' + ALLOWED_DOMAIN)){
-    showSignInError('Please sign in with your @' + ALLOWED_DOMAIN + ' email. Signed-in account: ' + email);
+  if(!ALLOWED_DOMAINS.some(d => email.toLowerCase().endsWith('@' + d))){
+    showSignInError('Please sign in with a Havenly Brands work email (' + ALLOWED_DOMAINS.map(d=>'@'+d).join(' or ') + '). Signed-in account: ' + email);
     await auth.signOut();
     return false;
   }
