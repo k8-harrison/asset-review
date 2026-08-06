@@ -329,6 +329,31 @@ async function startApp(){
   const commentsData = await fbGet('r2_comments');
   commentsByFile = commentsData || {};
   render();
+
+  // Live refresh, same as the main site — anyone leaving this tab open still
+  // sees new approvals/comments. Only applies on a confirmed successful fetch.
+  setInterval(async ()=>{
+    let changed = false;
+    try{
+      const token = await getAuthToken();
+      const qs = token ? ('?auth=' + token) : '';
+      const [appRes, comRes] = await Promise.all([
+        fetch(FIREBASE_URL + '/r2_approved.json' + qs),
+        fetch(FIREBASE_URL + '/r2_comments.json' + qs)
+      ]);
+      if(appRes.ok){
+        const data = await appRes.json();
+        approvedSet = new Set(data || []);
+        changed = true;
+      }
+      if(comRes.ok){
+        const data = await comRes.json();
+        commentsByFile = data || {};
+        changed = true;
+      }
+    }catch(e){ /* network hiccup — leave existing state as-is */ }
+    if(changed) render();
+  }, 5000);
 }
 
 function render(){

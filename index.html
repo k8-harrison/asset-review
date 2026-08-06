@@ -603,12 +603,49 @@ async function startApp(){
   buildReviewerFilter();
   render();
 
+  // Live refresh: keeps selections/comments/finals current for anyone who leaves
+  // the tab open, instead of only ever showing a snapshot from page-load time.
+  // Only ever applies an update on a CONFIRMED successful fetch (r.ok) — a failed
+  // or transient request leaves existing state untouched rather than blanking it.
   setInterval(async ()=>{
-    const data = await fbGet('finalSelects');
-    const freshSet = new Set(data || []);
-    updateFinalCounter(freshSet);
-    if(currentView === 'finals'){
-      finalSelects = freshSet;
+    let changed = false;
+    try{
+      const token = await getAuthToken();
+      const qs = token ? ('?auth=' + token) : '';
+
+      const [selRes, comRes, finRes] = await Promise.all([
+        fetch(FIREBASE_URL + '/selections.json' + qs),
+        fetch(FIREBASE_URL + '/comments.json' + qs),
+        fetch(FIREBASE_URL + '/finalSelects.json' + qs)
+      ]);
+
+      if(selRes.ok){
+        const data = await selRes.json();
+        const fresh = {};
+        if(data){
+          for(const key of Object.keys(data)){
+            const entry = data[key];
+            if(entry && entry.name) fresh[entry.name] = new Set(entry.ids || []);
+          }
+        }
+        if(myName && !(myName in fresh)) fresh[myName] = new Set();
+        selectionsByReviewer = fresh;
+        changed = true;
+      }
+      if(comRes.ok){
+        const data = await comRes.json();
+        commentsByImage = data || {};
+        changed = true;
+      }
+      if(finRes.ok){
+        const data = await finRes.json();
+        finalSelects = new Set(data || []);
+        updateFinalCounter(finalSelects);
+        changed = true;
+      }
+    }catch(e){ /* network hiccup — leave existing state as-is */ }
+    if(changed){
+      buildReviewerFilter();
       render();
     }
   }, 5000);
@@ -787,16 +824,18 @@ function sanitizeKey(name){
 }
 
 async function loadAllSelections(){
-  selectionsByReviewer = {};
   const data = await fbGet('selections');
   if(data){
+    const fresh = {};
     for(const key of Object.keys(data)){
       const entry = data[key];
       if(entry && entry.name){
-        selectionsByReviewer[entry.name] = new Set(entry.ids || []);
+        fresh[entry.name] = new Set(entry.ids || []);
       }
     }
+    selectionsByReviewer = fresh;
   }
+  // if the fetch failed, keep whatever was already loaded rather than wiping it
   if(myName && !(myName in selectionsByReviewer)) selectionsByReviewer[myName] = new Set();
 }
 
