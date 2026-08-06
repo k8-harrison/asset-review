@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{
     --paper:#F6F3EC;
@@ -157,6 +158,7 @@
   #copyExportBtn:hover{background:var(--moss-dark);}
   #downloadExportBtn{background:transparent;color:var(--moss-dark);}
   #downloadVisualBtn{background:transparent;color:var(--moss-dark);}
+  #downloadZipBtn{background:transparent;color:var(--moss-dark);flex:1 1 100%;}
   #closeExportBtn{background:transparent;color:var(--ink-soft);border-color:var(--line);}
 
   .whoami{
@@ -418,6 +420,7 @@
       <button id="copyExportBtn">Copy to clipboard</button>
       <button id="downloadExportBtn">Download .txt</button>
       <button id="downloadVisualBtn">Download with photos</button>
+      <button id="downloadZipBtn">Download JPGs (.zip)</button>
       <button id="closeExportBtn">Close</button>
     </div>
   </div>
@@ -707,6 +710,7 @@ function wireStaticListeners(){
   document.getElementById('copyExportBtn').addEventListener('click', copyExportText);
   document.getElementById('downloadExportBtn').addEventListener('click', downloadExportText);
   document.getElementById('downloadVisualBtn').addEventListener('click', downloadVisualExport);
+  document.getElementById('downloadZipBtn').addEventListener('click', downloadJpgZip);
   document.getElementById('lbNavPrev').addEventListener('click', ()=>navLightbox(-1));
   document.getElementById('lbNavNext').addEventListener('click', ()=>navLightbox(1));
   document.addEventListener('keydown', e=>{
@@ -1336,7 +1340,52 @@ async function downloadVisualExport(){
   btn.disabled = false;
 }
 
-/* ====== IMAGE LOADING WITH FALLBACK ====== */
+async function downloadJpgZip(){
+  const btn = document.getElementById('downloadZipBtn');
+  const original = btn.textContent;
+  const rows = getRowsForScope().filter(r=>exportIncluded.has(r.img.id));
+
+  if(rows.length === 0){
+    btn.textContent = 'Nothing checked above';
+    setTimeout(()=>{ btn.textContent = original; }, 1800);
+    return;
+  }
+
+  btn.disabled = true;
+  const zip = new JSZip();
+  let done = 0, failed = 0;
+
+  for(const r of rows){
+    btn.textContent = `Zipping ${done + 1}/${rows.length}...`;
+    try{
+      const res = await fetch('images/full/' + r.img.file);
+      if(!res.ok) throw new Error('fetch failed');
+      const blob = await res.blob();
+      zip.file(r.img.file, blob);
+    }catch(e){
+      failed++;
+    }
+    done++;
+  }
+
+  btn.textContent = 'Building zip...';
+  const zipBlob = await zip.generateAsync({type:'blob', compression:'STORE'});
+
+  const url = URL.createObjectURL(zipBlob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  const dlLabel = exportScope === 'final' ? 'final-selects' : 'selected-frames';
+  a.href = url;
+  a.download = '26jul-bur-chi-' + dlLabel + '-' + stamp + '.zip';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  btn.textContent = failed > 0 ? `Done — ${failed} failed` : original;
+  btn.disabled = false;
+  if(failed > 0) setTimeout(()=>{ btn.textContent = original; }, 3000);
+}
 function imgWithFallback(candidates){
   const encoded = encodeURIComponent(JSON.stringify(candidates.slice(1)));
   return `src="${candidates[0]}" data-fallback="${encoded}" onerror="tryNextImageSrc(this)"`;
