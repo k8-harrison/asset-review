@@ -182,5 +182,40 @@ function render(){
 
 render();
 </script>
+<script>
+// --- Update checker: detects when a newer version of this page has been deployed,
+// so nobody gets silently stuck on stale cached code after a future push. ---
+(function(){
+  let baseline = null;
+  async function check(){
+    try{
+      const res = await fetch(location.pathname, {method:'HEAD', cache:'no-store'});
+      const tag = res.headers.get('etag') || res.headers.get('last-modified');
+      if(!tag) return;
+      if(baseline === null){ baseline = tag; return; }
+      if(tag !== baseline){
+        showBanner();
+      }
+    }catch(e){ /* network hiccup, ignore */ }
+  }
+  function showBanner(){
+    if(document.getElementById('updateBanner')) return;
+    const bar = document.createElement('div');
+    bar.id = 'updateBanner';
+    bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:999;'+
+      'background:#2B2B24;color:#F6F3EC;font-family:Overpass,sans-serif;font-size:13px;'+
+      'padding:12px 18px;display:flex;align-items:center;justify-content:center;gap:14px;'+
+      'box-shadow:0 -2px 10px rgba(0,0,0,0.15);';
+    bar.innerHTML = 'A newer version of this page is available.'+
+      '<button id="updateBannerBtn" style="background:#94944D;color:#fff;border:none;'+
+      'padding:6px 14px;border-radius:6px;font-weight:600;cursor:pointer;font-family:Overpass,sans-serif;font-size:13px;">Reload</button>';
+    document.body.appendChild(bar);
+    document.getElementById('updateBannerBtn').addEventListener('click', ()=>location.reload());
+  }
+  check();
+  setInterval(check, 60000);
+})();
+</script>
+
 </body>
 </html>
