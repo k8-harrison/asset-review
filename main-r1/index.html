@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{
     --paper:#F6F3EC; --paper-dim:#EDE9DD; --ink:#2B2B24; --ink-soft:#6B6858;
@@ -106,6 +107,78 @@
     #lightbox{flex-direction:column;padding:14px;}
     #lightboxPanel{margin-left:0;margin-top:14px;width:100%;max-width:400px;}
   }
+  .exportBtnHeader{
+    background:var(--moss);color:#fff;border:none;padding:9px 16px;border-radius:3px;
+    font-size:13px;font-weight:700;cursor:pointer;font-family:'Overpass',sans-serif;
+  }
+  .exportBtnHeader:hover{background:var(--moss-dark);}
+  #exportModal{
+    position:fixed;inset:0;background:rgba(20,19,15,0.6);display:none;
+    align-items:center;justify-content:center;z-index:180;padding:24px;
+  }
+  #exportModal.open{display:flex;}
+  .exportCard{
+    background:var(--card);border-radius:4px;padding:24px;width:860px;max-width:95vw;
+    box-shadow:0 20px 60px rgba(0,0,0,0.35);max-height:88vh;overflow-y:auto;
+  }
+  .exportCard h3{margin:0 0 4px;font-size:16px;}
+  .exportCard .sub{font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
+  .exportQuickRow{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;
+    font-size:11px;color:var(--ink-soft);
+  }
+  .exportQuickActions button{
+    background:none;border:none;color:var(--moss-dark);font-weight:700;font-size:11px;
+    cursor:pointer;text-decoration:underline;padding:0;margin-left:12px;font-family:'Overpass',sans-serif;
+  }
+  #exportVisualList{
+    max-height:400px;overflow-y:auto;border:1px solid var(--line);border-radius:3px;
+    margin-bottom:14px;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;
+  }
+  .exportRow{
+    display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid var(--line);border-radius:3px;
+    position:relative;transition:opacity .15s ease;
+  }
+  .exportRow.excluded{opacity:0.35;}
+  .exportRow img{
+    width:100%;height:110px;object-fit:contain;border-radius:2px;background:var(--paper-dim);
+  }
+  .exportRow .exportInfo{min-width:0;}
+  .exportRow .exportFname{font-size:10px;font-weight:700;margin-bottom:2px;word-break:break-all;}
+  .exportRow .exportComment{font-size:10px;color:var(--ink-soft);line-height:1.4;margin-top:2px;}
+  .exportCheck{
+    position:absolute;top:4px;left:4px;z-index:2;width:20px;height:20px;cursor:pointer;
+  }
+  .exportCheck input{
+    position:absolute;opacity:0;width:20px;height:20px;margin:0;cursor:pointer;
+  }
+  .exportCheck span{
+    display:block;width:20px;height:20px;border-radius:3px;background:rgba(255,255,255,0.9);
+    border:1px solid var(--line);
+  }
+  .exportCheck input:checked + span{
+    background:var(--moss);border-color:var(--moss);
+  }
+  .exportCheck input:checked + span::after{
+    content:'';display:block;width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;
+    transform:rotate(45deg);margin:2px auto;
+  }
+  #exportText{
+    width:100%;height:200px;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    border:1px solid var(--line);border-radius:3px;padding:12px;background:var(--paper);
+    resize:vertical;line-height:1.6;
+  }
+  .exportActions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .exportActions button{
+    flex:1 1 calc(50% - 5px);padding:10px;border-radius:3px;font-size:13px;font-weight:700;cursor:pointer;
+    font-family:'Overpass',sans-serif;border:1px solid var(--moss);
+  }
+  #copyExportBtn{background:var(--moss);color:#fff;border:none;}
+  #copyExportBtn:hover{background:var(--moss-dark);}
+  #downloadExportBtn{background:transparent;color:var(--moss-dark);}
+  #downloadVisualBtn{background:transparent;color:var(--moss-dark);}
+  #downloadZipBtn{background:transparent;color:var(--moss-dark);flex:1 1 100%;}
+  #closeExportBtn{background:transparent;color:var(--ink-soft);border-color:var(--line);}
 </style>
 </head>
 <body>
@@ -128,6 +201,7 @@
     <div class="sub">Main photoset · <span id="approvedCount">0</span> of 57 approved · click a photo to expand and compare</div>
   </div>
   <div style="display:flex;gap:10px;align-items:center;">
+    <button class="exportBtnHeader" id="exportBtn">Export</button>
     <a class="backLink" href="../">&larr; Back to main review</a>
     <div class="whoami" id="whoami"><span class="dot"></span><b id="meName">—</b></div>
   </div>
@@ -154,6 +228,29 @@
     <div id="noComments" style="display:none;">No comments yet.</div>
     <textarea id="lbCommentInput" placeholder="Add feedback on this edit..."></textarea>
     <button id="lbCommentSubmit">Post comment</button>
+  </div>
+</div>
+
+<div id="exportModal">
+  <div class="exportCard">
+    <h3>Export — Main R1</h3>
+    <div class="sub" id="exportSub">Approved edits and their feedback — uncheck any already sent to the photographer.</div>
+    <div class="exportQuickRow">
+      <span id="exportCountLabel"></span>
+      <span class="exportQuickActions">
+        <button id="exportSelectAll" type="button">Check all</button>
+        <button id="exportSelectNone" type="button">Uncheck all</button>
+      </span>
+    </div>
+    <div id="exportVisualList"></div>
+    <textarea id="exportText" readonly></textarea>
+    <div class="exportActions">
+      <button id="copyExportBtn">Copy to clipboard</button>
+      <button id="downloadExportBtn">Download .txt</button>
+      <button id="downloadVisualBtn">Download with photos</button>
+      <button id="downloadZipBtn">Download JPGs (.zip)</button>
+      <button id="closeExportBtn">Close</button>
+    </div>
   </div>
 </div>
 
@@ -315,6 +412,24 @@ async function init(){
     toggleApprove(file, true);
   });
   document.getElementById('lbCommentSubmit').addEventListener('click', postComment);
+  document.getElementById('exportBtn').addEventListener('click', openExportModal);
+  document.getElementById('exportSelectAll').addEventListener('click', ()=>{
+    exportIncluded = new Set(getExportRows().map(r=>r.file));
+    document.getElementById('exportText').value = buildExportText();
+    renderExportVisualList();
+  });
+  document.getElementById('exportSelectNone').addEventListener('click', ()=>{
+    exportIncluded = new Set();
+    document.getElementById('exportText').value = buildExportText();
+    renderExportVisualList();
+  });
+  document.getElementById('closeExportBtn').addEventListener('click', ()=>{
+    document.getElementById('exportModal').classList.remove('open');
+  });
+  document.getElementById('copyExportBtn').addEventListener('click', copyExportText);
+  document.getElementById('downloadExportBtn').addEventListener('click', downloadExportText);
+  document.getElementById('downloadVisualBtn').addEventListener('click', downloadVisualExport);
+  document.getElementById('downloadZipBtn').addEventListener('click', downloadJpgZip);
   document.addEventListener('keydown', e=>{
     if(!document.getElementById('lightbox').classList.contains('open')) return;
     if(e.key==='Escape') closeLightbox();
@@ -489,6 +604,238 @@ function navLightbox(dir){
 }
 function closeLightbox(){
   document.getElementById('lightbox').classList.remove('open');
+}
+
+let exportIncluded = new Set(); // files currently checked for this export session
+
+function getExportRows(){
+  return FILES.filter(f=>approvedSet.has(f))
+    .map(f=>({file: f, comments: commentsByFile[fKey(f)] || []}))
+    .sort((a,b)=> a.file.localeCompare(b.file, undefined, {numeric:true}));
+}
+
+function buildExportText(){
+  const rows = getExportRows().filter(r=>exportIncluded.has(r.file));
+  const heading = '26JUL BUR CHI — MAIN R1 APPROVED EDITS';
+
+  const lines = [];
+  lines.push(heading);
+  lines.push('Generated ' + new Date().toLocaleString());
+  lines.push('');
+  lines.push(rows.length + ' approved edit(s)');
+  lines.push('----------------------------------------');
+  lines.push('');
+
+  if(rows.length === 0){
+    lines.push('Nothing checked for export yet.');
+  }
+
+  rows.forEach(r=>{
+    lines.push(r.file);
+    if(r.comments.length){
+      r.comments.forEach(c=>{
+        lines.push('  - ' + c.text);
+      });
+    }
+    lines.push('');
+  });
+
+  return lines.join('\n');
+}
+
+function renderExportVisualList(){
+  const rows = getExportRows();
+  const container = document.getElementById('exportVisualList');
+  if(rows.length === 0){
+    container.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--ink-soft);">No approved edits yet.</div>`;
+    return;
+  }
+  container.innerHTML = rows.map(r=>{
+    const checked = exportIncluded.has(r.file);
+    return `
+    <div class="exportRow ${checked ? '' : 'excluded'}" data-file="${escapeHtml(r.file)}">
+      <label class="exportCheck">
+        <input type="checkbox" data-action="toggleInclude" ${checked ? 'checked' : ''}>
+        <span></span>
+      </label>
+      <img src="images/thumb/${r.file}">
+      <div class="exportInfo">
+        <div class="exportFname mono">${escapeHtml(r.file)}</div>
+        ${r.comments.map(c=>`<div class="exportComment">${escapeHtml(c.text)}</div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  container.querySelectorAll('[data-action="toggleInclude"]').forEach(cb=>{
+    cb.addEventListener('change', e=>{
+      const cell = e.target.closest('.exportRow');
+      const file = cell.dataset.file;
+      if(e.target.checked){ exportIncluded.add(file); cell.classList.remove('excluded'); }
+      else { exportIncluded.delete(file); cell.classList.add('excluded'); }
+      document.getElementById('exportText').value = buildExportText();
+      updateExportCount();
+    });
+  });
+  updateExportCount();
+}
+
+function updateExportCount(){
+  const total = getExportRows().length;
+  const checked = getExportRows().filter(r=>exportIncluded.has(r.file)).length;
+  const el = document.getElementById('exportCountLabel');
+  if(el) el.textContent = checked + ' of ' + total + ' checked';
+}
+
+function openExportModal(){
+  exportIncluded = new Set(getExportRows().map(r=>r.file));
+  document.getElementById('exportText').value = buildExportText();
+  renderExportVisualList();
+  document.getElementById('exportModal').classList.add('open');
+}
+
+async function copyExportText(){
+  const text = document.getElementById('exportText').value;
+  try{
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById('copyExportBtn');
+    const original = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(()=>{ btn.textContent = original; }, 1500);
+  }catch(e){
+    const ta = document.getElementById('exportText');
+    ta.select();
+    document.execCommand('copy');
+  }
+}
+
+function downloadExportText(){
+  const text = document.getElementById('exportText').value;
+  const blob = new Blob([text], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = '26jul-bur-chi-main-r1-approved-' + stamp + '.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function imageToDataURL(src){
+  try{
+    const res = await fetch(src);
+    const blob = await res.blob();
+    return await new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }catch(e){ return ''; }
+}
+
+async function downloadVisualExport(){
+  const btn = document.getElementById('downloadVisualBtn');
+  const original = btn.textContent;
+  btn.textContent = 'Building...';
+  btn.disabled = true;
+
+  const rows = getExportRows().filter(r=>exportIncluded.has(r.file));
+  const rowsHtml = [];
+  for(const r of rows){
+    const dataUrl = await imageToDataURL('images/thumb/' + r.file);
+    const commentsHtml = r.comments.length
+      ? r.comments.map(c => `<div class="c">${escapeHtml(c.text)}</div>`).join('')
+      : '';
+    rowsHtml.push(`
+      <div class="cell">
+        <img src="${dataUrl}">
+        <div class="fname">${escapeHtml(r.file)}</div>
+        ${commentsHtml}
+      </div>`);
+  }
+
+  const heading = '26JUL BUR CHI - Main R1 Approved Edits';
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<title>${heading}</title>
+<style>
+  body{font-family:-apple-system,Helvetica,Arial,sans-serif;background:#F6F3EC;color:#2B2B24;margin:0;padding:32px;}
+  h1{font-size:18px;margin:0 0 4px;}
+  .sub{font-size:13px;color:#6B6858;margin-bottom:24px;}
+  .sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;}
+  .cell{background:#fff;border:1px solid #D9D4C4;border-radius:4px;padding:10px;}
+  .cell img{width:100%;height:150px;object-fit:contain;border-radius:3px;background:#EDE9DD;display:block;margin-bottom:8px;}
+  .fname{font-family:'Courier New',monospace;font-size:12px;font-weight:700;margin-bottom:4px;word-break:break-all;}
+  .c{font-size:11px;color:#2B2B24;line-height:1.4;margin-bottom:3px;}
+</style></head>
+<body>
+  <h1>${heading}</h1>
+  <div class="sub">${rows.length} approved edit(s) · exported ${new Date().toLocaleString()}</div>
+  <div class="sheet">
+  ${rowsHtml.join('')}
+  </div>
+</body></html>`;
+
+  const blob = new Blob([html], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = '26jul-bur-chi-main-r1-approved-' + stamp + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  btn.textContent = original;
+  btn.disabled = false;
+}
+
+async function downloadJpgZip(){
+  const btn = document.getElementById('downloadZipBtn');
+  const original = btn.textContent;
+  const rows = getExportRows().filter(r=>exportIncluded.has(r.file));
+
+  if(rows.length === 0){
+    btn.textContent = 'Nothing checked above';
+    setTimeout(()=>{ btn.textContent = original; }, 1800);
+    return;
+  }
+
+  btn.disabled = true;
+  const zip = new JSZip();
+  let done = 0, failed = 0;
+
+  for(const r of rows){
+    btn.textContent = `Zipping ${done + 1}/${rows.length}...`;
+    try{
+      const res = await fetch('images/full/' + r.file);
+      if(!res.ok) throw new Error('fetch failed');
+      const blob = await res.blob();
+      zip.file(r.file, blob);
+    }catch(e){
+      failed++;
+    }
+    done++;
+  }
+
+  btn.textContent = 'Building zip...';
+  const zipBlob = await zip.generateAsync({type:'blob', compression:'STORE'});
+
+  const url = URL.createObjectURL(zipBlob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = '26jul-bur-chi-main-r1-approved-' + stamp + '.zip';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  btn.textContent = failed > 0 ? `Done — ${failed} failed` : original;
+  btn.disabled = false;
+  if(failed > 0) setTimeout(()=>{ btn.textContent = original; }, 3000);
 }
 
 init();
