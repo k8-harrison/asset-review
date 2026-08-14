@@ -62,6 +62,12 @@
     font-size:13px;cursor:pointer;z-index:2;
   }
   .card.approved .checkBadge{background:var(--r2);}
+  .deleteBadge{
+    position:absolute;bottom:6px;right:6px;width:24px;height:24px;border-radius:50%;
+    background:rgba(178,44,44,0.75);color:#fff;display:flex;align-items:center;justify-content:center;
+    font-size:12px;cursor:pointer;z-index:2;border:none;
+  }
+  .deleteBadge:hover{background:#B22C2C;}
   .cardFooter{padding:8px 10px;}
   .cardFooter .fname{font-size:11px;font-weight:700;word-break:break-all;}
   .commentCount{font-size:10px;color:var(--ink-soft);margin-top:2px;}
@@ -198,7 +204,7 @@
 <header>
   <div class="titleBlock">
     <h1><span class="r2Badge">R1</span>26JUN HAV — Round 1 Edits</h1>
-    <div class="sub">59 photos · <span id="approvedCount">0</span> approved · click a photo to expand and compare (photos without a matching original show as a single image)</div>
+    <div class="sub"><span id="totalPhotoCount">59</span> photos · <span id="approvedCount">0</span> approved · click a photo to expand and compare (photos without a matching original show as a single image)</div>
   </div>
   <div style="display:flex;gap:10px;align-items:center;">
     <button class="exportBtnHeader" id="exportBtn">Export</button>
@@ -223,6 +229,7 @@
   <div id="lightboxPanel">
     <div class="fname mono" id="lbFname"></div>
     <button id="lbApproveBtn">Approve this edit</button>
+    <button id="lbDeleteBtn" style="display:none;background:transparent;color:#B22C2C;border:1px solid #B22C2C;padding:8px;border-radius:3px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Overpass',sans-serif;width:100%;margin-top:8px;">Delete this photo (admin)</button>
     <div class="commentsHeading">Feedback</div>
     <div id="lbComments"></div>
     <div id="noComments" style="display:none;">No comments yet.</div>
@@ -255,8 +262,8 @@
 </div>
 
 <script>
-const RECORDS = [{"file": "Cat_Havenly_June2026_10943.jpg", "original": "Cat_Havenly_June2026_10943.jpg"}, {"file": "Cat_Havenly_June2026_10981_Final.jpg", "original": "Cat_Havenly_June2026_10981.jpg"}, {"file": "Cat_Havenly_June2026_10994.jpg", "original": "Cat_Havenly_June2026_10994.jpg"}, {"file": "Cat_Havenly_June2026_11020.jpg", "original": "Cat_Havenly_June2026_11020.jpg"}, {"file": "Havenly_June2026_11033_Final.jpg", "original": null}, {"file": "Havenly_June2026_11033_Final_2.jpg", "original": null}, {"file": "Havenly_June2026_11033_Final_2_NoFixture.jpg", "original": null}, {"file": "Havenly_June2026_11033_Final_2_NoFixture_V2.jpg", "original": null}, {"file": "Havenly_June2026_11033_Final_NoFixture.jpg", "original": null}, {"file": "Havenly_June2026_11071_Final.jpg", "original": null}, {"file": "Havenly_June2026_11083_Final.jpg", "original": null}, {"file": "Havenly_June2026_11083_Final_2.jpg", "original": null}, {"file": "Havenly_June2026_11140.jpg", "original": null}, {"file": "Havenly_June2026_11166_Final.jpg", "original": null}, {"file": "Havenly_June2026_11166_Final_2.jpg", "original": null}, {"file": "Havenly_June2026_11166_Final_3.jpg", "original": null}, {"file": "Havenly_June2026_11166_Final_4.jpg", "original": null}, {"file": "Havenly_June2026_11508_Final.jpg", "original": null}, {"file": "Havenly_June2026_11539_Final.jpg", "original": null}, {"file": "Havenly_June2026_11553_Final.jpg", "original": null}, {"file": "Havenly_June2026_11571_Final.jpg", "original": null}, {"file": "Havenly_June2026_11608_Final.jpg", "original": null}, {"file": "Havenly_June2026_11608_Final_Light.jpg", "original": null}, {"file": "Havenly_June2026_11681_Final.jpg", "original": null}, {"file": "Havenly_June2026_11718.jpg", "original": null}, {"file": "Havenly_June2026_11726.jpg", "original": "Havenly_June2026_11726.jpg"}, {"file": "Havenly_June2026_11734.jpg", "original": null}, {"file": "Havenly_June2026_11775_Final.jpg", "original": "Havenly_June2026_11775.jpg"}, {"file": "Havenly_June2026_11790_Final.jpg", "original": null}, {"file": "Havenly_June2026_11803.jpg", "original": "Havenly_June2026_11803.jpg"}, {"file": "Havenly_June2026_11820.jpg", "original": "Havenly_June2026_11820.jpg"}, {"file": "Havenly_June2026_11889.jpg", "original": null}, {"file": "Havenly_June2026_11914.jpg", "original": "Havenly_June2026_11914.jpg"}, {"file": "Havenly_June2026_11918.jpg", "original": "Havenly_June2026_11918.jpg"}, {"file": "Havenly_June2026_11922.jpg", "original": null}, {"file": "Havenly_June2026_11949.jpg", "original": "Havenly_June2026_11949.jpg"}, {"file": "Havenly_June2026_11954_Final.jpg", "original": "Havenly_June2026_11954.jpg"}, {"file": "Havenly_June2026_11960.jpg", "original": "Havenly_June2026_11960.jpg"}, {"file": "Havenly_June2026_12010.jpg", "original": "Havenly_June2026_12010.jpg"}, {"file": "Havenly_June2026_12010_V2.jpg", "original": "Havenly_June2026_12010.jpg"}, {"file": "Havenly_June2026_12021.jpg", "original": "Havenly_June2026_12021.jpg"}, {"file": "Havenly_June2026_12046_Final.jpg", "original": "Havenly_June2026_12046.jpg"}, {"file": "Havenly_June2026_12085_Final.jpg", "original": null}, {"file": "Havenly_June2026_12102_Final.jpg", "original": "Havenly_June2026_12102.jpg"}, {"file": "Havenly_June2026_12102_Final_Lights.jpg", "original": "Havenly_June2026_12102.jpg"}, {"file": "Havenly_June2026_12133.jpg", "original": "Havenly_June2026_12133.jpg"}, {"file": "Havenly_June2026_12159.jpg", "original": "Havenly_June2026_12159.jpg"}, {"file": "Havenly_June2026_12162.jpg", "original": "Havenly_June2026_12162.jpg"}, {"file": "Havenly_June2026_12176_Final.jpg", "original": "Havenly_June2026_12176.jpg"}, {"file": "Havenly_June2026_12223_Final.jpg", "original": null}, {"file": "Havenly_June2026_12245.jpg", "original": null}, {"file": "Havenly_June2026_12265_7_Final.jpg", "original": "Havenly_June2026_12265.jpg"}, {"file": "Havenly_June2026_12300_Final.jpg", "original": "Havenly_June2026_12300.jpg"}, {"file": "Havenly_June2026_12305_1.jpg", "original": "Havenly_June2026_12305.jpg"}, {"file": "Havenly_June2026_12324.jpg", "original": null}, {"file": "Havenly_June2026_12325.jpg", "original": null}, {"file": "Havenly_June2026_12348_Final.jpg", "original": "Havenly_June2026_12348.jpg"}, {"file": "Havenly_June2026_12354.jpg", "original": null}, {"file": "Havenly_June2026_12462.jpg", "original": "Havenly_June2026_12462.jpg"}];
-const FILES = RECORDS.map(r => r.file);
+const RECORDS = [{"file": "Cat_Havenly_June2026_10943.jpg", "original": "Cat_Havenly_June2026_10943.jpg"}, {"file": "Cat_Havenly_June2026_10981_Final.jpg", "original": "Cat_Havenly_June2026_10981.jpg"}, {"file": "Cat_Havenly_June2026_10994.jpg", "original": "Cat_Havenly_June2026_10994.jpg"}, {"file": "Cat_Havenly_June2026_11020.jpg", "original": "Cat_Havenly_June2026_11020.jpg"}, {"file": "Havenly_June2026_11033_Final.jpg", "original": null}, {"file": "Havenly_June2026_11033_Final_2.jpg", "original": null}, {"file": "Havenly_June2026_11033_Final_2_NoFixture.jpg", "original": null}, {"file": "Havenly_June2026_11033_Final_2_NoFixture_V2.jpg", "original": null}, {"file": "Havenly_June2026_11033_Final_NoFixture.jpg", "original": null}, {"file": "Havenly_June2026_11071_Final.jpg", "original": null}, {"file": "Havenly_June2026_11083_Final.jpg", "original": null}, {"file": "Havenly_June2026_11083_Final_2.jpg", "original": null}, {"file": "Havenly_June2026_11140.jpg", "original": null}, {"file": "Havenly_June2026_11166_Final.jpg", "original": null}, {"file": "Havenly_June2026_11166_Final_2.jpg", "original": null}, {"file": "Havenly_June2026_11166_Final_3.jpg", "original": null}, {"file": "Havenly_June2026_11166_Final_4.jpg", "original": null}, {"file": "Havenly_June2026_11508_Final.jpg", "original": null}, {"file": "Havenly_June2026_11539_Final.jpg", "original": null}, {"file": "Havenly_June2026_11553_Final.jpg", "original": null}, {"file": "Havenly_June2026_11571_Final.jpg", "original": null}, {"file": "Havenly_June2026_11608_Final.jpg", "original": null}, {"file": "Havenly_June2026_11608_Final_Light.jpg", "original": null}, {"file": "Havenly_June2026_11681_Final.jpg", "original": null}, {"file": "Havenly_June2026_11718.jpg", "original": null}, {"file": "Havenly_June2026_11726.jpg", "original": "Havenly_June2026_11726.jpg"}, {"file": "Havenly_June2026_11734.jpg", "original": null}, {"file": "Havenly_June2026_11775_Final.jpg", "original": "Havenly_June2026_11775.jpg"}, {"file": "Havenly_June2026_11790_Final.jpg", "original": null}, {"file": "Havenly_June2026_11803.jpg", "original": "Havenly_June2026_11803.jpg"}, {"file": "Havenly_June2026_11820.jpg", "original": "Havenly_June2026_11820.jpg"}, {"file": "Havenly_June2026_11889.jpg", "original": null}, {"file": "Havenly_June2026_11914.jpg", "original": "Havenly_June2026_11914.jpg"}, {"file": "Havenly_June2026_11918.jpg", "original": "Havenly_June2026_11918.jpg"}, {"file": "Havenly_June2026_11922.jpg", "original": null}, {"file": "Havenly_June2026_11949.jpg", "original": "Havenly_June2026_11949.jpg"}, {"file": "Havenly_June2026_11954_Final.jpg", "original": "Havenly_June2026_11954.jpg"}, {"file": "Havenly_June2026_11960.jpg", "original": "Havenly_June2026_11960.jpg"}, {"file": "Havenly_June2026_12021.jpg", "original": "Havenly_June2026_12021.jpg"}, {"file": "Havenly_June2026_12046_Final.jpg", "original": "Havenly_June2026_12046.jpg"}, {"file": "Havenly_June2026_12085_Final.jpg", "original": null}, {"file": "Havenly_June2026_12102_Final.jpg", "original": "Havenly_June2026_12102.jpg"}, {"file": "Havenly_June2026_12102_Final_Lights.jpg", "original": "Havenly_June2026_12102.jpg"}, {"file": "Havenly_June2026_12133.jpg", "original": "Havenly_June2026_12133.jpg"}, {"file": "Havenly_June2026_12159.jpg", "original": "Havenly_June2026_12159.jpg"}, {"file": "Havenly_June2026_12162.jpg", "original": "Havenly_June2026_12162.jpg"}, {"file": "Havenly_June2026_12176_Final.jpg", "original": "Havenly_June2026_12176.jpg"}, {"file": "Havenly_June2026_12223_Final.jpg", "original": null}, {"file": "Havenly_June2026_12245.jpg", "original": null}, {"file": "Havenly_June2026_12265_7_Final.jpg", "original": "Havenly_June2026_12265.jpg"}, {"file": "Havenly_June2026_12300_Final.jpg", "original": "Havenly_June2026_12300.jpg"}, {"file": "Havenly_June2026_12305_1.jpg", "original": "Havenly_June2026_12305.jpg"}, {"file": "Havenly_June2026_12324.jpg", "original": null}, {"file": "Havenly_June2026_12325.jpg", "original": null}, {"file": "Havenly_June2026_12348_Final.jpg", "original": "Havenly_June2026_12348.jpg"}, {"file": "Havenly_June2026_12354.jpg", "original": null}, {"file": "Havenly_June2026_12462.jpg", "original": "Havenly_June2026_12462.jpg"}, {"file": "Havenly_June2026_12010.jpg", "original": "Havenly_June2026_12010.jpg"}, {"file": "Havenly_June2026_12010_V2.jpg", "original": "Havenly_June2026_12010.jpg"}];
+let FILES = RECORDS.map(r => r.file);
 const ORIGINAL_OF = {};
 RECORDS.forEach(r => { if(r.original) ORIGINAL_OF[r.file] = r.original; });
 function hasOriginal(file){ return !!ORIGINAL_OF[file]; }
@@ -275,9 +282,13 @@ async function notifySlack(text){
   }catch(e){ console.error('slack notify failed', e); }
 }
 let myName = null;
+let myEmail = null;
+const ADMIN_EMAIL = 'kate.harrison@havenly.com';
+function isAdmin(){ return myEmail && myEmail.toLowerCase() === ADMIN_EMAIL; }
 let approvedSet = new Set();
 let commentsByFile = {};
 let cardState = {}; // file -> 'edit' | 'original'  (grid card state)
+let deletedFiles = new Set();
 let lbIndex = -1;
 let lbState = 'edit'; // lightbox's own toggle state
 
@@ -316,6 +327,7 @@ async function handleSignedInUser(user){
     return false;
   }
   clearSignInError();
+  myEmail = email;
   myName = user.displayName || email.split('@')[0];
   document.getElementById('nameGate').classList.add('hidden');
   document.getElementById('meName').textContent = myName;
@@ -400,6 +412,7 @@ async function init(){
       if(ok) startApp();
     }else{
       myName = null;
+      myEmail = null;
       document.getElementById('nameGate').classList.remove('hidden');
       document.getElementById('meName').textContent = '—';
     }
@@ -416,6 +429,10 @@ async function init(){
   document.getElementById('lbApproveBtn').addEventListener('click', ()=>{
     const file = FILES[lbIndex];
     toggleApprove(file, true);
+  });
+  document.getElementById('lbDeleteBtn').addEventListener('click', ()=>{
+    const file = FILES[lbIndex];
+    deletePhoto(file);
   });
   document.getElementById('lbCommentSubmit').addEventListener('click', postComment);
   document.getElementById('exportBtn').addEventListener('click', openExportModal);
@@ -449,6 +466,9 @@ async function startApp(){
   approvedSet = new Set(approvedData || []);
   const commentsData = await fbGet('shoots/26junHav/r1_comments');
   commentsByFile = commentsData || {};
+  const deletedData = await fbGet('shoots/26junHav/r1_deleted');
+  deletedFiles = new Set(deletedData || []);
+  applyDeletions();
   render();
 
   // Live refresh, same as the main site — anyone leaving this tab open still
@@ -458,9 +478,10 @@ async function startApp(){
     try{
       const token = await getAuthToken();
       const qs = token ? ('?auth=' + token) : '';
-      const [appRes, comRes] = await Promise.all([
+      const [appRes, comRes, delRes] = await Promise.all([
         fetch(FIREBASE_URL + '/shoots/26junHav/r1_approved.json' + qs),
-        fetch(FIREBASE_URL + '/shoots/26junHav/r1_comments.json' + qs)
+        fetch(FIREBASE_URL + '/shoots/26junHav/r1_comments.json' + qs),
+        fetch(FIREBASE_URL + '/shoots/26junHav/r1_deleted.json' + qs)
       ]);
       if(appRes.ok){
         const data = await appRes.json();
@@ -472,13 +493,37 @@ async function startApp(){
         commentsByFile = data || {};
         changed = true;
       }
+      if(delRes.ok){
+        const data = await delRes.json();
+        const newDeleted = new Set(data || []);
+        if(newDeleted.size !== deletedFiles.size || [...newDeleted].some(f=>!deletedFiles.has(f))){
+          deletedFiles = newDeleted;
+          applyDeletions();
+          changed = true;
+        }
+      }
     }catch(e){ /* network hiccup — leave existing state as-is */ }
     if(changed) render();
   }, 5000);
 }
 
+function applyDeletions(){
+  FILES = RECORDS.filter(r => !deletedFiles.has(r.file)).map(r => r.file);
+}
+
+async function deletePhoto(file){
+  if(!isAdmin()) return;
+  if(!confirm('Delete ' + file + ' from this review? This removes it for everyone and can\'t be undone from here.')) return;
+  deletedFiles.add(file);
+  await fbSet('shoots/26junHav/r1_deleted', Array.from(deletedFiles));
+  applyDeletions();
+  closeLightbox();
+  render();
+}
+
 function render(){
   document.getElementById('approvedCount').textContent = approvedSet.size;
+  document.getElementById('totalPhotoCount').textContent = FILES.length;
   const grid = document.getElementById('grid');
   grid.innerHTML = FILES.map((file, i)=>{
     const isApproved = approvedSet.has(file);
@@ -491,6 +536,7 @@ function render(){
       <div class="imgArea" data-action="view">
         <div class="stateLabel ${state}">${state === 'edit' ? 'R1 EDIT' : 'ORIGINAL'}</div>
         <button class="checkBadge" data-action="approve" title="${isApproved?'Remove approval':'Approve this edit'}">${isApproved ? '&#10003;' : ''}</button>
+        ${isAdmin() ? `<button class="deleteBadge" data-action="delete" title="Delete this photo (admin only)">&#128465;</button>` : ''}
         <img src="${src}">
         ${canToggle ? `<button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'original' : 'R1 edit'}</button>` : ''}
       </div>
@@ -505,6 +551,13 @@ function render(){
     const idx = parseInt(card.dataset.idx);
     const file = FILES[idx];
     card.querySelector('[data-action="view"]').addEventListener('click', ()=>openLightbox(idx));
+    const deleteEl = card.querySelector('[data-action="delete"]');
+    if(deleteEl){
+      deleteEl.addEventListener('click', e=>{
+        e.stopPropagation();
+        deletePhoto(file);
+      });
+    }
     const toggleEl = card.querySelector('[data-action="toggle"]');
     if(toggleEl){
       toggleEl.addEventListener('click', e=>{
@@ -558,6 +611,7 @@ function updateLightboxPanel(){
   const btn = document.getElementById('lbApproveBtn');
   btn.textContent = isApproved ? 'Approved — remove' : 'Approve this edit';
   btn.classList.toggle('active', isApproved);
+  document.getElementById('lbDeleteBtn').style.display = isAdmin() ? 'block' : 'none';
   renderComments(file);
 }
 function renderComments(file){
