@@ -44,7 +44,6 @@
   #grid{display:flex;flex-wrap:wrap;gap:16px;}
   .card{background:var(--card);border:1px solid var(--line);border-radius:4px;overflow:hidden;width:220px;transition:box-shadow .15s ease;}
   .card:hover{box-shadow:0 6px 18px rgba(0,0,0,0.12);}
-  .card.approved{box-shadow:0 0 0 2px var(--r2) inset;}
   .imgArea{position:relative;height:230px;background:var(--paper-dim);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;}
   .imgArea img{width:100%;height:100%;object-fit:contain;display:block;}
   .stateLabel{position:absolute;top:6px;left:6px;font-size:10px;font-weight:700;padding:3px 7px;border-radius:3px;color:#fff;letter-spacing:0.3px;z-index:2;}
@@ -59,7 +58,6 @@
   .cardFooter{padding:8px 10px;}
   .cardFooter .fname{font-size:11px;font-weight:700;word-break:break-all;}
   .commentCount{font-size:10px;color:var(--ink-soft);margin-top:2px;}
-  .approvedCount{font-size:12px;color:var(--ink-soft);}
 
   /* lightbox */
   #lightbox{position:fixed;inset:0;background:rgba(20,19,15,0.92);display:none;align-items:center;justify-content:center;z-index:150;padding:30px;}
@@ -172,6 +170,14 @@
   .segmented button{border:none;background:transparent;padding:7px 13px;font-size:12px;cursor:pointer;font-family:'Overpass',sans-serif;color:var(--ink-soft);font-weight:600;}
   .segmented button.active{background:var(--r2);color:#fff;}
   .segmented button+button{border-left:1px solid var(--line);}
+  #prevRoundSection{
+    background:var(--paper-dim);border:1px solid var(--line);border-radius:4px;
+    padding:12px;margin-bottom:16px;
+  }
+  #prevRoundSection .commentsHeading{color:var(--r2);margin-bottom:6px;}
+  .prevCommentItem{font-size:12px;line-height:1.5;margin-bottom:6px;color:var(--ink);}
+  .prevCommentItem b{color:var(--ink);}
+  .prevCommentItem .cTime{font-size:10px;color:var(--ink-soft);margin-left:6px;}
 </style>
 </head>
 <body>
@@ -220,7 +226,11 @@
   </div>
   <div id="lightboxPanel">
     <div class="fname mono" id="lbFname"></div>
-    <div class="commentsHeading">Feedback</div>
+    <div id="prevRoundSection" style="display:none;">
+      <div class="commentsHeading" id="prevRoundHeading">R1 Feedback</div>
+      <div id="prevComments"></div>
+    </div>
+    <div class="commentsHeading">Feedback — This Round</div>
     <div id="lbComments"></div>
     <div id="noComments" style="display:none;">No comments yet.</div>
     <textarea id="lbCommentInput" placeholder="Add feedback on this edit..."></textarea>
@@ -231,7 +241,7 @@
 <div id="exportModal">
   <div class="exportCard">
     <h3>Export — R2</h3>
-    <div class="sub" id="exportSub">Approved edits and their feedback — uncheck any already sent to the photographer.</div>
+    <div class="sub" id="exportSub">Photos with feedback — uncheck any already sent to the photographer.</div>
     <div class="exportQuickRow">
       <span id="exportCountLabel"></span>
       <span class="exportQuickActions">
@@ -267,6 +277,7 @@ async function notifySlack(text){
 }
 let myName = null;
 let commentsByFile = {};
+let prevComments = {}; // read-only: comments from the round before this one
 let cardState = {}; // file -> 'edit' | 'original'  (grid card state)
 let currentFilter = 'all'; // 'all' | 'commented'
 let visibleFiles = [];
@@ -441,6 +452,8 @@ async function init(){
 
 async function startApp(){
   const commentsData = await fbGet('r3_comments');
+  const prevData = await fbGet('r2_comments');
+  prevComments = prevData || {};
   commentsByFile = commentsData || {};
   render();
 
@@ -525,7 +538,24 @@ function updateLightboxPanel(){
   const file = visibleFiles[lbIndex];
   if(!file) return;
   document.getElementById('lbFname').textContent = file;
+  renderPrevComments(file);
   renderComments(file);
+}
+function renderPrevComments(file){
+  const arr = prevComments[fKey(file)] || [];
+  const section = document.getElementById('prevRoundSection');
+  const list = document.getElementById('prevComments');
+  if(arr.length === 0){
+    section.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+  section.style.display = 'block';
+  list.innerHTML = arr.map(c=>`
+    <div class="prevCommentItem">
+      <b>${escapeHtml(c.name)}</b><span class="cTime">${timeAgo(c.ts)}</span>
+      <div>${escapeHtml(c.text)}</div>
+    </div>`).join('');
 }
 function renderComments(file){
   const arr = commentsByFile[fKey(file)] || [];
@@ -593,13 +623,13 @@ function getExportRows(){
 
 function buildExportText(){
   const rows = getExportRows().filter(r=>exportIncluded.has(r.file));
-  const heading = '26JUL BUR CHI — MAIN R1 APPROVED EDITS';
+  const heading = '26JUL BUR CHI — R2 FEEDBACK';
 
   const lines = [];
   lines.push(heading);
   lines.push('Generated ' + new Date().toLocaleString());
   lines.push('');
-  lines.push(rows.length + ' approved edit(s)');
+  lines.push(rows.length + ' commented photo(s)');
   lines.push('----------------------------------------');
   lines.push('');
 
@@ -624,7 +654,7 @@ function renderExportVisualList(){
   const rows = getExportRows();
   const container = document.getElementById('exportVisualList');
   if(rows.length === 0){
-    container.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--ink-soft);">No approved edits yet.</div>`;
+    container.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--ink-soft);">No comments on any photo yet.</div>`;
     return;
   }
   container.innerHTML = rows.map(r=>{
@@ -691,7 +721,7 @@ function downloadExportText(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26jul-bur-chi-r2-approved-' + stamp + '.txt';
+  a.download = '26jul-bur-chi-r2-feedback-' + stamp + '.txt';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -732,7 +762,7 @@ async function downloadVisualExport(){
       </div>`);
   }
 
-  const heading = '26JUL BUR CHI - Main R1 Approved Edits';
+  const heading = '26JUL BUR CHI - R2 Feedback';
   const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <title>${heading}</title>
@@ -748,7 +778,7 @@ async function downloadVisualExport(){
 </style></head>
 <body>
   <h1>${heading}</h1>
-  <div class="sub">${rows.length} approved edit(s) · exported ${new Date().toLocaleString()}</div>
+  <div class="sub">${rows.length} commented photo(s) · exported ${new Date().toLocaleString()}</div>
   <div class="sheet">
   ${rowsHtml.join('')}
   </div>
@@ -759,7 +789,7 @@ async function downloadVisualExport(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26jul-bur-chi-r2-approved-' + stamp + '.html';
+  a.download = '26jul-bur-chi-r2-feedback-' + stamp + '.html';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -804,7 +834,7 @@ async function downloadJpgZip(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26jul-bur-chi-r2-approved-' + stamp + '.zip';
+  a.download = '26jul-bur-chi-r2-feedback-' + stamp + '.zip';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
