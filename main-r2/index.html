@@ -56,12 +56,6 @@
     font-family:'Overpass',sans-serif;z-index:2;
   }
   .toggleBtn:hover{border-color:var(--r2);color:var(--r2);}
-  .checkBadge{
-    position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;
-    background:rgba(43,43,36,0.55);color:#fff;display:flex;align-items:center;justify-content:center;
-    font-size:13px;cursor:pointer;z-index:2;
-  }
-  .card.approved .checkBadge{background:var(--r2);}
   .cardFooter{padding:8px 10px;}
   .cardFooter .fname{font-size:11px;font-weight:700;word-break:break-all;}
   .commentCount{font-size:10px;color:var(--ink-soft);margin-top:2px;}
@@ -83,11 +77,6 @@
   #lbToggleBtn:hover{border-color:var(--r2);color:var(--r2);}
   #lightboxPanel{background:var(--card);border-radius:4px;padding:20px;width:280px;margin-left:20px;flex-shrink:0;max-height:88vh;overflow-y:auto;}
   #lightboxPanel .fname{font-size:13px;font-weight:700;margin-bottom:16px;}
-  #lbApproveBtn{
-    width:100%;padding:10px;border:1px solid var(--r2);border-radius:3px;background:transparent;
-    color:var(--r2);font-weight:700;font-size:13px;cursor:pointer;margin-bottom:16px;font-family:'Overpass',sans-serif;
-  }
-  #lbApproveBtn.active{background:var(--r2);color:#fff;}
   .commentsHeading{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--ink-soft);margin-bottom:8px;}
   #lbComments{max-height:180px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:10px;}
   .commentItem{font-size:12px;line-height:1.5;border-bottom:1px solid var(--line);padding-bottom:8px;}
@@ -179,6 +168,10 @@
   #downloadVisualBtn{background:transparent;color:var(--moss-dark);}
   #downloadZipBtn{background:transparent;color:var(--moss-dark);flex:1 1 100%;}
   #closeExportBtn{background:transparent;color:var(--ink-soft);border-color:var(--line);}
+  .segmented{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--card);}
+  .segmented button{border:none;background:transparent;padding:7px 13px;font-size:12px;cursor:pointer;font-family:'Overpass',sans-serif;color:var(--ink-soft);font-weight:600;}
+  .segmented button.active{background:var(--r2);color:#fff;}
+  .segmented button+button{border-left:1px solid var(--line);}
 </style>
 </head>
 <body>
@@ -198,7 +191,11 @@
 <header>
   <div class="titleBlock">
     <h1><span class="r2Badge">R2</span>26JUL BUR CHI — Round 2 Edits (Main)</h1>
-    <div class="sub">Main photoset · <span id="approvedCount">0</span> of 57 approved · comparing R1 → R2 · click a photo to expand</div>
+    <div class="sub">Main photoset · <span id="commentedCount">0</span> with comments · comparing R1 → R2 · click a photo to expand</div>
+  </div>
+  <div class="segmented" id="commentFilterToggle" style="margin-right:10px;">
+    <button data-filter="all" class="active">All Photos</button>
+    <button data-filter="commented">With Comments</button>
   </div>
   <div style="display:flex;gap:10px;align-items:center;">
     <a class="backLink" href="../main-r1/">&larr; Main R1</a>
@@ -223,7 +220,6 @@
   </div>
   <div id="lightboxPanel">
     <div class="fname mono" id="lbFname"></div>
-    <button id="lbApproveBtn">Approve this edit</button>
     <div class="commentsHeading">Feedback</div>
     <div id="lbComments"></div>
     <div id="noComments" style="display:none;">No comments yet.</div>
@@ -270,9 +266,10 @@ async function notifySlack(text){
   }catch(e){ console.error('slack notify failed', e); }
 }
 let myName = null;
-let approvedSet = new Set();
 let commentsByFile = {};
 let cardState = {}; // file -> 'edit' | 'original'  (grid card state)
+let currentFilter = 'all'; // 'all' | 'commented'
+let visibleFiles = [];
 let lbIndex = -1;
 let lbState = 'edit'; // lightbox's own toggle state
 let exportIncluded = new Set(); // files currently checked for this export session
@@ -407,12 +404,16 @@ async function init(){
     lbState = lbState === 'edit' ? 'original' : 'edit';
     updateLightboxImage();
   });
-  document.getElementById('lbApproveBtn').addEventListener('click', ()=>{
-    const file = FILES[lbIndex];
-    toggleApprove(file, true);
-  });
   document.getElementById('lbCommentSubmit').addEventListener('click', postComment);
   document.getElementById('exportBtn').addEventListener('click', openExportModal);
+  document.querySelectorAll('#commentFilterToggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#commentFilterToggle button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      render();
+    });
+  });
   document.getElementById('exportSelectAll').addEventListener('click', ()=>{
     exportIncluded = new Set(getExportRows().map(r=>r.file));
     document.getElementById('exportText').value = buildExportText();
@@ -439,8 +440,6 @@ async function init(){
 }
 
 async function startApp(){
-  const approvedData = await fbGet('main_r2_approved');
-  approvedSet = new Set(approvedData || []);
   const commentsData = await fbGet('main_r2_comments');
   commentsByFile = commentsData || {};
   render();
@@ -452,15 +451,7 @@ async function startApp(){
     try{
       const token = await getAuthToken();
       const qs = token ? ('?auth=' + token) : '';
-      const [appRes, comRes] = await Promise.all([
-        fetch(FIREBASE_URL + '/main_r2_approved.json' + qs),
-        fetch(FIREBASE_URL + '/main_r2_comments.json' + qs)
-      ]);
-      if(appRes.ok){
-        const data = await appRes.json();
-        approvedSet = new Set(data || []);
-        changed = true;
-      }
+      const comRes = await fetch(FIREBASE_URL + '/main_r2_comments.json' + qs);
       if(comRes.ok){
         const data = await comRes.json();
         commentsByFile = data || {};
@@ -472,20 +463,26 @@ async function startApp(){
 }
 
 function render(){
-  document.getElementById('approvedCount').textContent = approvedSet.size;
+  const commentedCount = FILES.filter(f=>(commentsByFile[fKey(f)] || []).length > 0).length;
+  document.getElementById('commentedCount').textContent = commentedCount;
+  visibleFiles = currentFilter === 'commented'
+    ? FILES.filter(f=>(commentsByFile[fKey(f)] || []).length > 0)
+    : FILES;
   const grid = document.getElementById('grid');
-  grid.innerHTML = FILES.map((file, i)=>{
-    const isApproved = approvedSet.has(file);
+  if(visibleFiles.length === 0){
+    grid.innerHTML = '<div style="padding:40px;color:var(--ink-soft);font-size:13px;">No photos with comments yet.</div>';
+    return;
+  }
+  grid.innerHTML = visibleFiles.map((file, i)=>{
     const state = cardState[file];
-    const src = state === 'edit' ? ('images/thumb/' + file) : ('../main-r1/images/thumb/' + file);
+    const src = state === 'edit' ? ('images/thumb/' + file) : ('../images/thumb/' + file);
     const commentCount = (commentsByFile[fKey(file)] || []).length;
     return `
-    <div class="card ${isApproved?'approved':''}" data-idx="${i}">
+    <div class="card" data-idx="${i}">
       <div class="imgArea" data-action="view">
-        <div class="stateLabel ${state}">${state === 'edit' ? 'MAIN R2 EDIT' : 'MAIN R1 EDIT'}</div>
-        <button class="checkBadge" data-action="approve" title="${isApproved?'Remove approval':'Approve this edit'}">${isApproved ? '&#10003;' : ''}</button>
+        <div class="stateLabel ${state}">${state === 'edit' ? 'EDIT' : 'ORIGINAL'}</div>
         <img src="${src}">
-        <button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'R1 edit' : 'R2 edit'}</button>
+        <button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'original' : 'edit'}</button>
       </div>
       <div class="cardFooter">
         <div class="fname mono">${frameLabel(file)}</div>
@@ -496,41 +493,27 @@ function render(){
 
   grid.querySelectorAll('.card').forEach(card=>{
     const idx = parseInt(card.dataset.idx);
-    const file = FILES[idx];
+    const file = visibleFiles[idx];
     card.querySelector('[data-action="view"]').addEventListener('click', ()=>openLightbox(idx));
     card.querySelector('[data-action="toggle"]').addEventListener('click', e=>{
       e.stopPropagation();
       cardState[file] = cardState[file] === 'edit' ? 'original' : 'edit';
       render();
     });
-    card.querySelector('[data-action="approve"]').addEventListener('click', e=>{
-      e.stopPropagation();
-      toggleApprove(file, false);
-    });
   });
 }
-
-async function toggleApprove(file, fromLightbox){
-  if(!myName){
-    document.getElementById('nameGate').classList.remove('hidden');
-    return;
-  }
-  if(approvedSet.has(file)) approvedSet.delete(file); else approvedSet.add(file);
-  await fbSet('main_r2_approved', Array.from(approvedSet));
-  render();
-  if(fromLightbox) updateLightboxPanel();
 }
 
 /* ====== LIGHTBOX ====== */
 function openLightbox(idx){
   lbIndex = idx;
-  lbState = cardState[FILES[idx]] || 'edit';
+  lbState = cardState[visibleFiles[idx]] || 'edit';
   document.getElementById('lightbox').classList.add('open');
   updateLightboxImage();
   updateLightboxPanel();
 }
 function updateLightboxImage(){
-  const file = FILES[lbIndex];
+  const file = visibleFiles[lbIndex];
   const src = lbState === 'edit' ? ('images/full/' + file) : ('../main-r1/images/full/' + file);
   document.getElementById('lightboxImg').src = src;
   const label = document.getElementById('lbStateLabel');
@@ -539,13 +522,9 @@ function updateLightboxImage(){
   document.getElementById('lbToggleBtn').textContent = 'Show ' + (lbState === 'edit' ? 'R1 edit' : 'R2 edit');
 }
 function updateLightboxPanel(){
-  const file = FILES[lbIndex];
+  const file = visibleFiles[lbIndex];
   if(!file) return;
   document.getElementById('lbFname').textContent = file;
-  const isApproved = approvedSet.has(file);
-  const btn = document.getElementById('lbApproveBtn');
-  btn.textContent = isApproved ? 'Approved — remove' : 'Approve this edit';
-  btn.classList.toggle('active', isApproved);
   renderComments(file);
 }
 function renderComments(file){
@@ -576,7 +555,7 @@ async function postComment(){
   const input = document.getElementById('lbCommentInput');
   const text = input.value.trim();
   if(!text) return;
-  const file = FILES[lbIndex];
+  const file = visibleFiles[lbIndex];
   if(!file) return;
   const arr = commentsByFile[fKey(file)] || [];
   arr.push({name: myName, text, ts: Date.now()});
@@ -598,8 +577,8 @@ async function deleteComment(file, idx){
 }
 function navLightbox(dir){
   let next = lbIndex + dir;
-  if(next < 0) next = FILES.length - 1;
-  if(next >= FILES.length) next = 0;
+  if(next < 0) next = visibleFiles.length - 1;
+  if(next >= visibleFiles.length) next = 0;
   openLightbox(next);
 }
 function closeLightbox(){
@@ -607,7 +586,7 @@ function closeLightbox(){
 }
 
 function getExportRows(){
-  return FILES.filter(f=>approvedSet.has(f))
+  return FILES.filter(f=>(commentsByFile[fKey(f)] || []).length > 0)
     .map(f=>({file: f, comments: commentsByFile[fKey(f)] || []}))
     .sort((a,b)=> a.file.localeCompare(b.file, undefined, {numeric:true}));
 }
