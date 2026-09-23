@@ -5,145 +5,99 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Havenly Brands — Asset Review</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Overpass:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#F6F3EC;
-    --paper-dim:#EDE9DD;
-    --ink:#2B2B24;
-    --ink-soft:#6B6858;
-    --line:#D9D4C4;
-    --card:#FFFFFF;
+    --paper:#F2EEE3;
+    --ink:#211F1A;
+    --ink-soft:#6E6A5E;
+    --line:#DCD6C7;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Overpass',sans-serif;}
-  .mono{font-family:'IBM Plex Mono',monospace;}
-  a{color:inherit;}
+  a{color:inherit;text-decoration:none;}
 
-  .masthead{background:var(--ink);color:var(--paper);padding:0;position:relative;overflow:hidden;}
-  .ticks{display:flex;justify-content:space-between;padding:0 18px;border-bottom:1px solid rgba(246,243,234,0.15);}
-  .ticks span{width:1px;height:9px;background:rgba(246,243,234,0.25);display:block;}
-  .masthead-inner{padding:36px 24px 30px;max-width:1040px;margin:0 auto;}
-  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#B7B29B;margin-bottom:10px;}
-  .eyebrow b{color:var(--paper);font-weight:600;}
-  h1{font-size:30px;font-weight:800;margin:0 0 6px;letter-spacing:-0.01em;}
-  .masthead p{margin:0;color:#B7B29B;font-size:14px;max-width:560px;line-height:1.5;}
+  .wrap{max-width:640px;margin:0 auto;padding:72px 28px 100px;}
 
-  .wrap{max-width:1040px;margin:0 auto;padding:34px 24px 80px;}
-  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
-
-  .card{
-    background:var(--card);border:1px solid var(--line);border-radius:10px;
-    padding:22px 20px 18px;position:relative;overflow:hidden;
-    text-decoration:none;display:block;transition:border-color .15s, transform .15s;
+  .kicker{font-size:14px;color:var(--ink-soft);margin:0 0 6px;}
+  h1{
+    font-family:'Fraunces',serif;font-weight:500;font-size:44px;line-height:1.05;
+    letter-spacing:-0.01em;margin:0 0 18px;
   }
-  .card:hover{border-color:var(--ink-soft);transform:translateY(-1px);}
-  .card:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
-  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent, var(--ink-soft));}
-  .card h3{font-size:19px;font-weight:700;margin:0 0 6px;line-height:1.3;}
-  .card .meta{font-size:12.5px;color:var(--ink-soft);margin-bottom:16px;min-height:16px;}
-  .card .foot{
-    display:flex;align-items:center;justify-content:space-between;
-    font-size:12px;color:var(--ink-soft);border-top:1px solid var(--line);padding-top:12px;
-  }
-  .card .open{font-weight:600;color:var(--ink);}
-  .card .open::after{content:" →";}
-  .card.empty .open{color:var(--ink-soft);}
-  .card.empty::before{opacity:0.35;}
+  .lede{font-size:15.5px;color:var(--ink-soft);line-height:1.6;max-width:38ch;margin:0 0 56px;}
 
-  @media (max-width:520px){
-    .masthead-inner{padding:28px 18px 24px;}
-    h1{font-size:24px;}
-    .wrap{padding:26px 18px 60px;}
+  .brands{display:flex;flex-direction:column;}
+
+  .brand{
+    display:flex;align-items:baseline;gap:16px;padding:22px 0;
+    border-top:1px solid var(--line);
+  }
+  .brands .brand:last-child{border-bottom:1px solid var(--line);}
+
+  .chip{
+    width:11px;height:11px;border-radius:50%;background:var(--accent);
+    flex:none;transform:translateY(-2px);
+  }
+  .brand-main{flex:1;min-width:0;}
+  .brand-name{
+    font-family:'Fraunces',serif;font-weight:500;font-size:24px;letter-spacing:-0.005em;
+  }
+  .brand a.brand-name-link{transition:opacity .12s;}
+  .brand:hover .brand-name-link{opacity:0.6;}
+  .brand-desc{font-size:13.5px;color:var(--ink-soft);margin-top:3px;}
+
+  .brand-status{
+    font-size:13px;color:var(--ink-soft);white-space:nowrap;text-align:right;flex:none;
+  }
+  .brand-status.live{color:var(--ink);}
+
+  @media (max-width:480px){
+    .wrap{padding:48px 20px 70px;}
+    h1{font-size:34px;}
+    .brand{flex-wrap:wrap;}
+    .brand-status{width:100%;text-align:left;margin-top:4px;padding-left:27px;}
   }
 </style>
 </head>
 <body>
 
-<div class="masthead">
-  <div class="ticks" id="ticks"></div>
-  <div class="masthead-inner">
-    <div class="eyebrow"><b>Havenly Brands</b> · Production Archive</div>
-    <h1>Asset Review</h1>
-    <p>Pick a brand, then a project, then a round — every photo review across the portfolio lives here.</p>
-  </div>
-</div>
+<div class="wrap">
+  <div class="kicker">Havenly Brands</div>
+  <h1>Asset Review</h1>
+  <p class="lede">Photo and file review for every brand's shoots — pick a brand, then a project, then a round.</p>
 
-<div class="wrap" id="wrap"></div>
+  <div class="brands" id="brands"></div>
+</div>
 
 <script>
 /* ============================================================
    BRANDS — add a new brand by adding one object here, and
    creating a matching /<slug>/index.html project directory.
-   slug    : URL path, e.g. "havenly" -> /havenly/
-   accent  : hex color for that brand's left-edge tab
-   meta    : one-line description
-   active  : number of projects currently in review (0 shows as empty state)
    ============================================================ */
 const BRANDS = [
-  { name: "Havenly", slug: "havenly", accent: "#3A3934", meta: "Interior design service & home marketplace", active: 1 },
-  { name: "Interior Define", slug: "interior-define", accent: "#B5651D", meta: "Custom furniture", active: 0 },
-  { name: "The Citizenry", slug: "the-citizenry", accent: "#3A5A78", meta: "Global artisan-made home goods", active: 0 },
-  { name: "Burrow", slug: "burrow", accent: "#94944D", meta: "Modern furniture", active: 1 },
-  { name: "The Expert", slug: "the-expert", accent: "#6E4B3A", meta: "Curated design marketplace & editorial", active: 0 }
+  { name: "Havenly", slug: "havenly", accent: "#B8583A", desc: "Interior design service & home marketplace", active: 1 },
+  { name: "Interior Define", slug: "interior-define", accent: "#33475A", desc: "Custom furniture", active: 0 },
+  { name: "The Citizenry", slug: "the-citizenry", accent: "#C08A2E", desc: "Global artisan-made home goods", active: 0 },
+  { name: "Burrow", slug: "burrow", accent: "#8B8B4A", desc: "Modern furniture", active: 1 },
+  { name: "The Expert", slug: "the-expert", accent: "#5C3A52", desc: "Curated design marketplace & editorial", active: 0 }
 ];
 
 function render(){
-  const wrap = document.getElementById('wrap');
-  wrap.innerHTML = `<div class="cards">
-    ${BRANDS.map(b=>{
-      const empty = b.active === 0;
-      const statusLabel = empty ? 'No active projects' : (b.active + ' active project' + (b.active > 1 ? 's' : ''));
-      return `
-      <a class="card ${empty ? 'empty' : ''}" href="${b.slug}/" style="--accent:${b.accent}">
-        <h3>${b.name}</h3>
-        <div class="meta">${b.meta}</div>
-        <div class="foot">
-          <span>${statusLabel}</span>
-          <span class="open">Open</span>
-        </div>
-      </a>`;
-    }).join('')}
-  </div>`;
+  document.getElementById('brands').innerHTML = BRANDS.map(b=>{
+    const statusText = b.active === 0 ? 'No active projects' : (b.active + ' project in review');
+    return `
+    <a class="brand" href="${b.slug}/" style="--accent:${b.accent}">
+      <span class="chip"></span>
+      <span class="brand-main">
+        <span class="brand-name brand-name-link">${b.name}</span>
+        <div class="brand-desc">${b.desc}</div>
+      </span>
+      <span class="brand-status ${b.active > 0 ? 'live' : ''}">${statusText}</span>
+    </a>`;
+  }).join('');
 }
-
-(function(){
-  const el = document.getElementById('ticks');
-  el.innerHTML = Array.from({length:40}, ()=>'<span></span>').join('');
-  el.style.padding = '10px 18px';
-})();
-
 render();
-</script>
-<script>
-(function(){
-  let baseline = null;
-  async function check(){
-    try{
-      const res = await fetch(location.pathname, {method:'HEAD', cache:'no-store'});
-      const tag = res.headers.get('etag') || res.headers.get('last-modified');
-      if(!tag) return;
-      if(baseline === null){ baseline = tag; return; }
-      if(tag !== baseline) showBanner();
-    }catch(e){}
-  }
-  function showBanner(){
-    if(document.getElementById('updateBanner')) return;
-    const bar = document.createElement('div');
-    bar.id = 'updateBanner';
-    bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:999;'+
-      'background:#2B2B24;color:#F6F3EC;font-family:Overpass,sans-serif;font-size:13px;'+
-      'padding:12px 18px;display:flex;align-items:center;justify-content:center;gap:14px;'+
-      'box-shadow:0 -2px 10px rgba(0,0,0,0.15);';
-    bar.innerHTML = 'A newer version of this page is available.'+
-      '<button id="updateBannerBtn" style="background:#94944D;color:#fff;border:none;'+
-      'padding:6px 14px;border-radius:6px;font-weight:600;cursor:pointer;font-family:Overpass,sans-serif;font-size:13px;">Reload</button>';
-    document.body.appendChild(bar);
-    document.getElementById('updateBannerBtn').addEventListener('click', ()=>location.reload());
-  }
-  check();
-  setInterval(check, 60000);
-})();
 </script>
 
 </body>
