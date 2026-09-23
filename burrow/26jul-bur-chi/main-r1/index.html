@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>26JUN HAV - Round 1 Edits</title>
+<title>26JUL BUR CHI - Round 1 Edits (Main Photoset)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -44,7 +44,6 @@
   #grid{display:flex;flex-wrap:wrap;gap:16px;}
   .card{background:var(--card);border:1px solid var(--line);border-radius:4px;overflow:hidden;width:220px;transition:box-shadow .15s ease;}
   .card:hover{box-shadow:0 6px 18px rgba(0,0,0,0.12);}
-  .card.approved{box-shadow:0 0 0 2px var(--r2) inset;}
   .imgArea{position:relative;height:230px;background:var(--paper-dim);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;}
   .imgArea img{width:100%;height:100%;object-fit:contain;display:block;}
   .stateLabel{position:absolute;top:6px;left:6px;font-size:10px;font-weight:700;padding:3px 7px;border-radius:3px;color:#fff;letter-spacing:0.3px;z-index:2;}
@@ -56,22 +55,9 @@
     font-family:'Overpass',sans-serif;z-index:2;
   }
   .toggleBtn:hover{border-color:var(--r2);color:var(--r2);}
-  .checkBadge{
-    position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;
-    background:rgba(43,43,36,0.55);color:#fff;display:flex;align-items:center;justify-content:center;
-    font-size:13px;cursor:pointer;z-index:2;
-  }
-  .card.approved .checkBadge{background:var(--r2);}
-  .deleteBadge{
-    position:absolute;bottom:6px;right:6px;width:24px;height:24px;border-radius:50%;
-    background:rgba(178,44,44,0.75);color:#fff;display:flex;align-items:center;justify-content:center;
-    font-size:12px;cursor:pointer;z-index:2;border:none;
-  }
-  .deleteBadge:hover{background:#B22C2C;}
   .cardFooter{padding:8px 10px;}
   .cardFooter .fname{font-size:11px;font-weight:700;word-break:break-all;}
   .commentCount{font-size:10px;color:var(--ink-soft);margin-top:2px;}
-  .approvedCount{font-size:12px;color:var(--ink-soft);}
 
   /* lightbox */
   #lightbox{position:fixed;inset:0;background:rgba(20,19,15,0.92);display:none;align-items:center;justify-content:center;z-index:150;padding:30px;}
@@ -89,12 +75,15 @@
   #lbToggleBtn:hover{border-color:var(--r2);color:var(--r2);}
   #lightboxPanel{background:var(--card);border-radius:4px;padding:20px;width:280px;margin-left:20px;flex-shrink:0;max-height:88vh;overflow-y:auto;}
   #lightboxPanel .fname{font-size:13px;font-weight:700;margin-bottom:16px;}
-  #lbApproveBtn{
-    width:100%;padding:10px;border:1px solid var(--r2);border-radius:3px;background:transparent;
-    color:var(--r2);font-weight:700;font-size:13px;cursor:pointer;margin-bottom:16px;font-family:'Overpass',sans-serif;
-  }
-  #lbApproveBtn.active{background:var(--r2);color:#fff;}
   .commentsHeading{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--ink-soft);margin-bottom:8px;}
+  #prevRoundSection{
+    background:var(--paper-dim);border:1px solid var(--line);border-radius:4px;
+    padding:12px;margin-bottom:16px;
+  }
+  #prevRoundSection .commentsHeading{color:var(--r2);margin-bottom:6px;}
+  .prevCommentItem{font-size:12px;line-height:1.5;margin-bottom:6px;color:var(--ink);}
+  .prevCommentItem b{color:var(--ink);}
+  .prevCommentItem .cTime{font-size:10px;color:var(--ink-soft);margin-left:6px;}
   #lbComments{max-height:180px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:10px;}
   .commentItem{font-size:12px;line-height:1.5;border-bottom:1px solid var(--line);padding-bottom:8px;}
   .commentItem .cName{font-weight:700;color:var(--ink);}
@@ -185,6 +174,10 @@
   #downloadVisualBtn{background:transparent;color:var(--moss-dark);}
   #downloadZipBtn{background:transparent;color:var(--moss-dark);flex:1 1 100%;}
   #closeExportBtn{background:transparent;color:var(--ink-soft);border-color:var(--line);}
+  .segmented{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--card);}
+  .segmented button{border:none;background:transparent;padding:7px 13px;font-size:12px;cursor:pointer;font-family:'Overpass',sans-serif;color:var(--ink-soft);font-weight:600;}
+  .segmented button.active{background:var(--r2);color:#fff;}
+  .segmented button+button{border-left:1px solid var(--line);}
 </style>
 </head>
 <body>
@@ -203,12 +196,16 @@
 
 <header>
   <div class="titleBlock">
-    <h1><span class="r2Badge">R1</span>26JUN HAV — Round 1 Edits</h1>
-    <div class="sub"><span id="totalPhotoCount">59</span> photos · <span id="approvedCount">0</span> approved · click a photo to expand and compare (photos without a matching original show as a single image)</div>
+    <h1><span class="r2Badge">R1</span>26JUL BUR CHI — Round 1 Edits (Main)</h1>
+    <div class="sub">Main photoset · <span id="commentedCount">0</span> with comments · click a photo to expand and compare</div>
+  </div>
+  <div class="segmented" id="commentFilterToggle" style="margin-right:10px;">
+    <button data-filter="all" class="active">All Photos</button>
+    <button data-filter="commented">With Comments</button>
   </div>
   <div style="display:flex;gap:10px;align-items:center;">
     <button class="exportBtnHeader" id="exportBtn">Export</button>
-    <a class="backLink" href="../">&larr; Back to main review</a>
+    <a class="backLink" href="../main/">&larr; Back to main review</a> <a class="backLink" href="../">Project home</a>
     <div class="whoami" id="whoami"><span class="dot"></span><b id="meName">—</b></div>
   </div>
 </header>
@@ -228,9 +225,11 @@
   </div>
   <div id="lightboxPanel">
     <div class="fname mono" id="lbFname"></div>
-    <button id="lbApproveBtn">Approve this edit</button>
-    <button id="lbDeleteBtn" style="display:none;background:transparent;color:#B22C2C;border:1px solid #B22C2C;padding:8px;border-radius:3px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Overpass',sans-serif;width:100%;margin-top:8px;">Delete this photo (admin)</button>
-    <div class="commentsHeading">Feedback</div>
+    <div id="prevRoundSection" style="display:none;">
+      <div class="commentsHeading" id="prevRoundHeading">Previous Feedback</div>
+      <div id="prevComments"></div>
+    </div>
+    <div class="commentsHeading">Feedback — This Round</div>
     <div id="lbComments"></div>
     <div id="noComments" style="display:none;">No comments yet.</div>
     <textarea id="lbCommentInput" placeholder="Add feedback on this edit..."></textarea>
@@ -240,8 +239,8 @@
 
 <div id="exportModal">
   <div class="exportCard">
-    <h3>Export — 26JUN HAV R1</h3>
-    <div class="sub" id="exportSub">Approved edits and their feedback — uncheck any already sent to the photographer.</div>
+    <h3>Export — Main R1</h3>
+    <div class="sub" id="exportSub">Photos with feedback — uncheck any already sent to the photographer.</div>
     <div class="exportQuickRow">
       <span id="exportCountLabel"></span>
       <span class="exportQuickActions">
@@ -262,11 +261,7 @@
 </div>
 
 <script>
-const RECORDS = [{"file": "Cat_Havenly_June2026_10943.jpg", "original": "Cat_Havenly_June2026_10943.jpg"}, {"file": "Cat_Havenly_June2026_10981_Final.jpg", "original": "Cat_Havenly_June2026_10981.jpg"}, {"file": "Cat_Havenly_June2026_10994.jpg", "original": "Cat_Havenly_June2026_10994.jpg"}, {"file": "Cat_Havenly_June2026_11020.jpg", "original": "Cat_Havenly_June2026_11020.jpg"}, {"file": "Havenly_June2026_11033_Final.jpg", "original": null}, {"file": "Havenly_June2026_11033_Final_2.jpg", "original": null}, {"file": "Havenly_June2026_11033_Final_2_NoFixture.jpg", "original": null}, {"file": "Havenly_June2026_11033_Final_2_NoFixture_V2.jpg", "original": null}, {"file": "Havenly_June2026_11033_Final_NoFixture.jpg", "original": null}, {"file": "Havenly_June2026_11071_Final.jpg", "original": null}, {"file": "Havenly_June2026_11083_Final.jpg", "original": null}, {"file": "Havenly_June2026_11083_Final_2.jpg", "original": null}, {"file": "Havenly_June2026_11140.jpg", "original": null}, {"file": "Havenly_June2026_11166_Final.jpg", "original": null}, {"file": "Havenly_June2026_11166_Final_2.jpg", "original": null}, {"file": "Havenly_June2026_11166_Final_3.jpg", "original": null}, {"file": "Havenly_June2026_11166_Final_4.jpg", "original": null}, {"file": "Havenly_June2026_11508_Final.jpg", "original": null}, {"file": "Havenly_June2026_11539_Final.jpg", "original": null}, {"file": "Havenly_June2026_11553_Final.jpg", "original": null}, {"file": "Havenly_June2026_11571_Final.jpg", "original": null}, {"file": "Havenly_June2026_11608_Final.jpg", "original": null}, {"file": "Havenly_June2026_11608_Final_Light.jpg", "original": null}, {"file": "Havenly_June2026_11681_Final.jpg", "original": null}, {"file": "Havenly_June2026_11718.jpg", "original": null}, {"file": "Havenly_June2026_11726.jpg", "original": "Havenly_June2026_11726.jpg"}, {"file": "Havenly_June2026_11734.jpg", "original": null}, {"file": "Havenly_June2026_11775_Final.jpg", "original": "Havenly_June2026_11775.jpg"}, {"file": "Havenly_June2026_11790_Final.jpg", "original": null}, {"file": "Havenly_June2026_11803.jpg", "original": "Havenly_June2026_11803.jpg"}, {"file": "Havenly_June2026_11820.jpg", "original": "Havenly_June2026_11820.jpg"}, {"file": "Havenly_June2026_11889.jpg", "original": null}, {"file": "Havenly_June2026_11914.jpg", "original": "Havenly_June2026_11914.jpg"}, {"file": "Havenly_June2026_11918.jpg", "original": "Havenly_June2026_11918.jpg"}, {"file": "Havenly_June2026_11922.jpg", "original": null}, {"file": "Havenly_June2026_11949.jpg", "original": "Havenly_June2026_11949.jpg"}, {"file": "Havenly_June2026_11954_Final.jpg", "original": "Havenly_June2026_11954.jpg"}, {"file": "Havenly_June2026_11960.jpg", "original": "Havenly_June2026_11960.jpg"}, {"file": "Havenly_June2026_12021.jpg", "original": "Havenly_June2026_12021.jpg"}, {"file": "Havenly_June2026_12046_Final.jpg", "original": "Havenly_June2026_12046.jpg"}, {"file": "Havenly_June2026_12085_Final.jpg", "original": null}, {"file": "Havenly_June2026_12102_Final.jpg", "original": "Havenly_June2026_12102.jpg"}, {"file": "Havenly_June2026_12102_Final_Lights.jpg", "original": "Havenly_June2026_12102.jpg"}, {"file": "Havenly_June2026_12133.jpg", "original": "Havenly_June2026_12133.jpg"}, {"file": "Havenly_June2026_12159.jpg", "original": "Havenly_June2026_12159.jpg"}, {"file": "Havenly_June2026_12162.jpg", "original": "Havenly_June2026_12162.jpg"}, {"file": "Havenly_June2026_12176_Final.jpg", "original": "Havenly_June2026_12176.jpg"}, {"file": "Havenly_June2026_12223_Final.jpg", "original": null}, {"file": "Havenly_June2026_12245.jpg", "original": null}, {"file": "Havenly_June2026_12265_7_Final.jpg", "original": "Havenly_June2026_12265.jpg"}, {"file": "Havenly_June2026_12300_Final.jpg", "original": "Havenly_June2026_12300.jpg"}, {"file": "Havenly_June2026_12305_1.jpg", "original": "Havenly_June2026_12305.jpg"}, {"file": "Havenly_June2026_12324.jpg", "original": null}, {"file": "Havenly_June2026_12325.jpg", "original": null}, {"file": "Havenly_June2026_12348_Final.jpg", "original": "Havenly_June2026_12348.jpg"}, {"file": "Havenly_June2026_12354.jpg", "original": null}, {"file": "Havenly_June2026_12462.jpg", "original": "Havenly_June2026_12462.jpg"}, {"file": "Havenly_June2026_12010.jpg", "original": "Havenly_June2026_12010.jpg"}, {"file": "Havenly_June2026_12010_V2.jpg", "original": "Havenly_June2026_12010.jpg"}];
-let FILES = RECORDS.map(r => r.file);
-const ORIGINAL_OF = {};
-RECORDS.forEach(r => { if(r.original) ORIGINAL_OF[r.file] = r.original; });
-function hasOriginal(file){ return !!ORIGINAL_OF[file]; }
+const FILES = ["530A7082.jpg", "530A7196.jpg", "530A7262.jpg", "530A7280.jpg", "530A7475.jpg", "530A7618.jpg", "530A7808.jpg", "530A7810.jpg", "530A7818.jpg", "530A7870.jpg", "530A8042.jpg", "530A8076.jpg", "530A8083.jpg", "530A8135.jpg", "530A8318.jpg", "530A8329.jpg", "530A8404.jpg", "530A8405.jpg", "530A8406.jpg", "530A8407.jpg", "530A8408.jpg", "530A8447.jpg", "530A8481.jpg", "530A8521.jpg", "530A8665.jpg", "530A8756.jpg", "530A8811.jpg", "530A8886.jpg", "530A8910.jpg", "530A8914.jpg", "530A8919.jpg", "530A8953.jpg", "530A8958.jpg", "530A8988.jpg", "530A9003.jpg", "530A9021.jpg", "530A9023.jpg", "530A9026.jpg", "530A9049.jpg", "530A9052.jpg", "530A9064.jpg", "530A9079.jpg", "530A9108.jpg", "530A9124.jpg", "530A9144.jpg", "530A9179.jpg", "530A9203.jpg", "530A9210.jpg", "530A9243.jpg", "530A9247.jpg", "530A9253.jpg", "530A9260.jpg", "530A9267.jpg", "530A9273.jpg", "530A9294.jpg", "530A9337.jpg", "530A9350.jpg"];
 
 const FIREBASE_URL = 'https://asset-review-8bfb6-default-rtdb.firebaseio.com';
 const SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/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';
@@ -282,13 +277,11 @@ async function notifySlack(text){
   }catch(e){ console.error('slack notify failed', e); }
 }
 let myName = null;
-let myEmail = null;
-const ADMIN_EMAIL = 'kate.harrison@havenly.com';
-function isAdmin(){ return myEmail && myEmail.toLowerCase() === ADMIN_EMAIL; }
-let approvedSet = new Set();
 let commentsByFile = {};
+let prevComments = {}; // read-only: comments from the round before this one
 let cardState = {}; // file -> 'edit' | 'original'  (grid card state)
-let deletedFiles = new Set();
+let currentFilter = 'all'; // 'all' | 'commented'
+let visibleFiles = [];
 let lbIndex = -1;
 let lbState = 'edit'; // lightbox's own toggle state
 
@@ -327,7 +320,6 @@ async function handleSignedInUser(user){
     return false;
   }
   clearSignInError();
-  myEmail = email;
   myName = user.displayName || email.split('@')[0];
   document.getElementById('nameGate').classList.add('hidden');
   document.getElementById('meName').textContent = myName;
@@ -373,9 +365,8 @@ async function fbSet(path, value){
 
 function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function fKey(file){ return file.replace(/[.#$\[\]\/]/g, '_'); }
+function rootId(file){ return file.replace(/\.jpg$/i, ''); } // root site keys comments by id, no extension
 function frameLabel(file){
-  const m2 = file.match(/Havenly_June2026_(\d{4,5})/);
-  if(m2) return m2[1];
   const m = file.match(/(\d{3,4})(?:-\d+)?(?:\.jpg)?$/i);
   return m ? m[1] : file;
 }
@@ -412,7 +403,6 @@ async function init(){
       if(ok) startApp();
     }else{
       myName = null;
-      myEmail = null;
       document.getElementById('nameGate').classList.remove('hidden');
       document.getElementById('meName').textContent = '—';
     }
@@ -426,16 +416,16 @@ async function init(){
     lbState = lbState === 'edit' ? 'original' : 'edit';
     updateLightboxImage();
   });
-  document.getElementById('lbApproveBtn').addEventListener('click', ()=>{
-    const file = FILES[lbIndex];
-    toggleApprove(file, true);
-  });
-  document.getElementById('lbDeleteBtn').addEventListener('click', ()=>{
-    const file = FILES[lbIndex];
-    deletePhoto(file);
-  });
   document.getElementById('lbCommentSubmit').addEventListener('click', postComment);
   document.getElementById('exportBtn').addEventListener('click', openExportModal);
+  document.querySelectorAll('#commentFilterToggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#commentFilterToggle button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      render();
+    });
+  });
   document.getElementById('exportSelectAll').addEventListener('click', ()=>{
     exportIncluded = new Set(getExportRows().map(r=>r.file));
     document.getElementById('exportText').value = buildExportText();
@@ -462,13 +452,10 @@ async function init(){
 }
 
 async function startApp(){
-  const approvedData = await fbGet('shoots/26junHav/r1_approved');
-  approvedSet = new Set(approvedData || []);
-  const commentsData = await fbGet('shoots/26junHav/r1_comments');
+  const commentsData = await fbGet('main_r1_comments');
   commentsByFile = commentsData || {};
-  const deletedData = await fbGet('shoots/26junHav/r1_deleted');
-  deletedFiles = new Set(deletedData || []);
-  applyDeletions();
+  const prevData = await fbGet('comments');
+  prevComments = prevData || {};
   render();
 
   // Live refresh, same as the main site — anyone leaving this tab open still
@@ -478,67 +465,38 @@ async function startApp(){
     try{
       const token = await getAuthToken();
       const qs = token ? ('?auth=' + token) : '';
-      const [appRes, comRes, delRes] = await Promise.all([
-        fetch(FIREBASE_URL + '/shoots/26junHav/r1_approved.json' + qs),
-        fetch(FIREBASE_URL + '/shoots/26junHav/r1_comments.json' + qs),
-        fetch(FIREBASE_URL + '/shoots/26junHav/r1_deleted.json' + qs)
-      ]);
-      if(appRes.ok){
-        const data = await appRes.json();
-        approvedSet = new Set(data || []);
-        changed = true;
-      }
+      const comRes = await fetch(FIREBASE_URL + '/main_r1_comments.json' + qs);
       if(comRes.ok){
         const data = await comRes.json();
         commentsByFile = data || {};
         changed = true;
-      }
-      if(delRes.ok){
-        const data = await delRes.json();
-        const newDeleted = new Set(data || []);
-        if(newDeleted.size !== deletedFiles.size || [...newDeleted].some(f=>!deletedFiles.has(f))){
-          deletedFiles = newDeleted;
-          applyDeletions();
-          changed = true;
-        }
       }
     }catch(e){ /* network hiccup — leave existing state as-is */ }
     if(changed) render();
   }, 5000);
 }
 
-function applyDeletions(){
-  FILES = RECORDS.filter(r => !deletedFiles.has(r.file)).map(r => r.file);
-}
-
-async function deletePhoto(file){
-  if(!isAdmin()) return;
-  if(!confirm('Delete ' + file + ' from this review? This removes it for everyone and can\'t be undone from here.')) return;
-  deletedFiles.add(file);
-  await fbSet('shoots/26junHav/r1_deleted', Array.from(deletedFiles));
-  applyDeletions();
-  closeLightbox();
-  render();
-}
-
 function render(){
-  document.getElementById('approvedCount').textContent = approvedSet.size;
-  document.getElementById('totalPhotoCount').textContent = FILES.length;
+  const commentedCount = FILES.filter(f=>(commentsByFile[fKey(f)] || []).length > 0).length;
+  document.getElementById('commentedCount').textContent = commentedCount;
+  visibleFiles = currentFilter === 'commented'
+    ? FILES.filter(f=>(commentsByFile[fKey(f)] || []).length > 0)
+    : FILES;
   const grid = document.getElementById('grid');
-  grid.innerHTML = FILES.map((file, i)=>{
-    const isApproved = approvedSet.has(file);
-    const canToggle = hasOriginal(file);
-    const state = canToggle ? cardState[file] : 'edit';
-    const src = state === 'edit' ? ('images/thumb/' + file) : ('images/original-thumb/' + ORIGINAL_OF[file]);
+  if(visibleFiles.length === 0){
+    grid.innerHTML = '<div style="padding:40px;color:var(--ink-soft);font-size:13px;">No photos with comments yet.</div>';
+    return;
+  }
+  grid.innerHTML = visibleFiles.map((file, i)=>{
+    const state = cardState[file];
+    const src = state === 'edit' ? ('images/thumb/' + file) : ('../images/thumb/' + file);
     const commentCount = (commentsByFile[fKey(file)] || []).length;
     return `
-    <div class="card ${isApproved?'approved':''}" data-idx="${i}">
+    <div class="card" data-idx="${i}">
       <div class="imgArea" data-action="view">
         <div class="stateLabel ${state}">${state === 'edit' ? 'R1 EDIT' : 'ORIGINAL'}</div>
-        <button class="checkBadge" data-action="approve" title="${isApproved?'Remove approval':'Approve this edit'}">${isApproved ? '&#10003;' : ''}</button>
-        ${isAdmin() ? `<button class="deleteBadge" data-action="delete" title="Delete this photo (admin only)">&#128465;</button>` : ''}
         <img src="${src}">
-        ${canToggle ? `<button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'original' : 'R1 edit'}</button>` : ''}
+        <button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'original' : 'R1 edit'}</button>
       </div>
       <div class="cardFooter">
         <div class="fname mono">${frameLabel(file)}</div>
@@ -549,54 +507,27 @@ function render(){
 
   grid.querySelectorAll('.card').forEach(card=>{
     const idx = parseInt(card.dataset.idx);
-    const file = FILES[idx];
+    const file = visibleFiles[idx];
     card.querySelector('[data-action="view"]').addEventListener('click', ()=>openLightbox(idx));
-    const deleteEl = card.querySelector('[data-action="delete"]');
-    if(deleteEl){
-      deleteEl.addEventListener('click', e=>{
-        e.stopPropagation();
-        deletePhoto(file);
-      });
-    }
-    const toggleEl = card.querySelector('[data-action="toggle"]');
-    if(toggleEl){
-      toggleEl.addEventListener('click', e=>{
-        e.stopPropagation();
-        cardState[file] = cardState[file] === 'edit' ? 'original' : 'edit';
-        render();
-      });
-    }
-    card.querySelector('[data-action="approve"]').addEventListener('click', e=>{
+    card.querySelector('[data-action="toggle"]').addEventListener('click', e=>{
       e.stopPropagation();
-      toggleApprove(file, false);
+      cardState[file] = cardState[file] === 'edit' ? 'original' : 'edit';
+      render();
     });
   });
-}
-
-async function toggleApprove(file, fromLightbox){
-  if(!myName){
-    document.getElementById('nameGate').classList.remove('hidden');
-    return;
-  }
-  if(approvedSet.has(file)) approvedSet.delete(file); else approvedSet.add(file);
-  await fbSet('shoots/26junHav/r1_approved', Array.from(approvedSet));
-  render();
-  if(fromLightbox) updateLightboxPanel();
 }
 
 /* ====== LIGHTBOX ====== */
 function openLightbox(idx){
   lbIndex = idx;
-  const file = FILES[idx];
-  lbState = hasOriginal(file) ? (cardState[file] || 'edit') : 'edit';
+  lbState = cardState[visibleFiles[idx]] || 'edit';
   document.getElementById('lightbox').classList.add('open');
-  document.getElementById('lbToggleBtn').style.display = hasOriginal(file) ? '' : 'none';
   updateLightboxImage();
   updateLightboxPanel();
 }
 function updateLightboxImage(){
-  const file = FILES[lbIndex];
-  const src = lbState === 'edit' ? ('images/full/' + file) : ('images/original-full/' + ORIGINAL_OF[file]);
+  const file = visibleFiles[lbIndex];
+  const src = lbState === 'edit' ? ('images/full/' + file) : ('../images/full/' + file);
   document.getElementById('lightboxImg').src = src;
   const label = document.getElementById('lbStateLabel');
   label.textContent = lbState === 'edit' ? 'R1 EDIT' : 'ORIGINAL';
@@ -604,15 +535,27 @@ function updateLightboxImage(){
   document.getElementById('lbToggleBtn').textContent = 'Show ' + (lbState === 'edit' ? 'original' : 'R1 edit');
 }
 function updateLightboxPanel(){
-  const file = FILES[lbIndex];
+  const file = visibleFiles[lbIndex];
   if(!file) return;
   document.getElementById('lbFname').textContent = file;
-  const isApproved = approvedSet.has(file);
-  const btn = document.getElementById('lbApproveBtn');
-  btn.textContent = isApproved ? 'Approved — remove' : 'Approve this edit';
-  btn.classList.toggle('active', isApproved);
-  document.getElementById('lbDeleteBtn').style.display = isAdmin() ? 'block' : 'none';
+  renderPrevComments(file);
   renderComments(file);
+}
+function renderPrevComments(file){
+  const arr = prevComments[rootId(file)] || [];
+  const section = document.getElementById('prevRoundSection');
+  const list = document.getElementById('prevComments');
+  if(arr.length === 0){
+    section.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+  section.style.display = 'block';
+  list.innerHTML = arr.map(c=>`
+    <div class="prevCommentItem">
+      <b>${escapeHtml(c.name)}</b><span class="cTime">${timeAgo(c.ts)}</span>
+      <div>${escapeHtml(c.text)}</div>
+    </div>`).join('');
 }
 function renderComments(file){
   const arr = commentsByFile[fKey(file)] || [];
@@ -642,14 +585,14 @@ async function postComment(){
   const input = document.getElementById('lbCommentInput');
   const text = input.value.trim();
   if(!text) return;
-  const file = FILES[lbIndex];
+  const file = visibleFiles[lbIndex];
   if(!file) return;
   const arr = commentsByFile[fKey(file)] || [];
   arr.push({name: myName, text, ts: Date.now()});
-  const ok = await fbSet('shoots/26junHav/r1_comments/' + fKey(file), arr);
+  const ok = await fbSet('main_r1_comments/' + fKey(file), arr);
   if(!ok) return;
   commentsByFile[fKey(file)] = arr;
-  notifySlack('💬 *' + myName + '* commented on 26JUN HAV R1 edit `' + file + '`: "' + text + '"\n<https://k8-harrison.github.io/asset-review/26jun-hav/r1/|Open R1 review>');
+  notifySlack('💬 *' + myName + '* commented on R1 edit `' + file + '`: "' + text + '"\n<https://k8-harrison.github.io/asset-review/burrow/26jul-bur-chi/main-r1/|Open R1 review>');
   input.value = '';
   renderComments(file);
   render();
@@ -658,14 +601,14 @@ async function deleteComment(file, idx){
   const arr = commentsByFile[fKey(file)] || [];
   arr.splice(idx, 1);
   commentsByFile[fKey(file)] = arr;
-  await fbSet('shoots/26junHav/r1_comments/' + fKey(file), arr);
+  await fbSet('main_r1_comments/' + fKey(file), arr);
   renderComments(file);
   render();
 }
 function navLightbox(dir){
   let next = lbIndex + dir;
-  if(next < 0) next = FILES.length - 1;
-  if(next >= FILES.length) next = 0;
+  if(next < 0) next = visibleFiles.length - 1;
+  if(next >= visibleFiles.length) next = 0;
   openLightbox(next);
 }
 function closeLightbox(){
@@ -675,20 +618,20 @@ function closeLightbox(){
 let exportIncluded = new Set(); // files currently checked for this export session
 
 function getExportRows(){
-  return FILES.filter(f=>approvedSet.has(f))
+  return FILES.filter(f=>(commentsByFile[fKey(f)] || []).length > 0)
     .map(f=>({file: f, comments: commentsByFile[fKey(f)] || []}))
     .sort((a,b)=> a.file.localeCompare(b.file, undefined, {numeric:true}));
 }
 
 function buildExportText(){
   const rows = getExportRows().filter(r=>exportIncluded.has(r.file));
-  const heading = '26JUN HAV — R1 APPROVED EDITS';
+  const heading = '26JUL BUR CHI — MAIN R1 FEEDBACK';
 
   const lines = [];
   lines.push(heading);
   lines.push('Generated ' + new Date().toLocaleString());
   lines.push('');
-  lines.push(rows.length + ' approved edit(s)');
+  lines.push(rows.length + ' commented photo(s)');
   lines.push('----------------------------------------');
   lines.push('');
 
@@ -713,7 +656,7 @@ function renderExportVisualList(){
   const rows = getExportRows();
   const container = document.getElementById('exportVisualList');
   if(rows.length === 0){
-    container.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--ink-soft);">No approved edits yet.</div>`;
+    container.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--ink-soft);">No comments on any photo yet.</div>`;
     return;
   }
   container.innerHTML = rows.map(r=>{
@@ -780,7 +723,7 @@ function downloadExportText(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26jun-hav-r1-approved-' + stamp + '.txt';
+  a.download = '26jul-bur-chi-main-r1-feedback-' + stamp + '.txt';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -821,7 +764,7 @@ async function downloadVisualExport(){
       </div>`);
   }
 
-  const heading = '26JUN HAV - R1 Approved Edits';
+  const heading = '26JUL BUR CHI - Main R1 Feedback';
   const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <title>${heading}</title>
@@ -837,7 +780,7 @@ async function downloadVisualExport(){
 </style></head>
 <body>
   <h1>${heading}</h1>
-  <div class="sub">${rows.length} approved edit(s) · exported ${new Date().toLocaleString()}</div>
+  <div class="sub">${rows.length} commented photo(s) · exported ${new Date().toLocaleString()}</div>
   <div class="sheet">
   ${rowsHtml.join('')}
   </div>
@@ -848,7 +791,7 @@ async function downloadVisualExport(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26jun-hav-r1-approved-' + stamp + '.html';
+  a.download = '26jul-bur-chi-main-r1-feedback-' + stamp + '.html';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -893,7 +836,7 @@ async function downloadJpgZip(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26jun-hav-r1-approved-' + stamp + '.zip';
+  a.download = '26jul-bur-chi-main-r1-feedback-' + stamp + '.zip';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>26JUL BUR CHI - Round 2 Edits (Ludlow Sofa)</title>
+<title>26JUL BUR CHI - Round 1 Edits (Ludlow Sofa)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -196,16 +196,15 @@
 
 <header>
   <div class="titleBlock">
-    <h1><span class="r2Badge">R2</span>26JUL BUR CHI — Round 2 Edits</h1>
-    <div class="sub">Ludlow sofa · <span id="commentedCount">0</span> with comments · comparing R1 → R2 · click a photo to expand</div>
+    <h1><span class="r2Badge">R1</span>26JUL BUR CHI — Round 1 Edits</h1>
+    <div class="sub">Ludlow sofa · <span id="commentedCount">0</span> with comments · click a photo to expand and compare</div>
   </div>
   <div class="segmented" id="commentFilterToggle" style="margin-right:10px;">
     <button data-filter="all" class="active">All Photos</button>
     <button data-filter="commented">With Comments</button>
   </div>
   <div style="display:flex;gap:10px;align-items:center;">
-    <a class="backLink" href="../r1/">&larr; R1</a>
-    <a class="backLink" href="../">Main review</a>
+    <a class="backLink" href="../main/">&larr; Back to main review</a> <a class="backLink" href="../">Project home</a>
     <button class="exportBtnHeader" id="exportBtn">Export</button>
     <div class="whoami" id="whoami"><span class="dot"></span><b id="meName">—</b></div>
   </div>
@@ -219,15 +218,15 @@
   <span id="closeLightbox">&times;</span>
   <div id="lbImageArea">
     <span id="lbNavPrev">&#8249;</span>
-    <div id="lbStateLabel" class="edit">R2 EDIT</div>
+    <div id="lbStateLabel" class="edit">R1 EDIT</div>
     <img id="lightboxImg" src="">
-    <button id="lbToggleBtn">Show R1 edit</button>
+    <button id="lbToggleBtn">Show original</button>
     <span id="lbNavNext">&#8250;</span>
   </div>
   <div id="lightboxPanel">
     <div class="fname mono" id="lbFname"></div>
     <div id="prevRoundSection" style="display:none;">
-      <div class="commentsHeading" id="prevRoundHeading">R1 Feedback</div>
+      <div class="commentsHeading" id="prevRoundHeading">Select-Stage Feedback</div>
       <div id="prevComments"></div>
     </div>
     <div class="commentsHeading">Feedback — This Round</div>
@@ -240,7 +239,7 @@
 
 <div id="exportModal">
   <div class="exportCard">
-    <h3>Export — R2</h3>
+    <h3>Export — R1</h3>
     <div class="sub" id="exportSub">Photos with feedback — uncheck any already sent to the photographer.</div>
     <div class="exportQuickRow">
       <span id="exportCountLabel"></span>
@@ -365,6 +364,7 @@ async function fbSet(path, value){
 
 function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function fKey(file){ return file.replace(/[.#$\[\]\/]/g, '_'); }
+function rootId(file){ return file.replace(/\.jpg$/i, ''); } // root site keys comments by id, no extension
 function frameLabel(file){
   const m = file.match(/(\d{3,4})(?:-\d+)?(?:\.jpg)?$/i);
   return m ? m[1] : file;
@@ -391,7 +391,7 @@ async function init(){
     }
   });
   document.getElementById('whoami').addEventListener('click', ()=>{
-    if(confirm('Sign out of the R2 review?')){
+    if(confirm('Sign out of the R1 review?')){
       auth.signOut();
     }
   });
@@ -451,8 +451,8 @@ async function init(){
 }
 
 async function startApp(){
-  const commentsData = await fbGet('r3_comments');
-  const prevData = await fbGet('r2_comments');
+  const commentsData = await fbGet('r2_comments');
+  const prevData = await fbGet('comments');
   prevComments = prevData || {};
   commentsByFile = commentsData || {};
   render();
@@ -464,7 +464,7 @@ async function startApp(){
     try{
       const token = await getAuthToken();
       const qs = token ? ('?auth=' + token) : '';
-      const comRes = await fetch(FIREBASE_URL + '/r3_comments.json' + qs);
+      const comRes = await fetch(FIREBASE_URL + '/r2_comments.json' + qs);
       if(comRes.ok){
         const data = await comRes.json();
         commentsByFile = data || {};
@@ -493,9 +493,9 @@ function render(){
     return `
     <div class="card" data-idx="${i}">
       <div class="imgArea" data-action="view">
-        <div class="stateLabel ${state}">${state === 'edit' ? 'EDIT' : 'ORIGINAL'}</div>
+        <div class="stateLabel ${state}">${state === 'edit' ? 'R1 EDIT' : 'ORIGINAL'}</div>
         <img src="${src}">
-        <button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'original' : 'edit'}</button>
+        <button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'original' : 'R1 edit'}</button>
       </div>
       <div class="cardFooter">
         <div class="fname mono">${frameLabel(file)}</div>
@@ -526,12 +526,12 @@ function openLightbox(idx){
 }
 function updateLightboxImage(){
   const file = visibleFiles[lbIndex];
-  const src = lbState === 'edit' ? ('images/full/' + file) : ('../r1/images/full/' + file);
+  const src = lbState === 'edit' ? ('images/full/' + file) : ('../images/full/' + file);
   document.getElementById('lightboxImg').src = src;
   const label = document.getElementById('lbStateLabel');
-  label.textContent = lbState === 'edit' ? 'R2 EDIT' : 'R1 EDIT';
+  label.textContent = lbState === 'edit' ? 'R1 EDIT' : 'ORIGINAL';
   label.className = lbState;
-  document.getElementById('lbToggleBtn').textContent = 'Show ' + (lbState === 'edit' ? 'R1 edit' : 'R2 edit');
+  document.getElementById('lbToggleBtn').textContent = 'Show ' + (lbState === 'edit' ? 'original' : 'R1 edit');
 }
 function updateLightboxPanel(){
   const file = visibleFiles[lbIndex];
@@ -541,7 +541,7 @@ function updateLightboxPanel(){
   renderComments(file);
 }
 function renderPrevComments(file){
-  const arr = prevComments[fKey(file)] || [];
+  const arr = prevComments[rootId(file)] || [];
   const section = document.getElementById('prevRoundSection');
   const list = document.getElementById('prevComments');
   if(arr.length === 0){
@@ -588,10 +588,10 @@ async function postComment(){
   if(!file) return;
   const arr = commentsByFile[fKey(file)] || [];
   arr.push({name: myName, text, ts: Date.now()});
-  const ok = await fbSet('r3_comments/' + fKey(file), arr);
+  const ok = await fbSet('r2_comments/' + fKey(file), arr);
   if(!ok) return;
   commentsByFile[fKey(file)] = arr;
-  notifySlack('💬 *' + myName + '* commented on R2 edit `' + file + '`: "' + text + '"\n<https://k8-harrison.github.io/asset-review/r2/|Open R2 review>');
+  notifySlack('💬 *' + myName + '* commented on R1 edit `' + file + '`: "' + text + '"\n<https://k8-harrison.github.io/asset-review/burrow/26jul-bur-chi/r1/|Open R1 review>');
   input.value = '';
   renderComments(file);
   render();
@@ -600,7 +600,7 @@ async function deleteComment(file, idx){
   const arr = commentsByFile[fKey(file)] || [];
   arr.splice(idx, 1);
   commentsByFile[fKey(file)] = arr;
-  await fbSet('r3_comments/' + fKey(file), arr);
+  await fbSet('r2_comments/' + fKey(file), arr);
   renderComments(file);
   render();
 }
@@ -622,7 +622,7 @@ function getExportRows(){
 
 function buildExportText(){
   const rows = getExportRows().filter(r=>exportIncluded.has(r.file));
-  const heading = '26JUL BUR CHI — R2 FEEDBACK';
+  const heading = '26JUL BUR CHI — R1 FEEDBACK';
 
   const lines = [];
   lines.push(heading);
@@ -720,7 +720,7 @@ function downloadExportText(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26jul-bur-chi-r2-feedback-' + stamp + '.txt';
+  a.download = '26jul-bur-chi-r1-feedback-' + stamp + '.txt';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -761,7 +761,7 @@ async function downloadVisualExport(){
       </div>`);
   }
 
-  const heading = '26JUL BUR CHI - R2 Feedback';
+  const heading = '26JUL BUR CHI - R1 Feedback';
   const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <title>${heading}</title>
@@ -788,7 +788,7 @@ async function downloadVisualExport(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26jul-bur-chi-r2-feedback-' + stamp + '.html';
+  a.download = '26jul-bur-chi-r1-feedback-' + stamp + '.html';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -833,7 +833,7 @@ async function downloadJpgZip(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26jul-bur-chi-r2-feedback-' + stamp + '.zip';
+  a.download = '26jul-bur-chi-r1-feedback-' + stamp + '.zip';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

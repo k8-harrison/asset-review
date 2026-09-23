@@ -385,7 +385,8 @@
     </select>
     <button id="exportBtn" class="exportBtn">Export</button>
     <a href="r1/" class="r2LinkBtn">R1 Edits &rarr;</a>
-    <a href="../shoots/" class="r2LinkBtn" style="margin-left:auto;">All Shoots &rarr;</a>
+    <a href="../" class="r2LinkBtn">Project Home &rarr;</a>
+    <a href="../../../" class="r2LinkBtn" style="margin-left:auto;">All Brands &rarr;</a>
     <div class="finalCounter" id="finalCounterBadge" title="Final picks so far">
       &#9733; <span id="finalCounterNum">0</span> final
       <span id="finalCounterBreakdown" class="finalCounterBreakdown"></span>
@@ -784,7 +785,7 @@ async function postComment(){
   const ok = await fbSet(DATA_PREFIX + '/comments/' + img.id, arr);
   if(!ok) return; // save failed — alert already shown, leave input text so it isn't lost
   commentsByImage[img.id] = arr;
-  notifySlack('💬 *' + myName + '* commented on `' + img.file + '` (26JUN HAV): "' + text + '"\n<https://k8-harrison.github.io/asset-review/26jun-hav/|Open review>');
+  notifySlack('💬 *' + myName + '* commented on `' + img.file + '` (26JUN HAV): "' + text + '"\n<https://k8-harrison.github.io/asset-review/havenly/26jun-hav/main/|Open review>');
   input.value = '';
   renderComments(img.id);
   render();

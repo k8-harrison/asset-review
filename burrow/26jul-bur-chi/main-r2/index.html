@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>26JUL BUR CHI - Round 1 Edits (Main Photoset)</title>
+<title>26JUL BUR CHI - Round 2 Edits (Main Photoset)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -76,14 +76,6 @@
   #lightboxPanel{background:var(--card);border-radius:4px;padding:20px;width:280px;margin-left:20px;flex-shrink:0;max-height:88vh;overflow-y:auto;}
   #lightboxPanel .fname{font-size:13px;font-weight:700;margin-bottom:16px;}
   .commentsHeading{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--ink-soft);margin-bottom:8px;}
-  #prevRoundSection{
-    background:var(--paper-dim);border:1px solid var(--line);border-radius:4px;
-    padding:12px;margin-bottom:16px;
-  }
-  #prevRoundSection .commentsHeading{color:var(--r2);margin-bottom:6px;}
-  .prevCommentItem{font-size:12px;line-height:1.5;margin-bottom:6px;color:var(--ink);}
-  .prevCommentItem b{color:var(--ink);}
-  .prevCommentItem .cTime{font-size:10px;color:var(--ink-soft);margin-left:6px;}
   #lbComments{max-height:180px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:10px;}
   .commentItem{font-size:12px;line-height:1.5;border-bottom:1px solid var(--line);padding-bottom:8px;}
   .commentItem .cName{font-weight:700;color:var(--ink);}
@@ -178,6 +170,14 @@
   .segmented button{border:none;background:transparent;padding:7px 13px;font-size:12px;cursor:pointer;font-family:'Overpass',sans-serif;color:var(--ink-soft);font-weight:600;}
   .segmented button.active{background:var(--r2);color:#fff;}
   .segmented button+button{border-left:1px solid var(--line);}
+  #prevRoundSection{
+    background:var(--paper-dim);border:1px solid var(--line);border-radius:4px;
+    padding:12px;margin-bottom:16px;
+  }
+  #prevRoundSection .commentsHeading{color:var(--r2);margin-bottom:6px;}
+  .prevCommentItem{font-size:12px;line-height:1.5;margin-bottom:6px;color:var(--ink);}
+  .prevCommentItem b{color:var(--ink);}
+  .prevCommentItem .cTime{font-size:10px;color:var(--ink-soft);margin-left:6px;}
 </style>
 </head>
 <body>
@@ -196,16 +196,18 @@
 
 <header>
   <div class="titleBlock">
-    <h1><span class="r2Badge">R1</span>26JUL BUR CHI — Round 1 Edits (Main)</h1>
-    <div class="sub">Main photoset · <span id="commentedCount">0</span> with comments · click a photo to expand and compare</div>
+    <h1><span class="r2Badge">R2</span>26JUL BUR CHI — Round 2 Edits (Main)</h1>
+    <div class="sub">Main photoset · <span id="commentedCount">0</span> with comments · comparing R1 → R2 · click a photo to expand</div>
   </div>
   <div class="segmented" id="commentFilterToggle" style="margin-right:10px;">
     <button data-filter="all" class="active">All Photos</button>
     <button data-filter="commented">With Comments</button>
   </div>
   <div style="display:flex;gap:10px;align-items:center;">
+    <a class="backLink" href="../main-r1/">&larr; Main R1</a>
+    <a class="backLink" href="../main/">Main review</a>
+    <a class="backLink" href="../">Project home</a>
     <button class="exportBtnHeader" id="exportBtn">Export</button>
-    <a class="backLink" href="../">&larr; Back to main review</a>
     <div class="whoami" id="whoami"><span class="dot"></span><b id="meName">—</b></div>
   </div>
 </header>
@@ -218,15 +220,15 @@
   <span id="closeLightbox">&times;</span>
   <div id="lbImageArea">
     <span id="lbNavPrev">&#8249;</span>
-    <div id="lbStateLabel" class="edit">R1 EDIT</div>
+    <div id="lbStateLabel" class="edit">R2 EDIT</div>
     <img id="lightboxImg" src="">
-    <button id="lbToggleBtn">Show original</button>
+    <button id="lbToggleBtn">Show R1 edit</button>
     <span id="lbNavNext">&#8250;</span>
   </div>
   <div id="lightboxPanel">
     <div class="fname mono" id="lbFname"></div>
     <div id="prevRoundSection" style="display:none;">
-      <div class="commentsHeading" id="prevRoundHeading">Previous Feedback</div>
+      <div class="commentsHeading" id="prevRoundHeading">Main R1 Feedback</div>
       <div id="prevComments"></div>
     </div>
     <div class="commentsHeading">Feedback — This Round</div>
@@ -239,7 +241,7 @@
 
 <div id="exportModal">
   <div class="exportCard">
-    <h3>Export — Main R1</h3>
+    <h3>Export — Main R2</h3>
     <div class="sub" id="exportSub">Photos with feedback — uncheck any already sent to the photographer.</div>
     <div class="exportQuickRow">
       <span id="exportCountLabel"></span>
@@ -258,9 +260,7 @@
       <button id="closeExportBtn">Close</button>
     </div>
   </div>
-</div>
-
-<script>
+</div><script>
 const FILES = ["530A7082.jpg", "530A7196.jpg", "530A7262.jpg", "530A7280.jpg", "530A7475.jpg", "530A7618.jpg", "530A7808.jpg", "530A7810.jpg", "530A7818.jpg", "530A7870.jpg", "530A8042.jpg", "530A8076.jpg", "530A8083.jpg", "530A8135.jpg", "530A8318.jpg", "530A8329.jpg", "530A8404.jpg", "530A8405.jpg", "530A8406.jpg", "530A8407.jpg", "530A8408.jpg", "530A8447.jpg", "530A8481.jpg", "530A8521.jpg", "530A8665.jpg", "530A8756.jpg", "530A8811.jpg", "530A8886.jpg", "530A8910.jpg", "530A8914.jpg", "530A8919.jpg", "530A8953.jpg", "530A8958.jpg", "530A8988.jpg", "530A9003.jpg", "530A9021.jpg", "530A9023.jpg", "530A9026.jpg", "530A9049.jpg", "530A9052.jpg", "530A9064.jpg", "530A9079.jpg", "530A9108.jpg", "530A9124.jpg", "530A9144.jpg", "530A9179.jpg", "530A9203.jpg", "530A9210.jpg", "530A9243.jpg", "530A9247.jpg", "530A9253.jpg", "530A9260.jpg", "530A9267.jpg", "530A9273.jpg", "530A9294.jpg", "530A9337.jpg", "530A9350.jpg"];
 
 const FIREBASE_URL = 'https://asset-review-8bfb6-default-rtdb.firebaseio.com';
@@ -284,6 +284,7 @@ let currentFilter = 'all'; // 'all' | 'commented'
 let visibleFiles = [];
 let lbIndex = -1;
 let lbState = 'edit'; // lightbox's own toggle state
+let exportIncluded = new Set(); // files currently checked for this export session
 
 const ALLOWED_DOMAINS = ['havenly.com', 'interiordefine.com'];
 
@@ -365,7 +366,6 @@ async function fbSet(path, value){
 
 function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function fKey(file){ return file.replace(/[.#$\[\]\/]/g, '_'); }
-function rootId(file){ return file.replace(/\.jpg$/i, ''); } // root site keys comments by id, no extension
 function frameLabel(file){
   const m = file.match(/(\d{3,4})(?:-\d+)?(?:\.jpg)?$/i);
   return m ? m[1] : file;
@@ -392,7 +392,7 @@ async function init(){
     }
   });
   document.getElementById('whoami').addEventListener('click', ()=>{
-    if(confirm('Sign out of the R1 review?')){
+    if(confirm('Sign out of the R2 review?')){
       auth.signOut();
     }
   });
@@ -452,10 +452,10 @@ async function init(){
 }
 
 async function startApp(){
-  const commentsData = await fbGet('main_r1_comments');
-  commentsByFile = commentsData || {};
-  const prevData = await fbGet('comments');
+  const commentsData = await fbGet('main_r2_comments');
+  const prevData = await fbGet('main_r1_comments');
   prevComments = prevData || {};
+  commentsByFile = commentsData || {};
   render();
 
   // Live refresh, same as the main site — anyone leaving this tab open still
@@ -465,7 +465,7 @@ async function startApp(){
     try{
       const token = await getAuthToken();
       const qs = token ? ('?auth=' + token) : '';
-      const comRes = await fetch(FIREBASE_URL + '/main_r1_comments.json' + qs);
+      const comRes = await fetch(FIREBASE_URL + '/main_r2_comments.json' + qs);
       if(comRes.ok){
         const data = await comRes.json();
         commentsByFile = data || {};
@@ -494,9 +494,9 @@ function render(){
     return `
     <div class="card" data-idx="${i}">
       <div class="imgArea" data-action="view">
-        <div class="stateLabel ${state}">${state === 'edit' ? 'R1 EDIT' : 'ORIGINAL'}</div>
+        <div class="stateLabel ${state}">${state === 'edit' ? 'EDIT' : 'ORIGINAL'}</div>
         <img src="${src}">
-        <button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'original' : 'R1 edit'}</button>
+        <button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'original' : 'edit'}</button>
       </div>
       <div class="cardFooter">
         <div class="fname mono">${frameLabel(file)}</div>
@@ -527,12 +527,12 @@ function openLightbox(idx){
 }
 function updateLightboxImage(){
   const file = visibleFiles[lbIndex];
-  const src = lbState === 'edit' ? ('images/full/' + file) : ('../images/full/' + file);
+  const src = lbState === 'edit' ? ('images/full/' + file) : ('../main-r1/images/full/' + file);
   document.getElementById('lightboxImg').src = src;
   const label = document.getElementById('lbStateLabel');
-  label.textContent = lbState === 'edit' ? 'R1 EDIT' : 'ORIGINAL';
+  label.textContent = lbState === 'edit' ? 'MAIN R2 EDIT' : 'MAIN R1 EDIT';
   label.className = lbState;
-  document.getElementById('lbToggleBtn').textContent = 'Show ' + (lbState === 'edit' ? 'original' : 'R1 edit');
+  document.getElementById('lbToggleBtn').textContent = 'Show ' + (lbState === 'edit' ? 'R1 edit' : 'R2 edit');
 }
 function updateLightboxPanel(){
   const file = visibleFiles[lbIndex];
@@ -542,7 +542,7 @@ function updateLightboxPanel(){
   renderComments(file);
 }
 function renderPrevComments(file){
-  const arr = prevComments[rootId(file)] || [];
+  const arr = prevComments[fKey(file)] || [];
   const section = document.getElementById('prevRoundSection');
   const list = document.getElementById('prevComments');
   if(arr.length === 0){
@@ -589,10 +589,10 @@ async function postComment(){
   if(!file) return;
   const arr = commentsByFile[fKey(file)] || [];
   arr.push({name: myName, text, ts: Date.now()});
-  const ok = await fbSet('main_r1_comments/' + fKey(file), arr);
+  const ok = await fbSet('main_r2_comments/' + fKey(file), arr);
   if(!ok) return;
   commentsByFile[fKey(file)] = arr;
-  notifySlack('💬 *' + myName + '* commented on R1 edit `' + file + '`: "' + text + '"\n<https://k8-harrison.github.io/asset-review/r1/|Open R1 review>');
+  notifySlack('💬 *' + myName + '* commented on Main R2 edit `' + file + '`: "' + text + '"\n<https://k8-harrison.github.io/asset-review/burrow/26jul-bur-chi/main-r2/|Open R2 review>');
   input.value = '';
   renderComments(file);
   render();
@@ -601,7 +601,7 @@ async function deleteComment(file, idx){
   const arr = commentsByFile[fKey(file)] || [];
   arr.splice(idx, 1);
   commentsByFile[fKey(file)] = arr;
-  await fbSet('main_r1_comments/' + fKey(file), arr);
+  await fbSet('main_r2_comments/' + fKey(file), arr);
   renderComments(file);
   render();
 }
@@ -615,8 +615,6 @@ function closeLightbox(){
   document.getElementById('lightbox').classList.remove('open');
 }
 
-let exportIncluded = new Set(); // files currently checked for this export session
-
 function getExportRows(){
   return FILES.filter(f=>(commentsByFile[fKey(f)] || []).length > 0)
     .map(f=>({file: f, comments: commentsByFile[fKey(f)] || []}))
@@ -625,7 +623,7 @@ function getExportRows(){
 
 function buildExportText(){
   const rows = getExportRows().filter(r=>exportIncluded.has(r.file));
-  const heading = '26JUL BUR CHI — MAIN R1 FEEDBACK';
+  const heading = '26JUL BUR CHI — MAIN R2 FEEDBACK';
 
   const lines = [];
   lines.push(heading);
@@ -723,7 +721,7 @@ function downloadExportText(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26jul-bur-chi-main-r1-feedback-' + stamp + '.txt';
+  a.download = '26jul-bur-chi-main-r2-feedback-' + stamp + '.txt';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -764,7 +762,7 @@ async function downloadVisualExport(){
       </div>`);
   }
 
-  const heading = '26JUL BUR CHI - Main R1 Feedback';
+  const heading = '26JUL BUR CHI - Main R2 Feedback';
   const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <title>${heading}</title>
@@ -791,7 +789,7 @@ async function downloadVisualExport(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26jul-bur-chi-main-r1-feedback-' + stamp + '.html';
+  a.download = '26jul-bur-chi-main-r2-feedback-' + stamp + '.html';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -836,7 +834,7 @@ async function downloadJpgZip(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26jul-bur-chi-main-r1-feedback-' + stamp + '.zip';
+  a.download = '26jul-bur-chi-main-r2-feedback-' + stamp + '.zip';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
