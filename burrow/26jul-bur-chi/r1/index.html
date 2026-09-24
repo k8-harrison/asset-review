@@ -545,7 +545,7 @@ function render(){
   }
   grid.innerHTML = visibleFiles.map((file, i)=>{
     const state = cardState[file];
-    const src = state === 'edit' ? ('images/thumb/' + file) : ('../images/thumb/' + file);
+    const src = state === 'edit' ? ('images/thumb/' + file) : ('../main/images/thumb/' + file);
     const commentCount = (commentsByFile[fKey(file)] || []).length;
     return `
     <div class="card" data-idx="${i}">
@@ -583,7 +583,7 @@ function openLightbox(idx){
 }
 function updateLightboxImage(){
   const file = visibleFiles[lbIndex];
-  const src = lbState === 'edit' ? ('images/full/' + file) : ('../images/full/' + file);
+  const src = lbState === 'edit' ? ('images/full/' + file) : ('../main/images/full/' + file);
   document.getElementById('lightboxImg').src = src;
   const label = document.getElementById('lbStateLabel');
   label.textContent = lbState === 'edit' ? 'R1 EDIT' : 'ORIGINAL';
