@@ -100,13 +100,8 @@ function applyTheme(theme){
   root.setProperty('--wrap-pad', d.wrapPad);
   root.setProperty('--row-pad', d.rowPad);
   if(document.body) document.body.setAttribute('data-accent', t.accentStyle || 'dot');
+  return t;
 }
-(async function(){
-  try{
-    const res = await fetch('https://asset-review-8bfb6-default-rtdb.firebaseio.com/theme.json', {cache:'no-store'});
-    applyTheme(res.ok ? await res.json() : null);
-  }catch(e){ applyTheme(null); }
-})();
 </script>
 
 <div class="wrap">
@@ -125,6 +120,8 @@ function applyTheme(theme){
 /* ============================================================
    BRANDS — add a new brand by adding one object here, and
    creating a matching /<slug>/index.html project directory.
+   'accent' here is only the fallback shown before /admin/'s
+   saved brandAccents load (or if none have been saved yet).
    ============================================================ */
 const BRANDS = [
   { name: "Havenly", slug: "havenly", accent: "#B8583A", desc: "Interior design service & home marketplace", active: 1 },
@@ -134,11 +131,13 @@ const BRANDS = [
   { name: "The Expert", slug: "the-expert", accent: "#5C3A52", desc: "Curated design marketplace & editorial", active: 0 }
 ];
 
-function render(){
+function render(brandAccents){
+  const accents = brandAccents || {};
   document.getElementById('brands').innerHTML = BRANDS.map(b=>{
     const statusText = b.active === 0 ? 'No active projects' : (b.active + ' project in review');
+    const accent = accents[b.slug] || b.accent;
     return `
-    <a class="brand" href="${b.slug}/" style="--accent:${b.accent}">
+    <a class="brand" href="${b.slug}/" style="--accent:${accent}">
       <span class="chip"></span>
       <span class="brand-main">
         <span class="brand-name brand-name-link">${b.name}</span>
@@ -148,7 +147,16 @@ function render(){
     </a>`;
   }).join('');
 }
-render();
+
+(async function(){
+  let theme = null;
+  try{
+    const res = await fetch('https://asset-review-8bfb6-default-rtdb.firebaseio.com/theme.json', {cache:'no-store'});
+    theme = res.ok ? await res.json() : null;
+  }catch(e){ /* fall back to defaults below */ }
+  const applied = applyTheme(theme);
+  render(applied.brandAccents);
+})();
 </script>
 
 </body>

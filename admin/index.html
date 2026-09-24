@@ -205,6 +205,10 @@
         </div>
       </div>
 
+      <h2 style="margin-top:28px;">Brand colors</h2>
+      <div class="hint" style="margin-bottom:14px;">Each brand's own color — used for its swatch, its round numbers, and other per-brand accents.</div>
+      <div id="brandColorFields"></div>
+
       <div class="actions">
         <button id="saveBtn">Save &amp; publish</button>
         <button id="resetBtn">Reset</button>
@@ -219,7 +223,7 @@
         <h3 class="h1">Asset Review</h3>
         <p class="lede">Photo and file review for every brand's shoots.</p>
         <div class="brand">
-          <span class="chip"></span>
+          <span class="chip" id="previewChip_havenly"></span>
           <span class="brand-main">
             <span class="brand-name">Havenly</span>
             <div class="brand-desc">Interior design service &amp; home marketplace</div>
@@ -227,7 +231,7 @@
           <span class="brand-status">1 project in review</span>
         </div>
         <div class="brand">
-          <span class="chip"></span>
+          <span class="chip" id="previewChip_burrow"></span>
           <span class="brand-main">
             <span class="brand-name">Burrow</span>
             <div class="brand-desc">Modern furniture</div>
@@ -235,9 +239,9 @@
           <span class="brand-status">1 project in review</span>
         </div>
         <div class="roundsDemo">
-          <div class="roundsLabel">Review rounds look like this</div>
-          <div class="round"><span class="round-num">01</span><span class="round-name">Main Review</span></div>
-          <div class="round"><span class="round-num">02</span><span class="round-name">R1 Edits</span></div>
+          <div class="roundsLabel">Havenly's review rounds look like this</div>
+          <div class="round"><span class="round-num" id="previewRoundNum1">01</span><span class="round-name">Main Review</span></div>
+          <div class="round"><span class="round-num" id="previewRoundNum2">02</span><span class="round-name">R1 Edits</span></div>
         </div>
       </div>
     </div>
@@ -252,8 +256,22 @@ const FIREBASE_URL = 'https://asset-review-8bfb6-default-rtdb.firebaseio.com';
 const THEME_DEFAULTS = {
   paper: '#F2EEE3', ink: '#211F1A', inkSoft: '#6E6A5E', line: '#DCD6C7',
   headlineFont: 'fraunces', bodyFont: 'overpass',
-  density: 'comfortable', accentStyle: 'dot'
+  density: 'comfortable', accentStyle: 'dot',
+  brandAccents: {
+    havenly: '#B8583A',
+    'interior-define': '#33475A',
+    'the-citizenry': '#C08A2E',
+    burrow: '#8B8B4A',
+    'the-expert': '#5C3A52'
+  }
 };
+const BRAND_LIST = [
+  { slug: 'havenly', name: 'Havenly' },
+  { slug: 'interior-define', name: 'Interior Define' },
+  { slug: 'the-citizenry', name: 'The Citizenry' },
+  { slug: 'burrow', name: 'Burrow' },
+  { slug: 'the-expert', name: 'The Expert' }
+];
 
 const HEADLINE_FONTS = [
   {id:'fraunces', label:'Fraunces — warm serif', family:"'Fraunces', serif"},
@@ -276,8 +294,12 @@ const DENSITY_MAP = {
   spacious:    { wrapPad: '52px 40px',  rowPad: '25px 0' }
 };
 
-let currentTheme = Object.assign({}, THEME_DEFAULTS);
-let savedTheme = Object.assign({}, THEME_DEFAULTS);
+function cloneTheme(t){
+  return Object.assign({}, t, { brandAccents: Object.assign({}, t.brandAccents) });
+}
+
+let currentTheme = cloneTheme(THEME_DEFAULTS);
+let savedTheme = cloneTheme(THEME_DEFAULTS);
 
 function fontMap(list){ const m = {}; list.forEach(f=>m[f.id]=f.family); return m; }
 const HEADLINE_MAP = fontMap(HEADLINE_FONTS);
@@ -295,6 +317,14 @@ function applyPreview(t){
   box.style.setProperty('--wrap-pad', d.wrapPad);
   box.style.setProperty('--row-pad', d.rowPad);
   box.setAttribute('data-accent', t.accentStyle || 'dot');
+
+  const ba = t.brandAccents || {};
+  const havenlyColor = ba.havenly || THEME_DEFAULTS.brandAccents.havenly;
+  const burrowColor = ba.burrow || THEME_DEFAULTS.brandAccents.burrow;
+  document.getElementById('previewChip_havenly').style.background = havenlyColor;
+  document.getElementById('previewChip_burrow').style.background = burrowColor;
+  document.getElementById('previewRoundNum1').style.color = havenlyColor;
+  document.getElementById('previewRoundNum2').style.color = havenlyColor;
 }
 
 function syncControlsFromTheme(t){
@@ -310,6 +340,12 @@ function syncControlsFromTheme(t){
   document.getElementById('f_body').value = t.bodyFont;
   setSegmented('densitySeg', t.density);
   setSegmented('accentSeg', t.accentStyle);
+  BRAND_LIST.forEach(b=>{
+    const val = (t.brandAccents && t.brandAccents[b.slug]) || THEME_DEFAULTS.brandAccents[b.slug];
+    const colorEl = document.getElementById('ba_' + b.slug);
+    const hexEl = document.getElementById('ba_' + b.slug + '_hex');
+    if(colorEl){ colorEl.value = val; hexEl.value = val; }
+  });
   applyPreview(t);
 }
 
@@ -324,6 +360,18 @@ function buildFontOptions(){
   hSel.innerHTML = HEADLINE_FONTS.map(f=>`<option value="${f.id}">${f.label}</option>`).join('');
   const bSel = document.getElementById('f_body');
   bSel.innerHTML = BODY_FONTS.map(f=>`<option value="${f.id}">${f.label}</option>`).join('');
+}
+
+function buildBrandColorFields(){
+  const container = document.getElementById('brandColorFields');
+  container.innerHTML = BRAND_LIST.map(b=>`
+    <div class="field">
+      <label>${b.name}</label>
+      <div class="colorRow">
+        <input type="color" id="ba_${b.slug}">
+        <input type="text" id="ba_${b.slug}_hex">
+      </div>
+    </div>`).join('');
 }
 
 function wireControls(){
@@ -374,9 +422,30 @@ function wireControls(){
   });
 
   document.getElementById('resetBtn').addEventListener('click', ()=>{
-    currentTheme = Object.assign({}, THEME_DEFAULTS);
+    currentTheme = cloneTheme(THEME_DEFAULTS);
     syncControlsFromTheme(currentTheme);
     setStatus('', '');
+  });
+
+  BRAND_LIST.forEach(b=>{
+    const colorEl = document.getElementById('ba_' + b.slug);
+    const hexEl = document.getElementById('ba_' + b.slug + '_hex');
+    colorEl.addEventListener('input', ()=>{
+      currentTheme.brandAccents[b.slug] = colorEl.value;
+      hexEl.value = colorEl.value;
+      applyPreview(currentTheme);
+    });
+    hexEl.addEventListener('change', ()=>{
+      let v = hexEl.value.trim();
+      if(!v.startsWith('#')) v = '#' + v;
+      if(/^#[0-9a-fA-F]{6}$/.test(v)){
+        currentTheme.brandAccents[b.slug] = v;
+        colorEl.value = v;
+        applyPreview(currentTheme);
+      } else {
+        hexEl.value = currentTheme.brandAccents[b.slug];
+      }
+    });
   });
 
   document.getElementById('saveBtn').addEventListener('click', saveTheme);
@@ -402,8 +471,10 @@ async function loadTheme(){
     if(res.ok){
       const data = await res.json();
       if(data){
-        savedTheme = Object.assign({}, THEME_DEFAULTS, data);
-        currentTheme = Object.assign({}, savedTheme);
+        savedTheme = Object.assign({}, THEME_DEFAULTS, data, {
+          brandAccents: Object.assign({}, THEME_DEFAULTS.brandAccents, data.brandAccents || {})
+        });
+        currentTheme = cloneTheme(savedTheme);
       }
     }
   }catch(e){ /* fall back to defaults, already set */ }
@@ -417,7 +488,7 @@ async function saveTheme(){
     const url = FIREBASE_URL + '/theme.json' + (token ? '?auth=' + token : '');
     const res = await fetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(currentTheme)});
     if(res.ok){
-      savedTheme = Object.assign({}, currentTheme);
+      savedTheme = cloneTheme(currentTheme);
       setStatus('Saved — live on the site now.', 'ok');
     } else {
       setStatus('Could not save (status ' + res.status + ').', 'err');
@@ -479,6 +550,7 @@ async function startApp(){
   document.getElementById('nameGate').classList.add('hidden');
   document.getElementById('appRoot').classList.add('visible');
   buildFontOptions();
+  buildBrandColorFields();
   wireControls();
   await loadTheme();
 }
