@@ -12,7 +12,8 @@
 <style>
   :root{
     --paper:#F6F3EC;
-    --paper-dim:#EDE9DD;
+    --paper-dim:color-mix(in srgb, var(--paper) 88%, black);
+    --font-headline:'Overpass',sans-serif; --font-body:'Overpass',sans-serif;
     --ink:#2B2B24;
     --ink-soft:#6B6858;
     --moss:#94944D;
@@ -21,7 +22,7 @@
     --card:#FFFFFF;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Overpass',sans-serif;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);}
   .mono{font-family:'IBM Plex Mono',monospace;}
 
   /* ---- name gate ---- */
@@ -38,12 +39,12 @@
   .gateCard p{margin:0 0 18px;font-size:13px;color:var(--ink-soft);line-height:1.5;}
   .gateCard input{
     width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:3px;
-    font-family:'Overpass',sans-serif;font-size:14px;margin-bottom:14px;background:var(--paper);
+    font-family:var(--font-body);font-size:14px;margin-bottom:14px;background:var(--paper);
   }
   .gateCard input:focus{outline:none;border-color:var(--moss);}
   .gateCard button{
     width:100%;padding:10px 12px;border:none;border-radius:3px;background:var(--moss);
-    color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'Overpass',sans-serif;
+    color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font-body);
   }
   .gateCard button:hover{background:var(--moss-dark);}
   .googleBtn{
@@ -62,7 +63,7 @@
     border-bottom:1px solid var(--line);padding:16px 24px;
     display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
   }
-  .titleBlock h1{font-size:16px;margin:0;font-weight:700;letter-spacing:0.2px;}
+  .titleBlock h1{font-size:16px;margin:0;font-weight:700;letter-spacing:0.2px;font-family:var(--font-headline);}
   .titleBlock .sub{font-size:11px;color:var(--ink-soft);margin-top:2px;}
   .titleBlock .sub span{color:var(--moss-dark);font-weight:600;}
 
@@ -70,25 +71,25 @@
   .segmented{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--card);}
   .segmented button{
     border:none;background:transparent;padding:7px 13px;font-size:12px;cursor:pointer;
-    font-family:'Overpass',sans-serif;color:var(--ink-soft);font-weight:600;
+    font-family:var(--font-body);color:var(--ink-soft);font-weight:600;
   }
   .segmented button.active{background:var(--moss);color:#fff;}
   .segmented button+button{border-left:1px solid var(--line);}
 
   select#reviewerFilter, select#batchFilter{
     padding:7px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card);
-    font-family:'Overpass',sans-serif;font-size:12px;color:var(--ink);
+    font-family:var(--font-body);font-size:12px;color:var(--ink);
   }
 
   .exportBtn{
     padding:7px 14px;border:1px solid var(--line);border-radius:4px;background:var(--card);
-    font-size:12px;font-weight:600;cursor:pointer;color:var(--ink-soft);font-family:'Overpass',sans-serif;
+    font-size:12px;font-weight:600;cursor:pointer;color:var(--ink-soft);font-family:var(--font-body);
   }
   .exportBtn:hover{border-color:var(--moss);color:var(--moss-dark);}
 
   .r2LinkBtn{
     padding:7px 14px;border:1px solid #8A5A3B;border-radius:4px;background:transparent;
-    font-size:12px;font-weight:700;cursor:pointer;color:#8A5A3B;font-family:'Overpass',sans-serif;
+    font-size:12px;font-weight:700;cursor:pointer;color:#8A5A3B;font-family:var(--font-body);
     text-decoration:none;white-space:nowrap;transition:background .15s ease,color .15s ease;
   }
   .r2LinkBtn:hover{background:#8A5A3B;color:#fff;}
@@ -110,7 +111,7 @@
   }
   .exportQuickActions button{
     background:none;border:none;color:var(--moss-dark);font-weight:700;font-size:11px;
-    cursor:pointer;text-decoration:underline;padding:0;margin-left:12px;font-family:'Overpass',sans-serif;
+    cursor:pointer;text-decoration:underline;padding:0;margin-left:12px;font-family:var(--font-body);
   }
   #exportVisualList{
     max-height:400px;overflow-y:auto;border:1px solid var(--line);border-radius:3px;
@@ -152,7 +153,7 @@
   .exportActions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
   .exportActions button{
     flex:1 1 calc(50% - 5px);padding:10px;border-radius:3px;font-size:13px;font-weight:700;cursor:pointer;
-    font-family:'Overpass',sans-serif;border:1px solid var(--moss);
+    font-family:var(--font-body);border:1px solid var(--moss);
   }
   #copyExportBtn{background:var(--moss);color:#fff;border:none;}
   #copyExportBtn:hover{background:var(--moss-dark);}
@@ -326,13 +327,13 @@
   #noComments{font-size:12px;color:var(--ink-soft);margin-bottom:10px;}
   #lbCommentInput{
     width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:3px;
-    font-family:'Overpass',sans-serif;font-size:12px;background:var(--paper);resize:vertical;
+    font-family:var(--font-body);font-size:12px;background:var(--paper);resize:vertical;
     min-height:52px;margin-bottom:8px;
   }
   #lbCommentInput:focus{outline:none;border-color:var(--moss);}
   #lbCommentSubmit{
     width:100%;padding:9px;border:none;border-radius:3px;background:var(--moss);
-    color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Overpass',sans-serif;
+    color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);
   }
   #lbCommentSubmit:hover{background:var(--moss-dark);}
   #closeLightbox{
@@ -354,6 +355,52 @@
 </style>
 </head>
 <body>
+<script>
+/* ===== Site-wide look, controlled from /admin/ ===== */
+const BRAND_SLUG = 'havenly';
+function darkenHex(hex, amt){
+  let c = hex.replace('#','');
+  if(c.length === 3) c = c.split('').map(ch=>ch+ch).join('');
+  const num = parseInt(c, 16);
+  let r = (num >> 16) & 0xFF, g = (num >> 8) & 0xFF, b = num & 0xFF;
+  r = Math.max(0, Math.round(r * (1 - amt)));
+  g = Math.max(0, Math.round(g * (1 - amt)));
+  b = Math.max(0, Math.round(b * (1 - amt)));
+  return '#' + [r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+(async function(){
+  try{
+    const res = await fetch('https://asset-review-8bfb6-default-rtdb.firebaseio.com/theme.json', {cache:'no-store'});
+    if(res.ok){
+      const t = await res.json();
+      if(t){
+        const root = document.documentElement.style;
+        const HEADLINE_FONT_MAP = {
+          fraunces: "'Fraunces', serif", playfair: "'Playfair Display', serif",
+          lora: "'Lora', serif", sourceserif: "'Source Serif 4', serif",
+          spacegrotesk: "'Space Grotesk', sans-serif", worksans: "'Work Sans', sans-serif"
+        };
+        const BODY_FONT_MAP = {
+          overpass: "'Overpass', sans-serif", inter: "'Inter', sans-serif",
+          worksans: "'Work Sans', sans-serif", plexsans: "'IBM Plex Sans', sans-serif",
+          sourcesans: "'Source Sans 3', sans-serif"
+        };
+        if(t.paper) root.setProperty('--paper', t.paper);
+        if(t.ink) root.setProperty('--ink', t.ink);
+        if(t.inkSoft) root.setProperty('--ink-soft', t.inkSoft);
+        if(t.line) root.setProperty('--line', t.line);
+        if(t.headlineFont) root.setProperty('--font-headline', HEADLINE_FONT_MAP[t.headlineFont] || HEADLINE_FONT_MAP.fraunces);
+        if(t.bodyFont) root.setProperty('--font-body', BODY_FONT_MAP[t.bodyFont] || BODY_FONT_MAP.overpass);
+        if(t.brandAccents && t.brandAccents[BRAND_SLUG]){
+          const accent = t.brandAccents[BRAND_SLUG];
+          root.setProperty('--moss', accent);
+          root.setProperty('--moss-dark', darkenHex(accent, 0.28));
+        }
+      }
+    }
+  }catch(e){ console.error('[theme] failed to load, using page defaults', e); }
+})();
+</script>
 
 <div id="nameGate">
   <div class="gateCard">
