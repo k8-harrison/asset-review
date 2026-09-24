@@ -349,6 +349,7 @@
 <script>
 /* ===== Site-wide look, controlled from /admin/ ===== */
 const BRAND_SLUG = 'burrow';
+const PROJECT_SLUG = '26jul-bur-chi';
 function darkenHex(hex, amt){
   let c = hex.replace('#','');
   if(c.length === 3) c = c.split('').map(ch=>ch+ch).join('');
@@ -386,6 +387,14 @@ function darkenHex(hex, amt){
           const accent = t.brandAccents[BRAND_SLUG];
           root.setProperty('--moss', accent);
           root.setProperty('--moss-dark', darkenHex(accent, 0.28));
+        }
+        const info = t.projectStatus && t.projectStatus[BRAND_SLUG] && t.projectStatus[BRAND_SLUG][PROJECT_SLUG];
+        if(info && info.finalAssetsUrl){
+          const linkEl = document.getElementById('finalAssetsBackLink');
+          if(linkEl){
+            linkEl.href = info.finalAssetsUrl;
+            linkEl.style.display = '';
+          }
         }
       }
     }
@@ -427,6 +436,7 @@ function darkenHex(hex, amt){
     <a href="../main-r1/" class="r2LinkBtn">Main R1 &rarr;</a>
     <a href="../main-r2/" class="r2LinkBtn">Main R2 &rarr;</a>
     <a href="../" class="r2LinkBtn">Project Home &rarr;</a>
+    <a href="#" id="finalAssetsBackLink" class="r2LinkBtn" style="display:none;" target="_blank" rel="noopener">Final assets &rarr;</a>
     <a href="../../../" class="r2LinkBtn" style="margin-left:auto;">All Brands &rarr;</a>
     <div class="finalCounter" id="finalCounterBadge" title="Final picks so far">
       &#9733; <span id="finalCounterNum">0</span> final

@@ -358,6 +358,7 @@
 <script>
 /* ===== Site-wide look, controlled from /admin/ ===== */
 const BRAND_SLUG = 'havenly';
+const PROJECT_SLUG = '26jun-hav';
 function darkenHex(hex, amt){
   let c = hex.replace('#','');
   if(c.length === 3) c = c.split('').map(ch=>ch+ch).join('');
@@ -396,6 +397,14 @@ function darkenHex(hex, amt){
           root.setProperty('--moss', accent);
           root.setProperty('--moss-dark', darkenHex(accent, 0.28));
         }
+        const info = t.projectStatus && t.projectStatus[BRAND_SLUG] && t.projectStatus[BRAND_SLUG][PROJECT_SLUG];
+        if(info && info.finalAssetsUrl){
+          const linkEl = document.getElementById('finalAssetsBackLink');
+          if(linkEl){
+            linkEl.href = info.finalAssetsUrl;
+            linkEl.style.display = '';
+          }
+        }
       }
     }
   }catch(e){ console.error('[theme] failed to load, using page defaults', e); }
@@ -433,6 +442,7 @@ function darkenHex(hex, amt){
     <button id="exportBtn" class="exportBtn">Export</button>
     <a href="../r1/" class="r2LinkBtn">R1 Edits &rarr;</a>
     <a href="../" class="r2LinkBtn">Project Home &rarr;</a>
+    <a href="#" id="finalAssetsBackLink" class="r2LinkBtn" style="display:none;" target="_blank" rel="noopener">Final assets &rarr;</a>
     <a href="../../../" class="r2LinkBtn" style="margin-left:auto;">All Brands &rarr;</a>
     <div class="finalCounter" id="finalCounterBadge" title="Final picks so far">
       &#9733; <span id="finalCounterNum">0</span> final

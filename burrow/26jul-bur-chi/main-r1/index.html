@@ -185,6 +185,7 @@
 <script>
 /* ===== Site-wide look, controlled from /admin/ ===== */
 const BRAND_SLUG = 'burrow';
+const PROJECT_SLUG = '26jul-bur-chi';
 function darkenHex(hex, amt){
   let c = hex.replace('#','');
   if(c.length === 3) c = c.split('').map(ch=>ch+ch).join('');
@@ -223,6 +224,14 @@ function darkenHex(hex, amt){
           root.setProperty('--moss', accent);
           root.setProperty('--moss-dark', darkenHex(accent, 0.28));
         }
+        const info = t.projectStatus && t.projectStatus[BRAND_SLUG] && t.projectStatus[BRAND_SLUG][PROJECT_SLUG];
+        if(info && info.finalAssetsUrl){
+          const linkEl = document.getElementById('finalAssetsBackLink');
+          if(linkEl){
+            linkEl.href = info.finalAssetsUrl;
+            linkEl.style.display = '';
+          }
+        }
       }
     }
   }catch(e){ console.error('[theme] failed to load, using page defaults', e); }
@@ -253,6 +262,7 @@ function darkenHex(hex, amt){
   <div style="display:flex;gap:10px;align-items:center;">
     <button class="exportBtnHeader" id="exportBtn">Export</button>
     <a class="backLink" href="../main/">&larr; Back to main review</a> <a class="backLink" href="../">Project home</a>
+    <a class="backLink" href="#" id="finalAssetsBackLink" style="display:none;" target="_blank" rel="noopener">Final assets &rarr;</a>
     <div class="whoami" id="whoami"><span class="dot"></span><b id="meName">—</b></div>
   </div>
 </header>

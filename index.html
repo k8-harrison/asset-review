@@ -122,17 +122,29 @@ function applyTheme(theme){
    saved brandAccents load (or if none have been saved yet).
    ============================================================ */
 const BRANDS = [
-  { name: "Havenly", slug: "havenly", accent: "#B8583A", desc: "Interior design service & home marketplace", active: 1 },
-  { name: "Interior Define", slug: "interior-define", accent: "#33475A", desc: "Custom furniture", active: 0 },
-  { name: "The Citizenry", slug: "the-citizenry", accent: "#C08A2E", desc: "Global artisan-made home goods", active: 0 },
-  { name: "Burrow", slug: "burrow", accent: "#8B8B4A", desc: "Modern furniture", active: 1 },
-  { name: "The Expert", slug: "the-expert", accent: "#5C3A52", desc: "Curated design marketplace & editorial", active: 0 }
+  { name: "Havenly", slug: "havenly", accent: "#B8583A", desc: "Interior design service & home marketplace" },
+  { name: "Interior Define", slug: "interior-define", accent: "#33475A", desc: "Custom furniture" },
+  { name: "The Citizenry", slug: "the-citizenry", accent: "#C08A2E", desc: "Global artisan-made home goods" },
+  { name: "Burrow", slug: "burrow", accent: "#8B8B4A", desc: "Modern furniture" },
+  { name: "The Expert", slug: "the-expert", accent: "#5C3A52", desc: "Curated design marketplace & editorial" }
 ];
 
-function render(brandAccents){
+function projectStatusSummary(total, complete){
+  if(total === 0) return 'No active projects';
+  const inReview = total - complete;
+  if(complete === 0) return total + ' project' + (total > 1 ? 's' : '') + ' in review';
+  if(inReview === 0) return total + ' project' + (total > 1 ? 's' : '') + ' complete';
+  return complete + ' complete, ' + inReview + ' in review';
+}
+
+function render(brandAccents, projectStatus){
   const accents = brandAccents || {};
+  const statuses = projectStatus || {};
   document.getElementById('brands').innerHTML = BRANDS.map(b=>{
-    const statusText = b.active === 0 ? 'No active projects' : (b.active + ' project in review');
+    const mine = statuses[b.slug] || {};
+    const total = Object.keys(mine).length;
+    const complete = Object.values(mine).filter(p=>p.status === 'complete').length;
+    const statusText = projectStatusSummary(total, complete);
     const accent = accents[b.slug] || b.accent;
     return `
     <a class="brand" href="${b.slug}/" style="--accent:${accent}">
@@ -140,7 +152,7 @@ function render(brandAccents){
       <span class="brand-main">
         <span class="brand-name brand-name-link">${b.name}</span>
       </span>
-      <span class="brand-status ${b.active > 0 ? 'live' : ''}">${statusText}</span>
+      <span class="brand-status ${total > 0 ? 'live' : ''}">${statusText}</span>
     </a>`;
   }).join('');
 }
@@ -160,7 +172,7 @@ function render(brandAccents){
     fetchNote = 'Could not load saved site settings (' + (e.message || 'network error') + ') — showing defaults.';
   }
   const applied = applyTheme(theme);
-  render(applied.brandAccents);
+  render(applied.brandAccents, applied.projectStatus);
   if(fetchNote){
     const note = document.createElement('div');
     note.style.cssText = 'margin-top:14px;font-size:11.5px;color:#B3261E;max-width:44ch;';

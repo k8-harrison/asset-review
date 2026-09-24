@@ -20,7 +20,8 @@
   .crumb{font-size:13px;color:var(--ink-soft);margin:0 0 22px;}
   .crumb a{border-bottom:1px solid var(--line);}
   .crumb a:hover{border-color:var(--ink-soft);}
-  .titleRow{display:flex;align-items:center;gap:12px;margin:0 0 40px;}
+  .titleRow{display:flex;align-items:center;gap:12px;margin:0 0 14px;}
+  .projectsSummary{font-size:13px;color:var(--ink-soft);margin:0 0 32px;min-height:16px;}
   .chip{width:13px;height:13px;border-radius:50%;background:var(--accent);flex:none;}
   h1{font-family:var(--font-headline);font-weight:500;font-size:38px;line-height:1.05;letter-spacing:-0.01em;margin:0;}
   .lede{font-size:15px;color:var(--ink-soft);line-height:1.6;max-width:42ch;margin:14px 0 48px;padding-left:25px;}
@@ -98,7 +99,18 @@ function renderProjectStatuses(theme){
   const mine = t.projectStatus && t.projectStatus[BRAND_SLUG];
   if(!mine) return;
   const render = ()=>{
-    Object.keys(mine).forEach(slug=>{
+    const slugs = Object.keys(mine);
+    const complete = slugs.filter(s=>mine[s].status === 'complete').length;
+    const summaryEl = document.getElementById('projectsSummary');
+    if(summaryEl && slugs.length > 0){
+      const inReview = slugs.length - complete;
+      let text;
+      if(complete === 0) text = slugs.length + ' project' + (slugs.length > 1 ? 's' : '') + ' in review';
+      else if(inReview === 0) text = slugs.length + ' project' + (slugs.length > 1 ? 's' : '') + ' complete';
+      else text = complete + ' complete, ' + inReview + ' in review';
+      summaryEl.textContent = text;
+    }
+    slugs.forEach(slug=>{
       const el = document.getElementById('status-' + slug);
       if(el && mine[slug].status === 'complete'){
         el.textContent = 'Complete';
@@ -151,6 +163,7 @@ function renderProjectStatuses(theme){
     <span class="chip"></span>
     <h1>Burrow</h1>
   </div>
+  <div class="projectsSummary" id="projectsSummary"></div>
   <div class="projects">
     <a class="project" href="26jul-bur-chi/">
       <span class="project-main">
