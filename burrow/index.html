@@ -34,6 +34,7 @@
   .project:hover .project-name{opacity:0.6;}
   .project-desc{font-size:13px;color:var(--ink-soft);margin-top:3px;}
   .project-status{font-size:13px;color:var(--ink);white-space:nowrap;flex:none;}
+  .project-status.complete{color:#2E7D32;font-weight:700;}
 
   .emptyState{
     padding:28px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
@@ -92,6 +93,25 @@ function applyTheme(theme){
   }
   if(document.body) document.body.setAttribute('data-accent', t.accentStyle || 'dot');
 }
+function renderProjectStatuses(theme){
+  const t = theme || {};
+  const mine = t.projectStatus && t.projectStatus[BRAND_SLUG];
+  if(!mine) return;
+  const render = ()=>{
+    Object.keys(mine).forEach(slug=>{
+      const el = document.getElementById('status-' + slug);
+      if(el && mine[slug].status === 'complete'){
+        el.textContent = 'Complete';
+        el.classList.add('complete');
+      }
+    });
+  };
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', render);
+  } else {
+    render();
+  }
+}
 (async function(){
   let theme = null;
   let fetchNote = '';
@@ -107,6 +127,7 @@ function applyTheme(theme){
     fetchNote = 'Could not load saved site settings (' + (e.message || 'network error') + ') — showing defaults.';
   }
   applyTheme(theme);
+  renderProjectStatuses(theme);
   if(fetchNote){
     const appendNote = ()=>{
       const note = document.createElement('div');
@@ -137,7 +158,7 @@ function applyTheme(theme){
         <div class="project-name">Artist's Loft — Chicago</div>
         <div class="project-desc">Lifestyle and product photography, shot in Chicago in July 2026.</div>
       </span>
-      <span class="project-status">In review</span>
+      <span class="project-status" id="status-26jul-bur-chi">In review</span>
     </a>
   </div>
 </div>

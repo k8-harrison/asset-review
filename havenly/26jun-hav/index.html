@@ -22,6 +22,15 @@
   .crumb a:hover{border-color:var(--ink-soft);}
   h1{font-family:var(--font-headline);font-weight:500;font-size:34px;line-height:1.1;letter-spacing:-0.01em;margin:0 0 6px;}
   .lede{font-size:14.5px;color:var(--ink-soft);line-height:1.6;margin:0 0 48px;}
+  .completeBadge{
+    display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;
+    color:#2E7D32;background:#E8F5E9;padding:5px 12px;border-radius:20px;margin-bottom:16px;
+  }
+  .finalAssetsLink{
+    display:inline-block;font-size:13px;font-weight:600;color:var(--accent);
+    border-bottom:1px solid var(--accent);text-decoration:none;margin-bottom:16px;margin-left:12px;
+  }
+  .finalAssetsLink:hover{opacity:0.7;}
 
   .rounds{display:flex;flex-direction:column;}
   .round{display:flex;align-items:baseline;gap:18px;padding:var(--row-pad);border-top:1px solid var(--line);}
@@ -48,6 +57,7 @@
 <script>
 /* ===== Site-wide look, controlled from /admin/ ===== */
 const BRAND_SLUG = 'havenly';
+const PROJECT_SLUG = '26jun-hav';
 const THEME_DEFAULTS = {
   paper: '#F2EEE3', ink: '#211F1A', inkSoft: '#6E6A5E', line: '#DCD6C7',
   headlineFont: 'fraunces', bodyFont: 'overpass',
@@ -85,6 +95,28 @@ function applyTheme(theme){
   }
   if(document.body) document.body.setAttribute('data-accent', t.accentStyle || 'dot');
 }
+function renderProjectStatus(theme){
+  const t = theme || {};
+  const info = t.projectStatus && t.projectStatus[BRAND_SLUG] && t.projectStatus[BRAND_SLUG][PROJECT_SLUG];
+  if(!info) return;
+  const render = ()=>{
+    const area = document.getElementById('projectStatusArea');
+    if(!area) return;
+    let html = '';
+    if(info.status === 'complete'){
+      html += '<span class="completeBadge">&#10003; Complete — assets are final</span>';
+    }
+    if(info.finalAssetsUrl){
+      html += '<a class="finalAssetsLink" href="' + info.finalAssetsUrl.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener">View final assets &rarr;</a>';
+    }
+    area.innerHTML = html;
+  };
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', render);
+  } else {
+    render();
+  }
+}
 (async function(){
   let theme = null;
   let fetchNote = '';
@@ -100,6 +132,7 @@ function applyTheme(theme){
     fetchNote = 'Could not load saved site settings (' + (e.message || 'network error') + ') — showing defaults.';
   }
   applyTheme(theme);
+  renderProjectStatus(theme);
   if(fetchNote){
     const appendNote = ()=>{
       const note = document.createElement('div');
@@ -121,6 +154,7 @@ function applyTheme(theme){
   <div class="crumb"><a href="../../">Asset Review</a> / <a href="../">Havenly</a> / 26JUN HAV</div>
   <h1>June Shoot</h1>
   <p class="lede">Shot in June 2026, across Main, Messy, Leica, and Talent batches.</p>
+  <div id="projectStatusArea"></div>
   <div class="rounds">
     <a class="round" href="main/">
       <span class="round-num">01</span>
