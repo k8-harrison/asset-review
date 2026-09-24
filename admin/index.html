@@ -527,7 +527,7 @@ function wireControls(){
       });
     });
     const urlEl = document.getElementById('ps_' + id + '_url');
-    urlEl.addEventListener('change', ()=>{
+    urlEl.addEventListener('input', ()=>{
       currentTheme.projectStatus[p.brand][p.slug].finalAssetsUrl = urlEl.value.trim();
     });
   });
