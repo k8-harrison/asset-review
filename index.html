@@ -148,12 +148,27 @@ function render(brandAccents){
 
 (async function(){
   let theme = null;
+  let fetchNote = '';
   try{
     const res = await fetch('https://asset-review-8bfb6-default-rtdb.firebaseio.com/theme.json', {cache:'no-store'});
-    theme = res.ok ? await res.json() : null;
-  }catch(e){ /* fall back to defaults below */ }
+    if(res.ok){
+      theme = await res.json();
+    } else {
+      const body = await res.text().catch(()=>'');
+      fetchNote = 'Could not load saved site settings (HTTP ' + res.status + ') — showing defaults.' + (body ? ' ' + body.slice(0,200) : '');
+    }
+  }catch(e){
+    fetchNote = 'Could not load saved site settings (' + (e.message || 'network error') + ') — showing defaults.';
+  }
   const applied = applyTheme(theme);
   render(applied.brandAccents);
+  if(fetchNote){
+    const note = document.createElement('div');
+    note.style.cssText = 'margin-top:14px;font-size:11.5px;color:#B3261E;max-width:44ch;';
+    note.textContent = fetchNote;
+    document.querySelector('.wrap').appendChild(note);
+    console.error('[theme]', fetchNote);
+  }
 })();
 </script>
 

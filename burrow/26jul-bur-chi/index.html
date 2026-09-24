@@ -86,10 +86,35 @@ function applyTheme(theme){
   if(document.body) document.body.setAttribute('data-accent', t.accentStyle || 'dot');
 }
 (async function(){
+  let theme = null;
+  let fetchNote = '';
   try{
     const res = await fetch('https://asset-review-8bfb6-default-rtdb.firebaseio.com/theme.json', {cache:'no-store'});
-    applyTheme(res.ok ? await res.json() : null);
-  }catch(e){ applyTheme(null); }
+    if(res.ok){
+      theme = await res.json();
+    } else {
+      const body = await res.text().catch(()=>'');
+      fetchNote = 'Could not load saved site settings (HTTP ' + res.status + ') — showing defaults.' + (body ? ' ' + body.slice(0,200) : '');
+    }
+  }catch(e){
+    fetchNote = 'Could not load saved site settings (' + (e.message || 'network error') + ') — showing defaults.';
+  }
+  applyTheme(theme);
+  if(fetchNote){
+    const appendNote = ()=>{
+      const note = document.createElement('div');
+      note.style.cssText = 'margin-top:14px;font-size:11.5px;color:#B3261E;max-width:44ch;';
+      note.textContent = fetchNote;
+      const wrap = document.querySelector('.wrap');
+      if(wrap) wrap.appendChild(note);
+    };
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', appendNote);
+    } else {
+      appendNote();
+    }
+    console.error('[theme]', fetchNote);
+  }
 })();
 </script>
 <div class="wrap">

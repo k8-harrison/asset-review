@@ -20,7 +20,7 @@
   .crumb{font-size:13px;color:var(--ink-soft);margin:0 0 22px;}
   .crumb a{border-bottom:1px solid var(--line);}
   .crumb a:hover{border-color:var(--ink-soft);}
-  .titleRow{display:flex;align-items:center;gap:12px;margin:0 0 6px;}
+  .titleRow{display:flex;align-items:center;gap:12px;margin:0 0 40px;}
   .chip{width:13px;height:13px;border-radius:50%;background:var(--accent);flex:none;}
   h1{font-family:var(--font-headline);font-weight:500;font-size:38px;line-height:1.05;letter-spacing:-0.01em;margin:0;}
   .lede{font-size:15px;color:var(--ink-soft);line-height:1.6;max-width:42ch;margin:14px 0 48px;padding-left:25px;}
@@ -93,10 +93,35 @@ function applyTheme(theme){
   if(document.body) document.body.setAttribute('data-accent', t.accentStyle || 'dot');
 }
 (async function(){
+  let theme = null;
+  let fetchNote = '';
   try{
     const res = await fetch('https://asset-review-8bfb6-default-rtdb.firebaseio.com/theme.json', {cache:'no-store'});
-    applyTheme(res.ok ? await res.json() : null);
-  }catch(e){ applyTheme(null); }
+    if(res.ok){
+      theme = await res.json();
+    } else {
+      const body = await res.text().catch(()=>'');
+      fetchNote = 'Could not load saved site settings (HTTP ' + res.status + ') — showing defaults.' + (body ? ' ' + body.slice(0,200) : '');
+    }
+  }catch(e){
+    fetchNote = 'Could not load saved site settings (' + (e.message || 'network error') + ') — showing defaults.';
+  }
+  applyTheme(theme);
+  if(fetchNote){
+    const appendNote = ()=>{
+      const note = document.createElement('div');
+      note.style.cssText = 'margin-top:14px;font-size:11.5px;color:#B3261E;max-width:44ch;';
+      note.textContent = fetchNote;
+      const wrap = document.querySelector('.wrap');
+      if(wrap) wrap.appendChild(note);
+    };
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', appendNote);
+    } else {
+      appendNote();
+    }
+    console.error('[theme]', fetchNote);
+  }
 })();
 </script>
 <div class="wrap">
@@ -105,7 +130,6 @@ function applyTheme(theme){
     <span class="chip"></span>
     <h1>The Expert</h1>
   </div>
-  <p class="lede">Curated design marketplace and editorial platform.</p>
   <div class="emptyState">No active projects yet for The Expert.</div>
 </div>
 </body>
