@@ -263,7 +263,7 @@
 </div>
 
 <script>
-const ADMIN_EMAIL = 'kate.harrison@havenly.com';
+const ADMIN_EMAILS = ['kate.harrison@havenly.com'];
 const ALLOWED_DOMAINS = ['havenly.com', 'interiordefine.com'];
 const FIREBASE_URL = 'https://asset-review-8bfb6-default-rtdb.firebaseio.com';
 
@@ -618,7 +618,7 @@ async function handleSignedInUser(user){
     await auth.signOut();
     return false;
   }
-  if(email !== ADMIN_EMAIL){
+  if(!ADMIN_EMAILS.includes(email)){
     showAdminOnly(email);
     await auth.signOut();
     return false;

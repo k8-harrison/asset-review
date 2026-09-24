@@ -330,8 +330,8 @@ async function notifySlack(text){
 }
 let myName = null;
 let myEmail = null;
-const ADMIN_EMAIL = 'kate.harrison@havenly.com';
-function isAdmin(){ return myEmail && myEmail.toLowerCase() === ADMIN_EMAIL; }
+const ADMIN_EMAILS = ['kate.harrison@havenly.com'];
+function isAdmin(){ return myEmail && ADMIN_EMAILS.includes(myEmail.toLowerCase()); }
 let approvedSet = new Set();
 let commentsByFile = {};
 let cardState = {}; // file -> 'edit' | 'original'  (grid card state)
