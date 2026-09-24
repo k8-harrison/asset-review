@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Site Look — Asset Review Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:wght@500;600;700&family=Lora:wght@500;600;700&family=Source+Serif+4:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&family=Overpass:wght@400;500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  /* ===== Fixed admin chrome — NOT affected by the theme being edited ===== */
+  :root{
+    --admin-bg:#FAFAF8; --admin-panel:#FFFFFF; --admin-ink:#1A1A17; --admin-soft:#71706A;
+    --admin-line:#E4E2DC; --admin-accent:#2B2B24;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--admin-bg);color:var(--admin-ink);font-family:'Overpass',sans-serif;}
+  a{color:inherit;}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;padding:16px 24px;
+    border-bottom:1px solid var(--admin-line);background:var(--admin-panel);
+  }
+  .topbar a{font-size:13px;color:var(--admin-soft);text-decoration:none;border-bottom:1px solid var(--admin-line);}
+  .topbar a:hover{color:var(--admin-ink);}
+  .topbar h1{font-size:16px;margin:0;font-weight:700;}
+  #whoami{font-size:12.5px;color:var(--admin-soft);cursor:pointer;}
+
+  .layout{display:grid;grid-template-columns:340px 1fr;gap:0;min-height:calc(100vh - 57px);}
+  @media (max-width:860px){ .layout{grid-template-columns:1fr;} }
+
+  .controls{padding:28px 26px;border-right:1px solid var(--admin-line);background:var(--admin-panel);}
+  .controls h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--admin-soft);margin:0 0 20px;font-weight:700;}
+  .field{margin-bottom:20px;}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:7px;}
+  .field .hint{font-size:11.5px;color:var(--admin-soft);margin-top:4px;}
+  .colorRow{display:flex;align-items:center;gap:10px;}
+  .colorRow input[type="color"]{
+    width:38px;height:38px;border-radius:6px;border:1px solid var(--admin-line);cursor:pointer;padding:0;
+  }
+  .colorRow input[type="text"]{
+    flex:1;font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:8px 10px;
+    border:1px solid var(--admin-line);border-radius:5px;color:var(--admin-ink);background:#fff;
+  }
+  select{
+    width:100%;padding:9px 10px;border:1px solid var(--admin-line);border-radius:5px;
+    font-size:13.5px;background:#fff;color:var(--admin-ink);font-family:'Overpass',sans-serif;
+  }
+  .segmented{display:flex;border:1px solid var(--admin-line);border-radius:6px;overflow:hidden;}
+  .segmented button{
+    flex:1;padding:9px 6px;border:none;background:#fff;font-size:12.5px;cursor:pointer;
+    color:var(--admin-soft);border-right:1px solid var(--admin-line);font-family:'Overpass',sans-serif;
+  }
+  .segmented button:last-child{border-right:none;}
+  .segmented button.active{background:var(--admin-accent);color:#fff;font-weight:600;}
+
+  .actions{display:flex;gap:10px;margin-top:28px;}
+  .actions button{
+    flex:1;padding:11px;border-radius:6px;font-size:13.5px;font-weight:700;cursor:pointer;
+    font-family:'Overpass',sans-serif;border:none;
+  }
+  #saveBtn{background:var(--admin-accent);color:#fff;}
+  #saveBtn:hover{background:#000;}
+  #resetBtn{background:#fff;color:var(--admin-soft);border:1px solid var(--admin-line);}
+  #resetBtn:hover{border-color:var(--admin-soft);color:var(--admin-ink);}
+  #saveStatus{font-size:12px;margin-top:10px;min-height:16px;}
+  #saveStatus.ok{color:#3A6B3A;}
+  #saveStatus.err{color:#B3261E;}
+
+  .previewPane{padding:36px 40px;overflow:auto;}
+  .previewLabel{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--admin-soft);font-weight:700;margin-bottom:14px;}
+
+  /* ===== Everything inside #previewBox uses the CUSTOMIZABLE variables ===== */
+  #previewBox{
+    --paper:#F2EEE3; --ink:#211F1A; --ink-soft:#6E6A5E; --line:#DCD6C7; --accent:#B8583A;
+    --font-headline:'Fraunces',serif; --font-body:'Overpass',sans-serif;
+    --wrap-pad:40px 32px; --row-pad:20px 0;
+    background:var(--paper);color:var(--ink);font-family:var(--font-body);
+    border-radius:10px;border:1px solid var(--admin-line);max-width:560px;
+    padding:var(--wrap-pad);box-shadow:0 4px 24px rgba(0,0,0,0.06);
+  }
+  #previewBox .kicker{font-size:14px;color:var(--ink-soft);margin:0 0 6px;}
+  #previewBox h3.h1{font-family:var(--font-headline);font-weight:500;font-size:36px;line-height:1.05;letter-spacing:-0.01em;margin:0 0 14px;}
+  #previewBox .lede{font-size:15px;color:var(--ink-soft);line-height:1.6;max-width:36ch;margin:0 0 30px;}
+  #previewBox .brand{display:flex;align-items:baseline;gap:16px;padding:var(--row-pad);border-top:1px solid var(--line);}
+  #previewBox .brand:last-child{border-bottom:1px solid var(--line);}
+  #previewBox .chip{width:11px;height:11px;border-radius:50%;background:var(--accent);flex:none;transform:translateY(-2px);}
+  #previewBox[data-accent="bar"] .chip{border-radius:2px;width:4px;height:22px;transform:translateY(0);align-self:stretch;}
+  #previewBox[data-accent="none"] .chip{display:none;}
+  #previewBox .brand-main{flex:1;min-width:0;}
+  #previewBox .brand-name{font-family:var(--font-headline);font-weight:500;font-size:22px;letter-spacing:-0.005em;}
+  #previewBox .brand-desc{font-size:13px;color:var(--ink-soft);margin-top:3px;}
+  #previewBox .brand-status{font-size:12.5px;color:var(--ink-soft);white-space:nowrap;}
+
+  #previewBox .roundsDemo{margin-top:34px;}
+  #previewBox .roundsLabel{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+  #previewBox .round{display:flex;align-items:baseline;gap:16px;padding:14px 0;border-top:1px solid var(--line);}
+  #previewBox .round:last-child{border-bottom:1px solid var(--line);}
+  #previewBox .round-num{font-family:var(--font-headline);font-weight:500;font-size:17px;color:var(--accent);width:24px;flex:none;}
+  #previewBox .round-name{font-size:15px;font-weight:600;}
+
+  /* ===== Sign-in gate ===== */
+  #nameGate{position:fixed;inset:0;background:rgba(26,26,23,0.6);display:flex;align-items:center;justify-content:center;z-index:200;}
+  #nameGate.hidden{display:none;}
+  .gateCard{background:#fff;border-radius:10px;padding:32px;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+  .gateCard h2{margin:0 0 10px;font-size:18px;}
+  .gateCard p{font-size:13px;color:var(--admin-soft);line-height:1.6;margin:0 0 20px;}
+  .googleBtn{
+    display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px;
+    border:1px solid var(--admin-line);border-radius:6px;background:#fff;font-size:14px;font-weight:600;
+    cursor:pointer;font-family:'Overpass',sans-serif;
+  }
+  .googleBtn:hover{border-color:var(--admin-soft);}
+  #signInError{margin-top:12px;font-size:12px;color:#B3261E;background:#FCE8E6;padding:10px 12px;border-radius:5px;line-height:1.5;}
+  #adminOnlyNote{margin-top:12px;font-size:12px;color:#8A6D1E;background:#FDF3DC;padding:10px 12px;border-radius:5px;line-height:1.5;display:none;}
+
+  #appRoot{display:none;}
+  #appRoot.visible{display:block;}
+</style>
+</head>
+<body>
+
+<div id="nameGate">
+  <div class="gateCard">
+    <h2>Site look settings</h2>
+    <p>Admin only — sign in with the Havenly Brands account that manages this site.</p>
+    <button id="googleSignInBtn" class="googleBtn">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.5 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3c-7.8 0-14.5 4.4-17.7 11.7z"/><path fill="#4CAF50" d="M24 45c5.4 0 10.3-1.9 14-5.2l-6.5-5.5c-2 1.4-4.6 2.2-7.5 2.2-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 40.5 16.2 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.5 5.5C41.4 36 45 30.5 45 24c0-1.4-.1-2.7-.4-3.5z"/></svg>
+      Sign in with Google
+    </button>
+    <div id="signInError" style="display:none;"></div>
+    <div id="adminOnlyNote"></div>
+  </div>
+</div>
+
+<div id="appRoot">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a href="../">&larr; Asset Review</a>
+      <h1>Site Look</h1>
+    </div>
+    <div id="whoami">—</div>
+  </div>
+
+  <div class="layout">
+    <div class="controls">
+      <h2>Colors</h2>
+      <div class="field">
+        <label>Background</label>
+        <div class="colorRow">
+          <input type="color" id="c_paper">
+          <input type="text" id="c_paper_hex">
+        </div>
+      </div>
+      <div class="field">
+        <label>Text</label>
+        <div class="colorRow">
+          <input type="color" id="c_ink">
+          <input type="text" id="c_ink_hex">
+        </div>
+      </div>
+      <div class="field">
+        <label>Secondary text</label>
+        <div class="colorRow">
+          <input type="color" id="c_inkSoft">
+          <input type="text" id="c_inkSoft_hex">
+        </div>
+      </div>
+      <div class="field">
+        <label>Dividing lines</label>
+        <div class="colorRow">
+          <input type="color" id="c_line">
+          <input type="text" id="c_line_hex">
+        </div>
+        <div class="hint">Each brand keeps its own accent color separately — that's not changed here.</div>
+      </div>
+
+      <h2 style="margin-top:28px;">Type</h2>
+      <div class="field">
+        <label>Headline font</label>
+        <select id="f_headline"></select>
+      </div>
+      <div class="field">
+        <label>Body font</label>
+        <select id="f_body"></select>
+      </div>
+
+      <h2 style="margin-top:28px;">Layout</h2>
+      <div class="field">
+        <label>Spacing</label>
+        <div class="segmented" id="densitySeg">
+          <button data-val="compact">Compact</button>
+          <button data-val="comfortable">Comfortable</button>
+          <button data-val="spacious">Spacious</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Accent mark</label>
+        <div class="segmented" id="accentSeg">
+          <button data-val="dot">Dot</button>
+          <button data-val="bar">Bar</button>
+          <button data-val="none">None</button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="saveBtn">Save &amp; publish</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+      <div id="saveStatus"></div>
+    </div>
+
+    <div class="previewPane">
+      <div class="previewLabel">Live preview</div>
+      <div id="previewBox">
+        <div class="kicker">Havenly Brands</div>
+        <h3 class="h1">Asset Review</h3>
+        <p class="lede">Photo and file review for every brand's shoots.</p>
+        <div class="brand">
+          <span class="chip"></span>
+          <span class="brand-main">
+            <span class="brand-name">Havenly</span>
+            <div class="brand-desc">Interior design service &amp; home marketplace</div>
+          </span>
+          <span class="brand-status">1 project in review</span>
+        </div>
+        <div class="brand">
+          <span class="chip"></span>
+          <span class="brand-main">
+            <span class="brand-name">Burrow</span>
+            <div class="brand-desc">Modern furniture</div>
+          </span>
+          <span class="brand-status">1 project in review</span>
+        </div>
+        <div class="roundsDemo">
+          <div class="roundsLabel">Review rounds look like this</div>
+          <div class="round"><span class="round-num">01</span><span class="round-name">Main Review</span></div>
+          <div class="round"><span class="round-num">02</span><span class="round-name">R1 Edits</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ADMIN_EMAIL = 'kate.harrison@havenly.com';
+const ALLOWED_DOMAINS = ['havenly.com', 'interiordefine.com'];
+const FIREBASE_URL = 'https://asset-review-8bfb6-default-rtdb.firebaseio.com';
+
+const THEME_DEFAULTS = {
+  paper: '#F2EEE3', ink: '#211F1A', inkSoft: '#6E6A5E', line: '#DCD6C7',
+  headlineFont: 'fraunces', bodyFont: 'overpass',
+  density: 'comfortable', accentStyle: 'dot'
+};
+
+const HEADLINE_FONTS = [
+  {id:'fraunces', label:'Fraunces — warm serif', family:"'Fraunces', serif"},
+  {id:'playfair', label:'Playfair Display — elegant serif', family:"'Playfair Display', serif"},
+  {id:'lora', label:'Lora — classic serif', family:"'Lora', serif"},
+  {id:'sourceserif', label:'Source Serif — clean serif', family:"'Source Serif 4', serif"},
+  {id:'spacegrotesk', label:'Space Grotesk — modern sans', family:"'Space Grotesk', sans-serif"},
+  {id:'worksans', label:'Work Sans — neutral sans', family:"'Work Sans', sans-serif"}
+];
+const BODY_FONTS = [
+  {id:'overpass', label:'Overpass', family:"'Overpass', sans-serif"},
+  {id:'inter', label:'Inter', family:"'Inter', sans-serif"},
+  {id:'worksans', label:'Work Sans', family:"'Work Sans', sans-serif"},
+  {id:'plexsans', label:'IBM Plex Sans', family:"'IBM Plex Sans', sans-serif"},
+  {id:'sourcesans', label:'Source Sans 3', family:"'Source Sans 3', sans-serif"}
+];
+const DENSITY_MAP = {
+  compact:     { wrapPad: '32px 26px',  rowPad: '13px 0' },
+  comfortable: { wrapPad: '40px 32px',  rowPad: '18px 0' },
+  spacious:    { wrapPad: '52px 40px',  rowPad: '25px 0' }
+};
+
+let currentTheme = Object.assign({}, THEME_DEFAULTS);
+let savedTheme = Object.assign({}, THEME_DEFAULTS);
+
+function fontMap(list){ const m = {}; list.forEach(f=>m[f.id]=f.family); return m; }
+const HEADLINE_MAP = fontMap(HEADLINE_FONTS);
+const BODY_MAP = fontMap(BODY_FONTS);
+
+function applyPreview(t){
+  const box = document.getElementById('previewBox');
+  box.style.setProperty('--paper', t.paper);
+  box.style.setProperty('--ink', t.ink);
+  box.style.setProperty('--ink-soft', t.inkSoft);
+  box.style.setProperty('--line', t.line);
+  box.style.setProperty('--font-headline', HEADLINE_MAP[t.headlineFont] || HEADLINE_MAP.fraunces);
+  box.style.setProperty('--font-body', BODY_MAP[t.bodyFont] || BODY_MAP.overpass);
+  const d = DENSITY_MAP[t.density] || DENSITY_MAP.comfortable;
+  box.style.setProperty('--wrap-pad', d.wrapPad);
+  box.style.setProperty('--row-pad', d.rowPad);
+  box.setAttribute('data-accent', t.accentStyle || 'dot');
+}
+
+function syncControlsFromTheme(t){
+  document.getElementById('c_paper').value = t.paper;
+  document.getElementById('c_paper_hex').value = t.paper;
+  document.getElementById('c_ink').value = t.ink;
+  document.getElementById('c_ink_hex').value = t.ink;
+  document.getElementById('c_inkSoft').value = t.inkSoft;
+  document.getElementById('c_inkSoft_hex').value = t.inkSoft;
+  document.getElementById('c_line').value = t.line;
+  document.getElementById('c_line_hex').value = t.line;
+  document.getElementById('f_headline').value = t.headlineFont;
+  document.getElementById('f_body').value = t.bodyFont;
+  setSegmented('densitySeg', t.density);
+  setSegmented('accentSeg', t.accentStyle);
+  applyPreview(t);
+}
+
+function setSegmented(id, val){
+  document.querySelectorAll('#' + id + ' button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.val === val);
+  });
+}
+
+function buildFontOptions(){
+  const hSel = document.getElementById('f_headline');
+  hSel.innerHTML = HEADLINE_FONTS.map(f=>`<option value="${f.id}">${f.label}</option>`).join('');
+  const bSel = document.getElementById('f_body');
+  bSel.innerHTML = BODY_FONTS.map(f=>`<option value="${f.id}">${f.label}</option>`).join('');
+}
+
+function wireControls(){
+  const colorPairs = [['c_paper','paper'],['c_ink','ink'],['c_inkSoft','inkSoft'],['c_line','line']];
+  colorPairs.forEach(([id, key])=>{
+    const colorEl = document.getElementById(id);
+    const hexEl = document.getElementById(id + '_hex');
+    colorEl.addEventListener('input', ()=>{
+      currentTheme[key] = colorEl.value;
+      hexEl.value = colorEl.value;
+      applyPreview(currentTheme);
+    });
+    hexEl.addEventListener('change', ()=>{
+      let v = hexEl.value.trim();
+      if(!v.startsWith('#')) v = '#' + v;
+      if(/^#[0-9a-fA-F]{6}$/.test(v)){
+        currentTheme[key] = v;
+        colorEl.value = v;
+        applyPreview(currentTheme);
+      } else {
+        hexEl.value = currentTheme[key];
+      }
+    });
+  });
+
+  document.getElementById('f_headline').addEventListener('change', e=>{
+    currentTheme.headlineFont = e.target.value;
+    applyPreview(currentTheme);
+  });
+  document.getElementById('f_body').addEventListener('change', e=>{
+    currentTheme.bodyFont = e.target.value;
+    applyPreview(currentTheme);
+  });
+
+  document.querySelectorAll('#densitySeg button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      currentTheme.density = b.dataset.val;
+      setSegmented('densitySeg', b.dataset.val);
+      applyPreview(currentTheme);
+    });
+  });
+  document.querySelectorAll('#accentSeg button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      currentTheme.accentStyle = b.dataset.val;
+      setSegmented('accentSeg', b.dataset.val);
+      applyPreview(currentTheme);
+    });
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    currentTheme = Object.assign({}, THEME_DEFAULTS);
+    syncControlsFromTheme(currentTheme);
+    setStatus('', '');
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', saveTheme);
+}
+
+function setStatus(msg, cls){
+  const el = document.getElementById('saveStatus');
+  el.textContent = msg;
+  el.className = cls || '';
+}
+
+async function getAuthToken(){
+  const user = auth.currentUser;
+  if(!user) return null;
+  try{ return await user.getIdToken(); }catch(e){ return null; }
+}
+
+async function loadTheme(){
+  try{
+    const token = await getAuthToken();
+    const qs = token ? ('?auth=' + token) : '';
+    const res = await fetch(FIREBASE_URL + '/theme.json' + qs);
+    if(res.ok){
+      const data = await res.json();
+      if(data){
+        savedTheme = Object.assign({}, THEME_DEFAULTS, data);
+        currentTheme = Object.assign({}, savedTheme);
+      }
+    }
+  }catch(e){ /* fall back to defaults, already set */ }
+  syncControlsFromTheme(currentTheme);
+}
+
+async function saveTheme(){
+  setStatus('Saving...', '');
+  try{
+    const token = await getAuthToken();
+    const url = FIREBASE_URL + '/theme.json' + (token ? '?auth=' + token : '');
+    const res = await fetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(currentTheme)});
+    if(res.ok){
+      savedTheme = Object.assign({}, currentTheme);
+      setStatus('Saved — live on the site now.', 'ok');
+    } else {
+      setStatus('Could not save (status ' + res.status + ').', 'err');
+    }
+  }catch(e){
+    setStatus('Could not save — check your connection.', 'err');
+  }
+}
+
+/* ===== Auth ===== */
+const firebaseApp = firebase.initializeApp({
+  apiKey: "AIzaSyCruCqUQi5HpPAroRTXs6Xxd-Ajf9ASB-o",
+  authDomain: "asset-review-8bfb6.firebaseapp.com",
+  databaseURL: "https://asset-review-8bfb6-default-rtdb.firebaseio.com",
+  projectId: "asset-review-8bfb6",
+  storageBucket: "asset-review-8bfb6.firebasestorage.app",
+  messagingSenderId: "895411644257",
+  appId: "1:895411644257:web:e5444ace279d996a258720"
+});
+const auth = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+function showSignInError(msg){
+  const el = document.getElementById('signInError');
+  el.textContent = msg;
+  el.style.display = 'block';
+  document.getElementById('adminOnlyNote').style.display = 'none';
+}
+function showAdminOnly(email){
+  const el = document.getElementById('adminOnlyNote');
+  el.textContent = 'Signed in as ' + email + ', but this page is limited to the site admin.';
+  el.style.display = 'block';
+  document.getElementById('signInError').style.display = 'none';
+}
+function clearSignInMessages(){
+  document.getElementById('signInError').style.display = 'none';
+  document.getElementById('adminOnlyNote').style.display = 'none';
+}
+
+async function handleSignedInUser(user){
+  const email = (user.email || '').toLowerCase();
+  if(!ALLOWED_DOMAINS.some(d => email.endsWith('@' + d))){
+    showSignInError('Please sign in with a Havenly Brands work email (' + ALLOWED_DOMAINS.map(d=>'@'+d).join(' or ') + ').');
+    await auth.signOut();
+    return false;
+  }
+  if(email !== ADMIN_EMAIL){
+    showAdminOnly(email);
+    await auth.signOut();
+    return false;
+  }
+  clearSignInMessages();
+  document.getElementById('whoami').textContent = email;
+  return true;
+}
+
+async function startApp(){
+  document.getElementById('nameGate').classList.add('hidden');
+  document.getElementById('appRoot').classList.add('visible');
+  buildFontOptions();
+  wireControls();
+  await loadTheme();
+}
+
+document.getElementById('googleSignInBtn').addEventListener('click', async ()=>{
+  clearSignInMessages();
+  try{
+    await auth.signInWithPopup(googleProvider);
+  }catch(e){
+    if(e.code !== 'auth/popup-closed-by-user'){
+      showSignInError('Sign-in failed: ' + (e.message || e.code));
+    }
+  }
+});
+document.getElementById('whoami').addEventListener('click', ()=>{
+  if(confirm('Sign out?')) auth.signOut();
+});
+
+auth.onAuthStateChanged(async user=>{
+  if(user){
+    const ok = await handleSignedInUser(user);
+    if(ok) startApp();
+  }else{
+    document.getElementById('appRoot').classList.remove('visible');
+    document.getElementById('nameGate').classList.remove('hidden');
+  }
+});
+</script>
+
+</body>
+</html>

@@ -6,26 +6,28 @@
 <title>26JUN HAV — Asset Review</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Overpass:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:wght@500;600;700&family=Lora:wght@500;600;700&family=Source+Serif+4:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&family=Overpass:wght@400;500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#F2EEE3; --ink:#211F1A; --ink-soft:#6E6A5E; --line:#DCD6C7; --accent:#B8583A;
+    --font-headline:'Fraunces',serif; --font-body:'Overpass',sans-serif;
+    --wrap-pad:56px 28px 100px; --row-pad:20px 0;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Overpass',sans-serif;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);}
   a{color:inherit;text-decoration:none;}
-  .wrap{max-width:640px;margin:0 auto;padding:56px 28px 100px;}
+  .wrap{max-width:640px;margin:0 auto;padding:var(--wrap-pad);}
   .crumb{font-size:13px;color:var(--ink-soft);margin:0 0 22px;}
   .crumb a{border-bottom:1px solid var(--line);}
   .crumb a:hover{border-color:var(--ink-soft);}
-  h1{font-family:'Fraunces',serif;font-weight:500;font-size:34px;line-height:1.1;letter-spacing:-0.01em;margin:0 0 6px;}
+  h1{font-family:var(--font-headline);font-weight:500;font-size:34px;line-height:1.1;letter-spacing:-0.01em;margin:0 0 6px;}
   .lede{font-size:14.5px;color:var(--ink-soft);line-height:1.6;margin:0 0 48px;}
 
   .rounds{display:flex;flex-direction:column;}
-  .round{display:flex;align-items:baseline;gap:18px;padding:20px 0;border-top:1px solid var(--line);}
+  .round{display:flex;align-items:baseline;gap:18px;padding:var(--row-pad);border-top:1px solid var(--line);}
   .rounds .round:last-child{border-bottom:1px solid var(--line);}
   .round-num{
-    font-family:'Fraunces',serif;font-weight:500;font-size:20px;color:var(--accent);
+    font-family:var(--font-headline);font-weight:500;font-size:20px;color:var(--accent);
     flex:none;width:28px;
   }
   .round-main{flex:1;min-width:0;}
@@ -43,6 +45,49 @@
 </style>
 </head>
 <body>
+<script>
+/* ===== Site-wide look, controlled from /admin/ ===== */
+const THEME_DEFAULTS = {
+  paper: '#F2EEE3', ink: '#211F1A', inkSoft: '#6E6A5E', line: '#DCD6C7',
+  headlineFont: 'fraunces', bodyFont: 'overpass',
+  density: 'comfortable', accentStyle: 'dot'
+};
+const HEADLINE_FONT_MAP = {
+  fraunces: "'Fraunces', serif", playfair: "'Playfair Display', serif",
+  lora: "'Lora', serif", sourceserif: "'Source Serif 4', serif",
+  spacegrotesk: "'Space Grotesk', sans-serif", worksans: "'Work Sans', sans-serif"
+};
+const BODY_FONT_MAP = {
+  overpass: "'Overpass', sans-serif", inter: "'Inter', sans-serif",
+  worksans: "'Work Sans', sans-serif", plexsans: "'IBM Plex Sans', sans-serif",
+  sourcesans: "'Source Sans 3', sans-serif"
+};
+const DENSITY_MAP = {
+  compact:     { wrapPad: '40px 24px 60px',  rowPad: '14px 0' },
+  comfortable: { wrapPad: '56px 28px 100px', rowPad: '20px 0' },
+  spacious:    { wrapPad: '80px 32px 140px', rowPad: '28px 0' }
+};
+function applyTheme(theme){
+  const t = Object.assign({}, THEME_DEFAULTS, theme || {});
+  const root = document.documentElement.style;
+  root.setProperty('--paper', t.paper);
+  root.setProperty('--ink', t.ink);
+  root.setProperty('--ink-soft', t.inkSoft);
+  root.setProperty('--line', t.line);
+  root.setProperty('--font-headline', HEADLINE_FONT_MAP[t.headlineFont] || HEADLINE_FONT_MAP.fraunces);
+  root.setProperty('--font-body', BODY_FONT_MAP[t.bodyFont] || BODY_FONT_MAP.overpass);
+  const d = DENSITY_MAP[t.density] || DENSITY_MAP.comfortable;
+  root.setProperty('--wrap-pad', d.wrapPad);
+  root.setProperty('--row-pad', d.rowPad);
+  if(document.body) document.body.setAttribute('data-accent', t.accentStyle || 'dot');
+}
+(async function(){
+  try{
+    const res = await fetch('https://asset-review-8bfb6-default-rtdb.firebaseio.com/theme.json', {cache:'no-store'});
+    applyTheme(res.ok ? await res.json() : null);
+  }catch(e){ applyTheme(null); }
+})();
+</script>
 <div class="wrap">
   <div class="crumb"><a href="../../">Asset Review</a> / <a href="../">Havenly</a> / 26JUN HAV</div>
   <h1>June Shoot</h1>
