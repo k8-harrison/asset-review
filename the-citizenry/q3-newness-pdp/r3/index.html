@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Q3 Newness PDP - Round 2 Edits</title>
+<title>Q3 Newness PDP - Round 3 Edits</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -267,12 +267,12 @@ function darkenHex(hex, amt){
 
 <header>
   <div class="titleBlock">
-    <h1><span class="r2Badge">R2</span>Q3 Newness PDP — Round 2 Edits</h1>
-    <div class="sub"><span id="totalPhotoCount">4</span> photos · <span id="approvedCount">0</span> approved · click a photo to expand, compare against R1, and see R1 feedback</div>
+    <h1><span class="r2Badge">R3</span>Q3 Newness PDP — Round 3 Edits</h1>
+    <div class="sub"><span id="totalPhotoCount">4</span> photos · <span id="approvedCount">0</span> approved · click a photo to expand, compare against R2, and see R2 feedback</div>
   </div>
   <div style="display:flex;gap:10px;align-items:center;">
     <button class="exportBtnHeader" id="exportBtn">Export</button>
-    <a class="backLink" href="../r1/">&larr; R1</a> <a class="backLink" href="../">Project home</a> <a class="backLink" href="../r3/">R3 &rarr;</a>
+    <a class="backLink" href="../r2/">&larr; R2</a> <a class="backLink" href="../">Project home</a>
     <a class="backLink" href="#" id="finalAssetsBackLink" style="display:none;" target="_blank" rel="noopener">Final assets &rarr;</a>
     <div class="whoami" id="whoami"><span class="dot"></span><b id="meName">—</b></div>
   </div>
@@ -286,9 +286,9 @@ function darkenHex(hex, amt){
   <span id="closeLightbox">&times;</span>
   <div id="lbImageArea">
     <span id="lbNavPrev">&#8249;</span>
-    <div id="lbStateLabel" class="edit">R2 EDIT</div>
+    <div id="lbStateLabel" class="edit">R3 EDIT</div>
     <img id="lightboxImg" src="">
-    <button id="lbToggleBtn">Show R1</button>
+    <button id="lbToggleBtn">Show R2</button>
     <span id="lbNavNext">&#8250;</span>
   </div>
   <div id="lightboxPanel">
@@ -296,7 +296,7 @@ function darkenHex(hex, amt){
     <button id="lbApproveBtn">Approve this edit</button>
     <button id="lbDeleteBtn" style="display:none;background:transparent;color:#B22C2C;border:1px solid #B22C2C;padding:8px;border-radius:3px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);width:100%;margin-top:8px;">Delete this photo (admin)</button>
     <div id="prevRoundSection" style="display:none;">
-      <div class="commentsHeading">R1 Feedback</div>
+      <div class="commentsHeading">R2 Feedback</div>
       <div id="prevComments"></div>
     </div>
     <div class="commentsHeading">Feedback — This Round</div>
@@ -309,7 +309,7 @@ function darkenHex(hex, amt){
 
 <div id="exportModal">
   <div class="exportCard">
-    <h3>Export — Q3 Newness PDP R2</h3>
+    <h3>Export — Q3 Newness PDP R3</h3>
     <div class="sub" id="exportSub">Approved edits and their feedback — uncheck any already sent to the photographer.</div>
     <div class="exportQuickRow">
       <span id="exportCountLabel"></span>
@@ -331,7 +331,7 @@ function darkenHex(hex, amt){
 </div>
 
 <script>
-const RECORDS = [{"file": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-LIANNA-AEGEAN_SQ02_R2.jpg", "original": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-LIANNA-AEGEAN_SQ02_R1.png"}, {"file": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-LIANNA-BARLEY_SQ02_R2.jpg", "original": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-LIANNA-BARLEY_SQ02_R1.png"}, {"file": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-RAYA-AEGEAN_SQ02_R2.jpg", "original": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-RAYA-AEGEAN_SQ02_R1.png"}, {"file": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-RAYA-OLIVE_SQ02_R2.jpg", "original": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-RAYA-OLIVE_SQ02_R1.png"}];
+const RECORDS = [{"file": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-LIANNA-AEGEAN_SQ02_R3.png", "original": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-LIANNA-AEGEAN_SQ02_R2.jpg"}, {"file": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-LIANNA-BARLEY_SQ02_R3.png", "original": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-LIANNA-BARLEY_SQ02_R2.jpg"}, {"file": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-RAYA-AEGEAN_SQ02_R3.png", "original": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-RAYA-AEGEAN_SQ02_R2.jpg"}, {"file": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-RAYA-OLIVE_SQ02_R3.png", "original": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-RAYA-OLIVE_SQ02_R2.jpg"}];
 let FILES = RECORDS.map(r => r.file);
 const ORIGINAL_OF = {};
 RECORDS.forEach(r => { if(r.original) ORIGINAL_OF[r.file] = r.original; });
@@ -355,7 +355,7 @@ let myEmail = null;
 const ADMIN_EMAILS = ['kate.harrison@havenly.com'];
 function isAdmin(){ return myEmail && ADMIN_EMAILS.includes(myEmail.toLowerCase()); }
 let approvedSet = new Set();
-let prevComments = {}; // read-only: R1 comments, keyed by the R1 file
+let prevComments = {}; // read-only: R2 comments, keyed by the R2 file
 let commentsByFile = {};
 let cardState = {}; // file -> 'edit' | 'original'  (grid card state)
 let deletedFiles = new Set();
@@ -473,7 +473,7 @@ async function init(){
     }
   });
   document.getElementById('whoami').addEventListener('click', ()=>{
-    if(confirm('Sign out of the R2 review?')){
+    if(confirm('Sign out of the R3 review?')){
       auth.signOut();
     }
   });
@@ -534,12 +534,12 @@ async function init(){
 }
 
 async function startApp(){
-  const approvedData = await fbGet('shoots/czQ3NewnessPdp/r2_approved');
+  const approvedData = await fbGet('shoots/czQ3NewnessPdp/r3_approved');
   approvedSet = new Set(approvedData || []);
-  const commentsData = await fbGet('shoots/czQ3NewnessPdp/r2_comments');
+  const commentsData = await fbGet('shoots/czQ3NewnessPdp/r3_comments');
   commentsByFile = commentsData || {};
-  prevComments = (await fbGet('shoots/czQ3NewnessPdp/r1_comments')) || {};
-  const deletedData = await fbGet('shoots/czQ3NewnessPdp/r2_deleted');
+  prevComments = (await fbGet('shoots/czQ3NewnessPdp/r2_comments')) || {};
+  const deletedData = await fbGet('shoots/czQ3NewnessPdp/r3_deleted');
   deletedFiles = new Set(deletedData || []);
   applyDeletions();
   render();
@@ -552,9 +552,9 @@ async function startApp(){
       const token = await getAuthToken();
       const qs = token ? ('?auth=' + token) : '';
       const [appRes, comRes, delRes] = await Promise.all([
-        fetch(FIREBASE_URL + '/shoots/czQ3NewnessPdp/r2_approved.json' + qs),
-        fetch(FIREBASE_URL + '/shoots/czQ3NewnessPdp/r2_comments.json' + qs),
-        fetch(FIREBASE_URL + '/shoots/czQ3NewnessPdp/r2_deleted.json' + qs)
+        fetch(FIREBASE_URL + '/shoots/czQ3NewnessPdp/r3_approved.json' + qs),
+        fetch(FIREBASE_URL + '/shoots/czQ3NewnessPdp/r3_comments.json' + qs),
+        fetch(FIREBASE_URL + '/shoots/czQ3NewnessPdp/r3_deleted.json' + qs)
       ]);
       if(appRes.ok){
         const data = await appRes.json();
@@ -588,7 +588,7 @@ async function deletePhoto(file){
   if(!isAdmin()) return;
   if(!confirm('Delete ' + file + ' from this review? This removes it for everyone and can\'t be undone from here.')) return;
   deletedFiles.add(file);
-  await fbSet('shoots/czQ3NewnessPdp/r2_deleted', Array.from(deletedFiles));
+  await fbSet('shoots/czQ3NewnessPdp/r3_deleted', Array.from(deletedFiles));
   applyDeletions();
   closeLightbox();
   render();
@@ -602,16 +602,16 @@ function render(){
     const isApproved = approvedSet.has(file);
     const canToggle = hasOriginal(file);
     const state = canToggle ? cardState[file] : 'edit';
-    const src = state === 'edit' ? ('images/thumb/' + file) : ('../r1/images/thumb/' + ORIGINAL_OF[file]);
+    const src = state === 'edit' ? ('images/thumb/' + file) : ('../r2/images/thumb/' + ORIGINAL_OF[file]);
     const commentCount = (commentsByFile[fKey(file)] || []).length;
     return `
     <div class="card ${isApproved?'approved':''}" data-idx="${i}">
       <div class="imgArea" data-action="view">
-        <div class="stateLabel ${state}">${state === 'edit' ? 'R2 EDIT' : 'R1'}</div>
+        <div class="stateLabel ${state}">${state === 'edit' ? 'R3 EDIT' : 'R2'}</div>
         <button class="checkBadge" data-action="approve" title="${isApproved?'Remove approval':'Approve this edit'}">${isApproved ? '&#10003;' : ''}</button>
         ${isAdmin() ? `<button class="deleteBadge" data-action="delete" title="Delete this photo (admin only)">&#128465;</button>` : ''}
         <img src="${src}">
-        ${canToggle ? `<button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'R1' : 'R2 edit'}</button>` : ''}
+        ${canToggle ? `<button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'R2' : 'R3 edit'}</button>` : ''}
       </div>
       <div class="cardFooter">
         <div class="fname mono">${frameLabel(file)}</div>
@@ -652,7 +652,7 @@ async function toggleApprove(file, fromLightbox){
     return;
   }
   if(approvedSet.has(file)) approvedSet.delete(file); else approvedSet.add(file);
-  await fbSet('shoots/czQ3NewnessPdp/r2_approved', Array.from(approvedSet));
+  await fbSet('shoots/czQ3NewnessPdp/r3_approved', Array.from(approvedSet));
   render();
   if(fromLightbox) updateLightboxPanel();
 }
@@ -669,12 +669,12 @@ function openLightbox(idx){
 }
 function updateLightboxImage(){
   const file = FILES[lbIndex];
-  const src = lbState === 'edit' ? ('images/full/' + file) : ('../r1/images/full/' + ORIGINAL_OF[file]);
+  const src = lbState === 'edit' ? ('images/full/' + file) : ('../r2/images/full/' + ORIGINAL_OF[file]);
   document.getElementById('lightboxImg').src = src;
   const label = document.getElementById('lbStateLabel');
-  label.textContent = lbState === 'edit' ? 'R2 EDIT' : 'R1';
+  label.textContent = lbState === 'edit' ? 'R3 EDIT' : 'R2';
   label.className = lbState;
-  document.getElementById('lbToggleBtn').textContent = 'Show ' + (lbState === 'edit' ? 'R1' : 'R2 edit');
+  document.getElementById('lbToggleBtn').textContent = 'Show ' + (lbState === 'edit' ? 'R2' : 'R3 edit');
 }
 function updateLightboxPanel(){
   const file = FILES[lbIndex];
@@ -733,10 +733,10 @@ async function postComment(){
   if(!file) return;
   const arr = commentsByFile[fKey(file)] || [];
   arr.push({name: myName, text, ts: Date.now()});
-  const ok = await fbSet('shoots/czQ3NewnessPdp/r2_comments/' + fKey(file), arr);
+  const ok = await fbSet('shoots/czQ3NewnessPdp/r3_comments/' + fKey(file), arr);
   if(!ok) return;
   commentsByFile[fKey(file)] = arr;
-  notifySlack('💬 *' + myName + '* commented on Q3 Newness PDP R2 edit `' + file + '`: "' + text + '"\n<https://k8-harrison.github.io/asset-review/the-citizenry/q3-newness-pdp/r2/|Open R2 review>');
+  notifySlack('💬 *' + myName + '* commented on Q3 Newness PDP R3 edit `' + file + '`: "' + text + '"\n<https://k8-harrison.github.io/asset-review/the-citizenry/q3-newness-pdp/r3/|Open R3 review>');
   input.value = '';
   renderComments(file);
   render();
@@ -745,7 +745,7 @@ async function deleteComment(file, idx){
   const arr = commentsByFile[fKey(file)] || [];
   arr.splice(idx, 1);
   commentsByFile[fKey(file)] = arr;
-  await fbSet('shoots/czQ3NewnessPdp/r2_comments/' + fKey(file), arr);
+  await fbSet('shoots/czQ3NewnessPdp/r3_comments/' + fKey(file), arr);
   renderComments(file);
   render();
 }
@@ -769,7 +769,7 @@ function getExportRows(){
 
 function buildExportText(){
   const rows = getExportRows().filter(r=>exportIncluded.has(r.file));
-  const heading = 'Q3 NEWNESS PDP — R2 APPROVED EDITS';
+  const heading = 'Q3 NEWNESS PDP — R3 APPROVED EDITS';
 
   const lines = [];
   lines.push(heading);
@@ -867,7 +867,7 @@ function downloadExportText(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = 'q3-newness-pdp-r2-approved-' + stamp + '.txt';
+  a.download = 'q3-newness-pdp-r3-approved-' + stamp + '.txt';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -908,7 +908,7 @@ async function downloadVisualExport(){
       </div>`);
   }
 
-  const heading = 'Q3 Newness PDP - R2 Approved Edits';
+  const heading = 'Q3 Newness PDP - R3 Approved Edits';
   const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <title>${heading}</title>
@@ -935,7 +935,7 @@ async function downloadVisualExport(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = 'q3-newness-pdp-r2-approved-' + stamp + '.html';
+  a.download = 'q3-newness-pdp-r3-approved-' + stamp + '.html';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -980,7 +980,7 @@ async function downloadJpgZip(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = 'q3-newness-pdp-r2-approved-' + stamp + '.zip';
+  a.download = 'q3-newness-pdp-r3-approved-' + stamp + '.zip';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
