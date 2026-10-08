@@ -88,6 +88,17 @@
     cursor:pointer;color:var(--ink);font-family:var(--font-body);
   }
   #lbToggleBtn:hover{border-color:var(--moss);color:var(--moss);}
+  #lbVersionPicker{
+    position:absolute;bottom:0;left:50%;transform:translateX(-50%);display:flex;
+    background:rgba(255,255,255,0.95);border:1px solid var(--line);border-radius:20px;overflow:hidden;
+  }
+  #lbVersionPicker button{
+    border:none;background:transparent;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;
+    color:var(--ink-soft);font-family:var(--font-body);
+  }
+  #lbVersionPicker button+button{border-left:1px solid var(--line);}
+  #lbVersionPicker button:hover{color:var(--moss);}
+  #lbVersionPicker button.active{background:var(--moss);color:#fff;}
   #lightboxPanel{background:var(--card);border-radius:4px;padding:20px;width:280px;margin-left:20px;flex-shrink:0;max-height:88vh;overflow-y:auto;}
   #lightboxPanel .fname{font-size:13px;font-weight:700;margin-bottom:16px;}
   #lbApproveBtn{
@@ -268,7 +279,7 @@ function darkenHex(hex, amt){
 <header>
   <div class="titleBlock">
     <h1><span class="r2Badge">R3</span>Q3 Newness PDP — Round 3 Edits</h1>
-    <div class="sub"><span id="totalPhotoCount">4</span> photos · <span id="approvedCount">0</span> approved · click a photo to expand, compare against R2, and see R2 feedback</div>
+    <div class="sub"><span id="totalPhotoCount">4</span> photos · <span id="approvedCount">0</span> approved · flip between R1, R2, and R3 on any photo · R2 feedback shows alongside</div>
   </div>
   <div style="display:flex;gap:10px;align-items:center;">
     <button class="exportBtnHeader" id="exportBtn">Export</button>
@@ -288,7 +299,7 @@ function darkenHex(hex, amt){
     <span id="lbNavPrev">&#8249;</span>
     <div id="lbStateLabel" class="edit">R3 EDIT</div>
     <img id="lightboxImg" src="">
-    <button id="lbToggleBtn">Show R2</button>
+    <div id="lbVersionPicker"></div>
     <span id="lbNavNext">&#8250;</span>
   </div>
   <div id="lightboxPanel">
@@ -336,6 +347,14 @@ let FILES = RECORDS.map(r => r.file);
 const ORIGINAL_OF = {};
 RECORDS.forEach(r => { if(r.original) ORIGINAL_OF[r.file] = r.original; });
 function hasOriginal(file){ return !!ORIGINAL_OF[file]; }
+// Every version of each R3 photo, newest first: R3 -> R2 -> R1
+const R1_OF = {"2608_CZ_STU_BLOCK-PRINT-NAPKINS-LIANNA-AEGEAN_SQ02_R3.png": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-LIANNA-AEGEAN_SQ02_R1.png", "2608_CZ_STU_BLOCK-PRINT-NAPKINS-LIANNA-BARLEY_SQ02_R3.png": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-LIANNA-BARLEY_SQ02_R1.png", "2608_CZ_STU_BLOCK-PRINT-NAPKINS-RAYA-AEGEAN_SQ02_R3.png": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-RAYA-AEGEAN_SQ02_R1.png", "2608_CZ_STU_BLOCK-PRINT-NAPKINS-RAYA-OLIVE_SQ02_R3.png": "2608_CZ_STU_BLOCK-PRINT-NAPKINS-RAYA-OLIVE_SQ02_R1.png"};
+function versionsOf(file){
+  const v = [{label:'R3 EDIT', short:'R3', cls:'edit', thumb:'images/thumb/' + file, full:'images/full/' + file}];
+  if(ORIGINAL_OF[file]) v.push({label:'R2', short:'R2', cls:'original', thumb:'../r2/images/thumb/' + ORIGINAL_OF[file], full:'../r2/images/full/' + ORIGINAL_OF[file]});
+  if(R1_OF[file]) v.push({label:'R1', short:'R1', cls:'original', thumb:'../r1/images/thumb/' + R1_OF[file], full:'../r1/images/full/' + R1_OF[file]});
+  return v;
+}
 
 const FIREBASE_URL = 'https://asset-review-8bfb6-default-rtdb.firebaseio.com';
 const SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/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';
@@ -357,10 +376,10 @@ function isAdmin(){ return myEmail && ADMIN_EMAILS.includes(myEmail.toLowerCase(
 let approvedSet = new Set();
 let prevComments = {}; // read-only: R2 comments, keyed by the R2 file
 let commentsByFile = {};
-let cardState = {}; // file -> 'edit' | 'original'  (grid card state)
+let cardState = {}; // file -> index into versionsOf(file) (0 = R3)
 let deletedFiles = new Set();
 let lbIndex = -1;
-let lbState = 'edit'; // lightbox's own toggle state
+let lbState = 0; // index into versionsOf(current file)
 
 const ALLOWED_DOMAINS = ['havenly.com', 'interiordefine.com'];
 
@@ -460,7 +479,7 @@ function timeAgo(ts){
 }
 
 async function init(){
-  FILES.forEach(f => cardState[f] = 'edit');
+  FILES.forEach(f => cardState[f] = 0);
 
   document.getElementById('googleSignInBtn').addEventListener('click', async ()=>{
     clearSignInError();
@@ -494,8 +513,10 @@ async function init(){
   document.getElementById('lightbox').addEventListener('click', e=>{ if(e.target.id==='lightbox') closeLightbox(); });
   document.getElementById('lbNavPrev').addEventListener('click', ()=>navLightbox(-1));
   document.getElementById('lbNavNext').addEventListener('click', ()=>navLightbox(1));
-  document.getElementById('lbToggleBtn').addEventListener('click', ()=>{
-    lbState = lbState === 'edit' ? 'original' : 'edit';
+  document.getElementById('lbVersionPicker').addEventListener('click', e=>{
+    const b = e.target.closest('button[data-v]');
+    if(!b) return;
+    lbState = parseInt(b.dataset.v);
     updateLightboxImage();
   });
   document.getElementById('lbApproveBtn').addEventListener('click', ()=>{
@@ -530,6 +551,11 @@ async function init(){
     if(e.key==='Escape') closeLightbox();
     if(e.key==='ArrowLeft') navLightbox(-1);
     if(e.key==='ArrowRight') navLightbox(1);
+    if(['1','2','3'].includes(e.key) && document.activeElement.tagName !== 'TEXTAREA'){
+      const vs = versionsOf(FILES[lbIndex]);
+      const i = vs.findIndex(v=>v.short === 'R' + e.key);
+      if(i >= 0){ lbState = i; updateLightboxImage(); }
+    }
   });
 }
 
@@ -600,18 +626,21 @@ function render(){
   const grid = document.getElementById('grid');
   grid.innerHTML = FILES.map((file, i)=>{
     const isApproved = approvedSet.has(file);
-    const canToggle = hasOriginal(file);
-    const state = canToggle ? cardState[file] : 'edit';
-    const src = state === 'edit' ? ('images/thumb/' + file) : ('../r2/images/thumb/' + ORIGINAL_OF[file]);
+    const versions = versionsOf(file);
+    const canToggle = versions.length > 1;
+    const vi = (cardState[file] || 0) % versions.length;
+    const ver = versions[vi];
+    const nextVer = versions[(vi + 1) % versions.length];
+    const src = ver.thumb;
     const commentCount = (commentsByFile[fKey(file)] || []).length;
     return `
     <div class="card ${isApproved?'approved':''}" data-idx="${i}">
       <div class="imgArea" data-action="view">
-        <div class="stateLabel ${state}">${state === 'edit' ? 'R3 EDIT' : 'R2'}</div>
+        <div class="stateLabel ${ver.cls}">${ver.label}</div>
         <button class="checkBadge" data-action="approve" title="${isApproved?'Remove approval':'Approve this edit'}">${isApproved ? '&#10003;' : ''}</button>
         ${isAdmin() ? `<button class="deleteBadge" data-action="delete" title="Delete this photo (admin only)">&#128465;</button>` : ''}
         <img src="${src}">
-        ${canToggle ? `<button class="toggleBtn" data-action="toggle">Show ${state === 'edit' ? 'R2' : 'R3 edit'}</button>` : ''}
+        ${canToggle ? `<button class="toggleBtn" data-action="toggle">Show ${nextVer.short === 'R3' ? 'R3 edit' : nextVer.short}</button>` : ''}
       </div>
       <div class="cardFooter">
         <div class="fname mono">${frameLabel(file)}</div>
@@ -635,7 +664,7 @@ function render(){
     if(toggleEl){
       toggleEl.addEventListener('click', e=>{
         e.stopPropagation();
-        cardState[file] = cardState[file] === 'edit' ? 'original' : 'edit';
+        cardState[file] = ((cardState[file] || 0) + 1) % versionsOf(file).length;
         render();
       });
     }
@@ -661,20 +690,27 @@ async function toggleApprove(file, fromLightbox){
 function openLightbox(idx){
   lbIndex = idx;
   const file = FILES[idx];
-  lbState = hasOriginal(file) ? (cardState[file] || 'edit') : 'edit';
+  const versions = versionsOf(file);
+  lbState = (cardState[file] || 0) % versions.length;
   document.getElementById('lightbox').classList.add('open');
-  document.getElementById('lbToggleBtn').style.display = hasOriginal(file) ? '' : 'none';
+  const picker = document.getElementById('lbVersionPicker');
+  picker.style.display = versions.length > 1 ? '' : 'none';
+  // oldest on the left: R1 | R2 | R3
+  picker.innerHTML = versions.map((v,i)=>({v,i})).reverse()
+    .map(({v,i})=>`<button type="button" data-v="${i}">${v.short}</button>`).join('');
   updateLightboxImage();
   updateLightboxPanel();
 }
 function updateLightboxImage(){
   const file = FILES[lbIndex];
-  const src = lbState === 'edit' ? ('images/full/' + file) : ('../r2/images/full/' + ORIGINAL_OF[file]);
-  document.getElementById('lightboxImg').src = src;
+  const ver = versionsOf(file)[lbState] || versionsOf(file)[0];
+  document.getElementById('lightboxImg').src = ver.full;
   const label = document.getElementById('lbStateLabel');
-  label.textContent = lbState === 'edit' ? 'R3 EDIT' : 'R2';
-  label.className = lbState;
-  document.getElementById('lbToggleBtn').textContent = 'Show ' + (lbState === 'edit' ? 'R2' : 'R3 edit');
+  label.textContent = ver.label;
+  label.className = ver.cls;
+  document.querySelectorAll('#lbVersionPicker button').forEach(b=>{
+    b.classList.toggle('active', parseInt(b.dataset.v) === lbState);
+  });
 }
 function updateLightboxPanel(){
   const file = FILES[lbIndex];
