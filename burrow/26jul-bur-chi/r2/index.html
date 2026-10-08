@@ -171,11 +171,11 @@
   .segmented button{border:none;background:transparent;padding:7px 13px;font-size:12px;cursor:pointer;font-family:var(--font-body);color:var(--ink-soft);font-weight:600;}
   .segmented button.active{background:var(--moss);color:#fff;}
   .segmented button+button{border-left:1px solid var(--line);}
-  #prevRoundSection{
+  .prevRoundSection{
     background:var(--paper-dim);border:1px solid var(--line);border-radius:4px;
     padding:12px;margin-bottom:16px;
   }
-  #prevRoundSection .commentsHeading{color:var(--moss);margin-bottom:6px;}
+  .prevRoundSection .commentsHeading{color:var(--moss);margin-bottom:6px;}
   .prevCommentItem{font-size:12px;line-height:1.5;margin-bottom:6px;color:var(--ink);}
   .prevCommentItem b{color:var(--ink);}
   .prevCommentItem .cTime{font-size:10px;color:var(--ink-soft);margin-left:6px;}
@@ -284,10 +284,7 @@ function darkenHex(hex, amt){
   </div>
   <div id="lightboxPanel">
     <div class="fname mono" id="lbFname"></div>
-    <div id="prevRoundSection" style="display:none;">
-      <div class="commentsHeading" id="prevRoundHeading">R1 Feedback</div>
-      <div id="prevComments"></div>
-    </div>
+    <div id="prevRounds"></div>
     <div class="commentsHeading">Feedback — This Round</div>
     <div id="lbComments"></div>
     <div id="noComments" style="display:none;">No comments yet.</div>
@@ -335,7 +332,13 @@ async function notifySlack(text){
 }
 let myName = null;
 let commentsByFile = {};
-let prevComments = {}; // read-only: comments from the round before this one
+function rootId(file){ return file.replace(/\.jpg$/i, ''); } // main review keys comments by id, no extension
+// Read-only feedback from every earlier round, newest first
+const PREV_ROUNDS = [
+  { label: 'R1', path: 'r2_comments', keyOf: f => fKey(f) },
+  { label: 'Main Review', path: 'comments', keyOf: f => rootId(f) }
+];
+let prevCommentsByRound = {};
 let cardState = {}; // file -> 'edit' | 'original'  (grid card state)
 let currentFilter = 'all'; // 'all' | 'commented'
 let visibleFiles = [];
@@ -510,8 +513,8 @@ async function init(){
 
 async function startApp(){
   const commentsData = await fbGet('r3_comments');
-  const prevData = await fbGet('r2_comments');
-  prevComments = prevData || {};
+  const prevData = await Promise.all(PREV_ROUNDS.map(r => fbGet(r.path)));
+  PREV_ROUNDS.forEach((r, i) => { prevCommentsByRound[r.label] = prevData[i] || {}; });
   commentsByFile = commentsData || {};
   render();
 
@@ -599,20 +602,21 @@ function updateLightboxPanel(){
   renderComments(file);
 }
 function renderPrevComments(file){
-  const arr = prevComments[fKey(file)] || [];
-  const section = document.getElementById('prevRoundSection');
-  const list = document.getElementById('prevComments');
-  if(arr.length === 0){
-    section.style.display = 'none';
-    list.innerHTML = '';
-    return;
-  }
-  section.style.display = 'block';
-  list.innerHTML = arr.map(c=>`
-    <div class="prevCommentItem">
-      <b>${escapeHtml(c.name)}</b><span class="cTime">${timeAgo(c.ts)}</span>
-      <div>${escapeHtml(c.text)}</div>
-    </div>`).join('');
+  const container = document.getElementById('prevRounds');
+  container.innerHTML = PREV_ROUNDS.map(r=>{
+    const key = r.keyOf(file);
+    const arr = key ? ((prevCommentsByRound[r.label] || {})[key] || []) : [];
+    if(arr.length === 0) return '';
+    return `
+    <div class="prevRoundSection">
+      <div class="commentsHeading">${r.label} Feedback</div>
+      ${arr.map(c=>`
+        <div class="prevCommentItem">
+          <b>${escapeHtml(c.name)}</b><span class="cTime">${timeAgo(c.ts)}</span>
+          <div>${escapeHtml(c.text)}</div>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
 }
 function renderComments(file){
   const arr = commentsByFile[fKey(file)] || [];

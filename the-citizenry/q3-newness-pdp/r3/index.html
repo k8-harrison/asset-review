@@ -372,10 +372,10 @@ const ADMIN_EMAILS = ['kate.harrison@havenly.com'];
 function isAdmin(){ return myEmail && ADMIN_EMAILS.includes(myEmail.toLowerCase()); }
 let approvedSet = new Set();
 // Read-only feedback from every earlier round, newest first.
-// fileOf maps this round's file to that round's matching file.
+// keyOf maps this round's file to that round's comment key.
 const PREV_ROUNDS = [
-  { label: 'R2', path: 'shoots/czQ3NewnessPdp/r2_comments', fileOf: f => ORIGINAL_OF[f] },
-  { label: 'R1', path: 'shoots/czQ3NewnessPdp/r1_comments', fileOf: f => R1_OF[f] }
+  { label: 'R2', path: 'shoots/czQ3NewnessPdp/r2_comments', keyOf: f => ORIGINAL_OF[f] ? fKey(ORIGINAL_OF[f]) : null },
+  { label: 'R1', path: 'shoots/czQ3NewnessPdp/r1_comments', keyOf: f => R1_OF[f] ? fKey(R1_OF[f]) : null }
 ];
 let prevCommentsByRound = {}; // label -> comments object
 let commentsByFile = {};
@@ -731,8 +731,8 @@ function updateLightboxPanel(){
 function renderPrevComments(file){
   const container = document.getElementById('prevRounds');
   container.innerHTML = PREV_ROUNDS.map(r=>{
-    const f = r.fileOf(file);
-    const arr = f ? ((prevCommentsByRound[r.label] || {})[fKey(f)] || []) : [];
+    const key = r.keyOf(file);
+    const arr = key ? ((prevCommentsByRound[r.label] || {})[key] || []) : [];
     if(arr.length === 0) return '';
     return `
     <div class="prevRoundSection">
