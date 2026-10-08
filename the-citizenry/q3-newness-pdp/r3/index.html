@@ -197,11 +197,11 @@
   #downloadVisualBtn{background:transparent;color:var(--moss-dark);}
   #downloadZipBtn{background:transparent;color:var(--moss-dark);flex:1 1 100%;}
   #closeExportBtn{background:transparent;color:var(--ink-soft);border-color:var(--line);}
-  #prevRoundSection{
+  .prevRoundSection{
     background:var(--paper-dim);border:1px solid var(--line);border-radius:4px;
     padding:12px;margin-bottom:16px;
   }
-  #prevRoundSection .commentsHeading{color:var(--moss);margin-bottom:6px;}
+  .prevRoundSection .commentsHeading{color:var(--moss);margin-bottom:6px;}
   .prevCommentItem{font-size:12px;line-height:1.5;margin-bottom:6px;color:var(--ink);}
   .prevCommentItem b{color:var(--ink);}
   .prevCommentItem .cTime{font-size:10px;color:var(--ink-soft);margin-left:6px;}
@@ -279,7 +279,7 @@ function darkenHex(hex, amt){
 <header>
   <div class="titleBlock">
     <h1><span class="r2Badge">R3</span>Q3 Newness PDP — Round 3 Edits</h1>
-    <div class="sub"><span id="totalPhotoCount">4</span> photos · <span id="approvedCount">0</span> approved · flip between R1, R2, and R3 on any photo · R2 feedback shows alongside</div>
+    <div class="sub"><span id="totalPhotoCount">4</span> photos · <span id="approvedCount">0</span> approved · flip between R1, R2, and R3 on any photo · R1 and R2 feedback shows alongside</div>
   </div>
   <div style="display:flex;gap:10px;align-items:center;">
     <button class="exportBtnHeader" id="exportBtn">Export</button>
@@ -306,10 +306,7 @@ function darkenHex(hex, amt){
     <div class="fname mono" id="lbFname"></div>
     <button id="lbApproveBtn">Approve this edit</button>
     <button id="lbDeleteBtn" style="display:none;background:transparent;color:#B22C2C;border:1px solid #B22C2C;padding:8px;border-radius:3px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);width:100%;margin-top:8px;">Delete this photo (admin)</button>
-    <div id="prevRoundSection" style="display:none;">
-      <div class="commentsHeading">R2 Feedback</div>
-      <div id="prevComments"></div>
-    </div>
+    <div id="prevRounds"></div>
     <div class="commentsHeading">Feedback — This Round</div>
     <div id="lbComments"></div>
     <div id="noComments" style="display:none;">No comments yet.</div>
@@ -374,7 +371,13 @@ let myEmail = null;
 const ADMIN_EMAILS = ['kate.harrison@havenly.com'];
 function isAdmin(){ return myEmail && ADMIN_EMAILS.includes(myEmail.toLowerCase()); }
 let approvedSet = new Set();
-let prevComments = {}; // read-only: R2 comments, keyed by the R2 file
+// Read-only feedback from every earlier round, newest first.
+// fileOf maps this round's file to that round's matching file.
+const PREV_ROUNDS = [
+  { label: 'R2', path: 'shoots/czQ3NewnessPdp/r2_comments', fileOf: f => ORIGINAL_OF[f] },
+  { label: 'R1', path: 'shoots/czQ3NewnessPdp/r1_comments', fileOf: f => R1_OF[f] }
+];
+let prevCommentsByRound = {}; // label -> comments object
 let commentsByFile = {};
 let cardState = {}; // file -> index into versionsOf(file) (0 = R3)
 let deletedFiles = new Set();
@@ -564,7 +567,8 @@ async function startApp(){
   approvedSet = new Set(approvedData || []);
   const commentsData = await fbGet('shoots/czQ3NewnessPdp/r3_comments');
   commentsByFile = commentsData || {};
-  prevComments = (await fbGet('shoots/czQ3NewnessPdp/r2_comments')) || {};
+  const prevData = await Promise.all(PREV_ROUNDS.map(r => fbGet(r.path)));
+  PREV_ROUNDS.forEach((r, i) => { prevCommentsByRound[r.label] = prevData[i] || {}; });
   const deletedData = await fbGet('shoots/czQ3NewnessPdp/r3_deleted');
   deletedFiles = new Set(deletedData || []);
   applyDeletions();
@@ -725,17 +729,21 @@ function updateLightboxPanel(){
   renderComments(file);
 }
 function renderPrevComments(file){
-  const orig = ORIGINAL_OF[file];
-  const arr = orig ? (prevComments[fKey(orig)] || []) : [];
-  const section = document.getElementById('prevRoundSection');
-  const list = document.getElementById('prevComments');
-  if(arr.length === 0){ section.style.display = 'none'; list.innerHTML = ''; return; }
-  section.style.display = 'block';
-  list.innerHTML = arr.map(c=>`
-    <div class="prevCommentItem">
-      <b>${escapeHtml(c.name)}</b><span class="cTime">${timeAgo(c.ts)}</span>
-      <div>${escapeHtml(c.text)}</div>
-    </div>`).join('');
+  const container = document.getElementById('prevRounds');
+  container.innerHTML = PREV_ROUNDS.map(r=>{
+    const f = r.fileOf(file);
+    const arr = f ? ((prevCommentsByRound[r.label] || {})[fKey(f)] || []) : [];
+    if(arr.length === 0) return '';
+    return `
+    <div class="prevRoundSection">
+      <div class="commentsHeading">${r.label} Feedback</div>
+      ${arr.map(c=>`
+        <div class="prevCommentItem">
+          <b>${escapeHtml(c.name)}</b><span class="cTime">${timeAgo(c.ts)}</span>
+          <div>${escapeHtml(c.text)}</div>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
 }
 function renderComments(file){
   const arr = commentsByFile[fKey(file)] || [];
