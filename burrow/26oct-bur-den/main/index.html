@@ -590,7 +590,7 @@ const BATCHES = [
   {id: 'd1s1', label: 'Day 1 · Scene 1 · Patio, lounge', short: 'D1 S1'},
   {id: 'd1s2', label: 'Day 1 · Scene 2 · Dining', short: 'D1 S2'},
   {id: 'd1s3', label: 'Day 1 · Scene 3 · Living', short: 'D1 S3'},
-  {id: 'd1s5', label: 'Day 1 · Scene 5 · Patio, dining', short: 'D1 S5'},
+  {id: 'd1s5', label: 'Day 1 · Scene 4 · Patio, dining', short: 'D1 S4'},
   {id: 'd2s1', label: 'Day 2 · Scene 1 · Patio', short: 'D2 S1'},
   {id: 'd2s2', label: 'Day 2 · Scene 2 · Living', short: 'D2 S2'},
   {id: 'd2s3', label: 'Day 2 · Scene 3 · Dining', short: 'D2 S3'},
@@ -611,7 +611,7 @@ const SHOT_LIST = {
   d1s1: {day:1, name:'Patio, lounge', look:'Look 1', action:'Emily reading the paper, Dominick drinking coffee. Dunes sofa, lounge chairs, ottoman, seagrass rug.', slots: STD_TALENT},
   d1s2: {day:1, name:'Dining', look:'Look 1', action:'Emily at the table, Dominick serving coffee and breakfast. Serif table, Alto chairs and counter stools.', slots: STD_TALENT},
   d1s3: {day:1, name:'Living', look:'Looks 2 and 3', action:'Emily heading out for a walk, Dominick knitting on the Mercer, folding laundry together, the couple on the Mercer. Includes the old Scene 4 frames. The GIF was not shot, so its 10 shots moved to flex picks.', slots: STD_TALENT},
-  d1s5: {day:1, name:'Patio, dining', look:'Look 2', action:'Emily journaling or sketching at the table, Dominick repotting a plant nearby. Dunes outdoor dining.', slots: STD_TALENT},
+  d1s5: {day:1, num:'4', name:'Patio, dining', look:'Look 2', action:'Emily journaling or sketching at the table, Dominick repotting a plant nearby. Dunes outdoor dining.', slots: STD_TALENT},
   d2s1: {day:2, name:'Patio', look:'No talent', action:'Dunes sofa, lounge chairs, ottoman, tray, rug, plus Dunes outdoor dining.', slots: [
     {id:'heroV', label:'Hero', o:'V', target:1}, {id:'heroH', label:'Hero', o:'H', target:1},
     {id:'sofaV', label:'Dunes sofa', o:'V', target:1}, {id:'sofaH', label:'Dunes sofa', o:'H', target:1},
@@ -1218,7 +1218,7 @@ function renderShotList(){
     sceneHtml[sceneId] = `
       <div class="slScene">
         <div class="slHead">
-          <h3>Scene${sc.num ? 's ' + sc.num : ' ' + sceneId.slice(-1)} · ${escapeHtml(sc.name)}</h3>
+          <h3>Scene ${sc.num || sceneId.slice(-1)} · ${escapeHtml(sc.name)}</h3>
           <div class="tot ${cov.filled === cov.target ? 'done' : ''}">${cov.filled} of ${cov.target} slots filled</div>
         </div>
         <div class="slMeta">${escapeHtml(sc.look)}. ${escapeHtml(sc.action)}<br>
