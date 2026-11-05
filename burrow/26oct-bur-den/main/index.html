@@ -181,6 +181,33 @@
   }
   #statsStrip b{color:var(--ink);}
 
+  /* ---- plan tracker ---- */
+  #planBar{padding:12px 24px 14px;border-bottom:1px solid var(--line);background:var(--paper);}
+  #planBar .pbHead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:10px;font-size:12px;color:var(--ink-soft);}
+  #planBar .pbHead b{color:var(--ink);font-size:13px;}
+  #planBar .pbLegend{display:flex;gap:12px;flex-wrap:wrap;margin-left:auto;font-size:11px;}
+  #planBar .pbLegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px;}
+  #planBar .pbCards{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;}
+  .pbCard{
+    flex:0 0 auto;min-width:148px;background:var(--card);border:1px solid var(--line);border-radius:4px;
+    padding:9px 11px;cursor:pointer;text-align:left;font-family:var(--font-body);color:var(--ink);
+  }
+  .pbCard:hover{border-color:var(--ink-soft);}
+  .pbCard.active{border-color:var(--moss);box-shadow:0 0 0 1px var(--moss) inset;}
+  .pbCard .pbName{font-size:11px;font-weight:700;margin-bottom:5px;white-space:nowrap;}
+  .pbCard .pbName span{color:var(--ink-soft);font-weight:600;}
+  .pbCard .pbNums{font-size:12px;line-height:1.35;}
+  .pbCard .pbNums b{font-size:16px;}
+  .pbCard .pbRatio{font-size:11px;font-weight:700;margin-left:4px;}
+  .pbCard .pbMeter{height:5px;border-radius:3px;background:var(--paper-dim);margin:6px 0 5px;overflow:hidden;}
+  .pbCard .pbMeter div{height:100%;border-radius:3px;}
+  .pbCard .pbSub{font-size:10.5px;color:var(--ink-soft);line-height:1.45;white-space:nowrap;}
+  .pbCard .pbSub b{color:var(--ink);}
+  .lvl-under{color:var(--ink-soft);} .bg-under{background:#B9B5A6;}
+  .lvl-ok{color:#2E7D32;} .bg-ok{background:#2E7D32;}
+  .lvl-high{color:#B26A00;} .bg-high{background:#D18A1C;}
+  .lvl-over{color:#B3261E;} .bg-over{background:#C0392B;}
+
   /* ---- grid ---- */
   main{padding:20px 24px 60px;}
   #grid{
@@ -522,6 +549,7 @@ function darkenHex(hex, amt){
   <div><b id="statReviewers">0</b> reviewers</div>
   <div><b id="statTop">—</b> most-picked frame</div>
 </div>
+<div id="planBar"></div>
 
 <main>
   <div id="grid"></div>
@@ -1219,7 +1247,7 @@ function renderShotList(){
       <div class="slScene">
         <div class="slHead">
           <h3>Scene ${sc.num || sceneId.slice(-1)} · ${escapeHtml(sc.name)}</h3>
-          <div class="tot ${cov.filled === cov.target ? 'done' : ''}">${cov.filled} of ${cov.target} slots filled</div>
+          <div class="tot ${cov.filled === cov.target ? 'done' : ''}">${cov.inScene.filter(img=>isShortlisted(img.id)).length} selects · ${cov.filled} of ${cov.target} slots filled</div>
         </div>
         <div class="slMeta">${escapeHtml(sc.look)}. ${escapeHtml(sc.action)}<br>
           ${cov.inScene.length} frames (${oCount.H} horizontal, ${oCount.V} vertical) · <a data-browse="${sceneId}">Browse this scene</a>${untagged}</div>
@@ -1304,9 +1332,75 @@ function cmpExport(a,b){
   return 0;
 }
 
+/* ====== PLAN TRACKER: selects vs shot-list plan ====== */
+function planLevel(selects, plan){
+  if(!plan) return 'under';
+  const r = selects / plan;
+  if(r < 1) return 'under';
+  if(r <= 2) return 'ok';
+  if(r <= 3) return 'high';
+  return 'over';
+}
+function renderPlanBar(){
+  const el = document.getElementById('planBar');
+  const selected = new Set();
+  Object.values(selectionsByReviewer).forEach(set=>set.forEach(id=>selected.add(id)));
+  const byId = {}; IMAGES.forEach(i=>byId[i.id]=i);
+  const card = (key, name, sub, sel, plan, fin, finPlan, extra) => {
+    const lvl = planLevel(sel, plan);
+    const ratio = plan ? (sel/plan) : 0;
+    const pct = plan ? Math.min(100, ratio / 4 * 100) : 0;
+    return `<button class="pbCard ${currentBatch === key ? 'active' : ''}" data-scene="${key}" title="${sel} selects against a plan of ${plan}">
+      <div class="pbName">${escapeHtml(name)} <span>${escapeHtml(sub)}</span></div>
+      <div class="pbNums"><b>${sel}</b> selects / ${plan} planned${plan && sel ? `<span class="pbRatio lvl-${lvl}">${ratio.toFixed(1)}×</span>` : ''}</div>
+      <div class="pbMeter"><div class="bg-${lvl}" style="width:${pct}%"></div></div>
+      <div class="pbSub">Finals <b>${fin}</b> / ${finPlan}${extra || ''}</div>
+    </button>`;
+  };
+  let totSel = 0, totFin = 0, totPlan = 0;
+  const cards = [];
+  Object.keys(SHOT_LIST).forEach(sceneId=>{
+    const sc = SHOT_LIST[sceneId];
+    const plan = sc.slots.reduce((a,x)=>a+x.target,0);
+    const planV = sc.slots.filter(x=>x.o==='V').reduce((a,x)=>a+x.target,0);
+    const planH = plan - planV;
+    const imgs = IMAGES.filter(i=>sceneOf(i) === sceneId);
+    const sel = imgs.filter(i=>selected.has(i.id));
+    const selV = sel.filter(i=>i.o==='V').length, selH = sel.length - selV;
+    const fin = imgs.filter(i=>finalSelects.has(i.id) && slotOf(i) !== 'flex').length;
+    totSel += sel.length; totFin += fin; totPlan += plan;
+    const b = BATCHES.find(x=>x.id === sceneId);
+    cards.push(card(sceneId, b.short, sc.name, sel.length, plan, fin, plan,
+      `<br>V <b>${selV}</b>/${planV} · H <b>${selH}</b>/${planH}`));
+  });
+  const flexFin = IMAGES.filter(i=>slotOf(i) === 'flex' && finalSelects.has(i.id)).length;
+  totPlan += FLEX.target; totFin += flexFin;
+  const btsSel = IMAGES.filter(i=>sceneOf(i) === 'bts' && selected.has(i.id)).length;
+  const allCard = card('all', 'All scenes', '', totSel, totPlan, totFin, totPlan,
+    `<br>Flex finals <b>${flexFin}</b>/${FLEX.target}${btsSel ? ` · BTS selects <b>${btsSel}</b>` : ''}`);
+  el.innerHTML = `
+    <div class="pbHead"><b>Selects vs. shot-list plan</b> Each card shows frames anyone has selected, against the planned count for that scene. Click a card to filter to it.
+      <span class="pbLegend"><span><i class="bg-under"></i>Under plan</span><span><i class="bg-ok"></i>Up to 2×</span><span><i class="bg-high"></i>2–3×</span><span><i class="bg-over"></i>Over 3×</span></span>
+    </div>
+    <div class="pbCards">${allCard}${cards.join('')}</div>`;
+  el.querySelectorAll('.pbCard').forEach(c=>c.addEventListener('click', ()=>{
+    const key = c.dataset.scene;
+    currentBatch = key;
+    document.getElementById('batchFilter').value = key;
+    currentSlot = '';
+    buildSlotFilter();
+    if(currentView === 'shotlist'){
+      currentView = 'grid';
+      document.querySelectorAll('#viewToggle button').forEach(b=>b.classList.toggle('active', b.dataset.view === 'grid'));
+    }
+    render();
+  }));
+}
+
 /* ====== RENDER ====== */
 function render(){
   updateStats();
+  renderPlanBar();
   document.getElementById('grid').style.display = 'none';
   document.getElementById('tallyList').style.display = 'none';
   document.getElementById('finalsList').style.display = 'none';
