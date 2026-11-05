@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>26OCT BUR DEN — Asset Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:wght@500;600;700&family=Lora:wght@500;600;700&family=Source+Serif+4:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&family=Overpass:wght@400;500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2EEE3; --ink:#211F1A; --ink-soft:#6E6A5E; --line:#DCD6C7; --accent:#8B8B4A;
+    --font-headline:'Fraunces',serif; --font-body:'Overpass',sans-serif;
+    --wrap-pad:56px 28px 100px; --row-pad:20px 0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);}
+  a{color:inherit;text-decoration:none;}
+  .wrap{max-width:640px;margin:0 auto;padding:var(--wrap-pad);}
+  .crumb{font-size:13px;color:var(--ink-soft);margin:0 0 22px;}
+  .crumb a{border-bottom:1px solid var(--line);}
+  .crumb a:hover{border-color:var(--ink-soft);}
+  h1{font-family:var(--font-headline);font-weight:500;font-size:34px;line-height:1.1;letter-spacing:-0.01em;margin:0 0 6px;}
+  .lede{font-size:14.5px;color:var(--ink-soft);line-height:1.6;margin:0 0 48px;}
+  .completeBadge{
+    display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;
+    color:#2E7D32;background:#E8F5E9;padding:5px 12px;border-radius:20px;margin-bottom:16px;
+  }
+  .finalAssetsLink{
+    display:inline-block;font-size:13px;font-weight:600;color:var(--accent);
+    border-bottom:1px solid var(--accent);text-decoration:none;margin-bottom:16px;margin-left:12px;
+  }
+  .finalAssetsLink:hover{opacity:0.7;}
+
+  .rounds{display:flex;flex-direction:column;}
+  .round{display:flex;align-items:baseline;gap:18px;padding:var(--row-pad);border-top:1px solid var(--line);}
+  .rounds .round:last-child{border-bottom:1px solid var(--line);}
+  .round-num{
+    font-family:var(--font-headline);font-weight:500;font-size:20px;color:var(--accent);
+    flex:none;width:28px;
+  }
+  .round-main{flex:1;min-width:0;}
+  .round-name{font-size:16.5px;font-weight:600;}
+  .round:hover .round-name{opacity:0.6;}
+  .round-desc{font-size:13px;color:var(--ink-soft);margin-top:3px;}
+  .round-status{font-size:13px;color:var(--ink);white-space:nowrap;flex:none;}
+
+  @media (max-width:480px){
+    .wrap{padding:40px 20px 70px;}
+    h1{font-size:28px;}
+    .round{flex-wrap:wrap;}
+    .round-status{width:100%;padding-left:46px;margin-top:2px;}
+  }
+</style>
+</head>
+<body>
+<script>
+/* ===== Site-wide look, controlled from /admin/ ===== */
+const BRAND_SLUG = 'burrow';
+const PROJECT_SLUG = '26oct-bur-den';
+const THEME_DEFAULTS = {
+  paper: '#F2EEE3', ink: '#211F1A', inkSoft: '#6E6A5E', line: '#DCD6C7',
+  headlineFont: 'fraunces', bodyFont: 'overpass',
+  density: 'comfortable', accentStyle: 'dot'
+};
+const HEADLINE_FONT_MAP = {
+  fraunces: "'Fraunces', serif", playfair: "'Playfair Display', serif",
+  lora: "'Lora', serif", sourceserif: "'Source Serif 4', serif",
+  spacegrotesk: "'Space Grotesk', sans-serif", worksans: "'Work Sans', sans-serif"
+};
+const BODY_FONT_MAP = {
+  overpass: "'Overpass', sans-serif", inter: "'Inter', sans-serif",
+  worksans: "'Work Sans', sans-serif", plexsans: "'IBM Plex Sans', sans-serif",
+  sourcesans: "'Source Sans 3', sans-serif"
+};
+const DENSITY_MAP = {
+  compact:     { wrapPad: '40px 24px 60px',  rowPad: '14px 0' },
+  comfortable: { wrapPad: '56px 28px 100px', rowPad: '20px 0' },
+  spacious:    { wrapPad: '80px 32px 140px', rowPad: '28px 0' }
+};
+function applyTheme(theme){
+  const t = Object.assign({}, THEME_DEFAULTS, theme || {});
+  const root = document.documentElement.style;
+  root.setProperty('--paper', t.paper);
+  root.setProperty('--ink', t.ink);
+  root.setProperty('--ink-soft', t.inkSoft);
+  root.setProperty('--line', t.line);
+  root.setProperty('--font-headline', HEADLINE_FONT_MAP[t.headlineFont] || HEADLINE_FONT_MAP.fraunces);
+  root.setProperty('--font-body', BODY_FONT_MAP[t.bodyFont] || BODY_FONT_MAP.overpass);
+  const d = DENSITY_MAP[t.density] || DENSITY_MAP.comfortable;
+  root.setProperty('--wrap-pad', d.wrapPad);
+  root.setProperty('--row-pad', d.rowPad);
+  if(t.brandAccents && t.brandAccents[BRAND_SLUG]){
+    root.setProperty('--accent', t.brandAccents[BRAND_SLUG]);
+  }
+  if(document.body) document.body.setAttribute('data-accent', t.accentStyle || 'dot');
+}
+function renderProjectStatus(theme){
+  const t = theme || {};
+  const info = t.projectStatus && t.projectStatus[BRAND_SLUG] && t.projectStatus[BRAND_SLUG][PROJECT_SLUG];
+  if(!info) return;
+  const render = ()=>{
+    const area = document.getElementById('projectStatusArea');
+    if(!area) return;
+    let html = '';
+    if(info.status === 'complete'){
+      html += '<span class="completeBadge">&#10003; Complete — assets are final</span>';
+    }
+    if(info.finalAssetsUrl){
+      html += '<a class="finalAssetsLink" href="' + info.finalAssetsUrl.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener">View final assets &rarr;</a>';
+    }
+    area.innerHTML = html;
+  };
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', render);
+  } else {
+    render();
+  }
+}
+(async function(){
+  let theme = null;
+  let fetchNote = '';
+  try{
+    const res = await fetch('https://asset-review-8bfb6-default-rtdb.firebaseio.com/theme.json', {cache:'no-store'});
+    if(res.ok){
+      theme = await res.json();
+    } else {
+      const body = await res.text().catch(()=>'');
+      fetchNote = 'Could not load saved site settings (HTTP ' + res.status + ') — showing defaults.' + (body ? ' ' + body.slice(0,200) : '');
+    }
+  }catch(e){
+    fetchNote = 'Could not load saved site settings (' + (e.message || 'network error') + ') — showing defaults.';
+  }
+  applyTheme(theme);
+  renderProjectStatus(theme);
+  if(fetchNote){
+    const appendNote = ()=>{
+      const note = document.createElement('div');
+      note.style.cssText = 'margin-top:14px;font-size:11.5px;color:#B3261E;max-width:44ch;';
+      note.textContent = fetchNote;
+      const wrap = document.querySelector('.wrap');
+      if(wrap) wrap.appendChild(note);
+    };
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', appendNote);
+    } else {
+      appendNote();
+    }
+    console.error('[theme]', fetchNote);
+  }
+})();
+</script>
+<div class="wrap">
+  <div class="crumb"><a href="../../">Asset Review</a> / <a href="../">Burrow</a> / 26OCT BUR DEN</div>
+  <h1>Where I Land — Denver</h1>
+  <p class="lede">Subject 01, the couple. Lifestyle and product photography, shot in Arvada on October 20–21, 2026.</p>
+  <div id="projectStatusArea"></div>
+  <div class="rounds">
+    <a class="round" href="main/">
+      <span class="round-num">01</span>
+      <span class="round-main">
+        <div class="round-name">Main Review</div>
+        <div class="round-desc">All 1,115 frames, sorted by shot-list scene, with selects, finals and shot-list coverage</div>
+      </span>
+      <span class="round-status">In review</span>
+    </a>
+  </div>
+</div>
+</body>
+</html>

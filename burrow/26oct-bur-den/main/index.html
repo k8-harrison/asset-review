@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>26OCT BUR DEN - Asset Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --paper:#F6F3EC;
+    --paper-dim:color-mix(in srgb, var(--paper) 88%, black);
+    --font-headline:'Overpass',sans-serif; --font-body:'Overpass',sans-serif;
+    --ink:#2B2B24;
+    --ink-soft:#6B6858;
+    --moss:#94944D;
+    --moss-dark:#6E6E39;
+    --line:#D9D4C4;
+    --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* ---- name gate ---- */
+  #nameGate{
+    position:fixed;inset:0;background:rgba(43,43,36,0.55);
+    display:flex;align-items:center;justify-content:center;z-index:200;
+  }
+  #nameGate.hidden{display:none;}
+  .gateCard{
+    background:var(--card);border:1px solid var(--line);border-radius:4px;
+    padding:32px 36px;width:340px;max-width:90vw;box-shadow:0 12px 40px rgba(0,0,0,0.25);
+  }
+  .gateCard h2{margin:0 0 6px;font-size:19px;font-weight:600;}
+  .gateCard p{margin:0 0 18px;font-size:13px;color:var(--ink-soft);line-height:1.5;}
+  .gateCard input{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:3px;
+    font-family:var(--font-body);font-size:14px;margin-bottom:14px;background:var(--paper);
+  }
+  .gateCard input:focus{outline:none;border-color:var(--moss);}
+  .gateCard button{
+    width:100%;padding:10px 12px;border:none;border-radius:3px;background:var(--moss);
+    color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font-body);
+  }
+  .gateCard button:hover{background:var(--moss-dark);}
+  .googleBtn{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:#fff;color:var(--ink);border:1px solid var(--line);
+  }
+  .googleBtn:hover{background:#F7F7F7;}
+  #signInError{
+    margin-top:12px;font-size:12px;color:#B3261E;background:#FCE8E6;padding:10px 12px;
+    border-radius:3px;line-height:1.5;
+  }
+
+  /* ---- top bar ---- */
+  header{
+    position:sticky;top:0;z-index:50;background:var(--paper);
+    border-bottom:1px solid var(--line);padding:16px 24px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  }
+  .titleBlock h1{font-size:16px;margin:0;font-weight:700;letter-spacing:0.2px;font-family:var(--font-headline);}
+  .titleBlock .sub{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .titleBlock .sub span{color:var(--moss-dark);font-weight:600;}
+
+  .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .segmented{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--card);}
+  .segmented button{
+    border:none;background:transparent;padding:7px 13px;font-size:12px;cursor:pointer;
+    font-family:var(--font-body);color:var(--ink-soft);font-weight:600;
+  }
+  .segmented button.active{background:var(--moss);color:#fff;}
+  .segmented button+button{border-left:1px solid var(--line);}
+
+  select#reviewerFilter, select#batchFilter{
+    padding:7px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card);
+    font-family:var(--font-body);font-size:12px;color:var(--ink);
+  }
+
+  .exportBtn{
+    padding:7px 14px;border:1px solid var(--line);border-radius:4px;background:var(--card);
+    font-size:12px;font-weight:600;cursor:pointer;color:var(--ink-soft);font-family:var(--font-body);
+  }
+  .exportBtn:hover{border-color:var(--moss);color:var(--moss-dark);}
+
+  .r2LinkBtn{
+    padding:7px 14px;border:1px solid var(--moss);border-radius:4px;background:transparent;
+    font-size:12px;font-weight:700;cursor:pointer;color:var(--moss);font-family:var(--font-body);
+    text-decoration:none;white-space:nowrap;transition:background .15s ease,color .15s ease;
+  }
+  .r2LinkBtn:hover{background:var(--moss);color:#fff;}
+
+  #exportModal{
+    position:fixed;inset:0;background:rgba(20,19,15,0.6);display:none;
+    align-items:center;justify-content:center;z-index:180;padding:24px;
+  }
+  #exportModal.open{display:flex;}
+  .exportCard{
+    background:var(--card);border-radius:4px;padding:24px;width:860px;max-width:95vw;
+    box-shadow:0 20px 60px rgba(0,0,0,0.35);max-height:88vh;overflow-y:auto;
+  }
+  .exportCard h3{margin:0 0 4px;font-size:16px;}
+  .exportCard .sub{font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
+  .exportQuickRow{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;
+    font-size:11px;color:var(--ink-soft);
+  }
+  .exportQuickActions button{
+    background:none;border:none;color:var(--moss-dark);font-weight:700;font-size:11px;
+    cursor:pointer;text-decoration:underline;padding:0;margin-left:12px;font-family:var(--font-body);
+  }
+  #exportVisualList{
+    max-height:400px;overflow-y:auto;border:1px solid var(--line);border-radius:3px;
+    margin-bottom:14px;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;
+  }
+  .exportRow{
+    display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid var(--line);border-radius:3px;
+    position:relative;transition:opacity .15s ease;
+  }
+  .exportRow.excluded{opacity:0.35;}
+  .exportRow img{
+    width:100%;height:110px;object-fit:contain;border-radius:2px;background:var(--paper-dim);
+  }
+  .exportRow .exportInfo{min-width:0;}
+  .exportRow .exportFname{font-size:10px;font-weight:700;margin-bottom:2px;word-break:break-all;}
+  .exportRow .exportComment{font-size:10px;color:var(--ink-soft);line-height:1.4;margin-top:2px;}
+  .exportCheck{
+    position:absolute;top:4px;left:4px;z-index:2;width:20px;height:20px;cursor:pointer;
+  }
+  .exportCheck input{
+    position:absolute;opacity:0;width:20px;height:20px;margin:0;cursor:pointer;
+  }
+  .exportCheck span{
+    display:block;width:20px;height:20px;border-radius:3px;background:rgba(255,255,255,0.9);
+    border:1px solid var(--line);
+  }
+  .exportCheck input:checked + span{
+    background:var(--moss);border-color:var(--moss);
+  }
+  .exportCheck input:checked + span::after{
+    content:'';display:block;width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;
+    transform:rotate(45deg);margin:2px auto;
+  }
+  #exportText{
+    width:100%;height:200px;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    border:1px solid var(--line);border-radius:3px;padding:12px;background:var(--paper);
+    resize:vertical;line-height:1.6;
+  }
+  .exportActions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .exportActions button{
+    flex:1 1 calc(50% - 5px);padding:10px;border-radius:3px;font-size:13px;font-weight:700;cursor:pointer;
+    font-family:var(--font-body);border:1px solid var(--moss);
+  }
+  #copyExportBtn{background:var(--moss);color:#fff;border:none;}
+  #copyExportBtn:hover{background:var(--moss-dark);}
+  #downloadExportBtn{background:transparent;color:var(--moss-dark);}
+  #downloadVisualBtn{background:transparent;color:var(--moss-dark);}
+  #downloadZipBtn{background:transparent;color:var(--moss-dark);flex:1 1 100%;}
+  #closeExportBtn{background:transparent;color:var(--ink-soft);border-color:var(--line);}
+
+  .whoami{
+    display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-soft);cursor:pointer;
+    padding:6px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card);
+  }
+  .whoami .dot{width:8px;height:8px;border-radius:50%;background:var(--moss);}
+  .whoami b{color:var(--ink);}
+  .finalCounter{
+    display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#fff;
+    padding:6px 12px;border-radius:4px;background:#C9A227;white-space:nowrap;
+  }
+  .finalCounterBreakdown{font-weight:500;font-size:11px;opacity:0.9;margin-left:2px;}
+
+  /* ---- stats strip ---- */
+  #statsStrip{
+    padding:10px 24px;font-size:11px;color:var(--ink-soft);border-bottom:1px solid var(--line);
+    display:flex;gap:20px;flex-wrap:wrap;
+  }
+  #statsStrip b{color:var(--ink);}
+
+  /* ---- grid ---- */
+  main{padding:20px 24px 60px;}
+  #grid{
+    display:flex;flex-wrap:wrap;gap:10px;
+  }
+  .cell{
+    background:var(--card);border:1px solid var(--line);border-radius:3px;overflow:hidden;
+    cursor:pointer;position:relative;transition:box-shadow .15s ease, transform .1s ease;
+    height:230px;
+  }
+  .cell:hover{box-shadow:0 6px 18px rgba(0,0,0,0.12);}
+  .cell.mine{box-shadow:0 0 0 3px var(--moss) inset;}
+  .frameNum{
+    position:absolute;top:6px;left:6px;background:rgba(43,43,36,0.62);color:#fff;
+    font-size:10px;padding:2px 6px;border-radius:2px;letter-spacing:0.3px;z-index:2;
+  }
+  .checkBadge{
+    position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;
+    background:rgba(43,43,36,0.55);color:#fff;display:flex;align-items:center;justify-content:center;
+    font-size:13px;z-index:3;transition:background .15s ease, transform .1s ease;cursor:pointer;
+  }
+  .checkBadge:hover{transform:scale(1.12);}
+  .cell.mine .checkBadge{background:var(--moss);}
+  .commentBadge{
+    position:absolute;top:6px;right:36px;min-width:24px;height:24px;background:rgba(43,43,36,0.55);
+    color:#fff;border-radius:12px;z-index:3;display:flex;align-items:center;justify-content:center;
+    gap:3px;padding:0 6px;cursor:pointer;transition:background .15s ease, transform .1s ease;
+  }
+  .commentBadge:hover{background:var(--moss-dark);transform:scale(1.12);}
+  .commentBadge span{font-size:10px;font-weight:700;line-height:1;}
+  .commentBadge svg{flex-shrink:0;}
+  .thumbWrap{height:100%;background:var(--paper-dim);cursor:pointer;}
+  .thumbWrap img{height:100%;width:auto;display:block;}
+  .tallyPill{
+    position:absolute;bottom:6px;left:6px;background:rgba(255,255,255,0.92);color:var(--ink);
+    font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;z-index:2;
+    display:flex;align-items:center;gap:4px;
+  }
+  .tallyPill .n{color:var(--moss-dark);}
+  .batchBadge{
+    position:absolute;bottom:6px;right:6px;font-size:9px;font-weight:700;text-transform:uppercase;
+    letter-spacing:0.4px;padding:3px 7px;border-radius:10px;z-index:2;color:#fff;
+    box-shadow:0 1px 3px rgba(0,0,0,0.25);
+  }
+  .namesRow{
+    position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(43,43,36,0.82),transparent);
+    color:#fff;font-size:9px;padding:14px 6px 4px;opacity:0;transition:opacity .15s ease;z-index:1;
+    text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .cell:hover .namesRow{opacity:1;}
+
+  /* tally view */
+  #tallyList{display:flex;flex-direction:column;gap:8px;max-width:720px;}
+  .tRow{
+    display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);
+    border-radius:3px;padding:8px 12px;cursor:pointer;
+  }
+  .tRow img{width:52px;height:78px;object-fit:contain;background:var(--paper-dim);border-radius:2px;flex-shrink:0;}
+  .tRow .fname{font-size:12px;font-weight:600;flex:1;}
+  .tRow .names{font-size:11px;color:var(--ink-soft);flex:2;}
+  .tRow .count{
+    font-size:13px;font-weight:700;color:#fff;background:var(--moss);border-radius:10px;
+    padding:3px 10px;flex-shrink:0;
+  }
+
+  #emptyMsg{display:none;padding:60px 0;text-align:center;color:var(--ink-soft);font-size:13px;}
+  #finalsList{display:flex;flex-wrap:wrap;gap:14px;}
+  #finalsIntro{
+    font-size:12px;color:var(--ink-soft);margin-bottom:14px;max-width:640px;line-height:1.6;
+    flex-basis:100%;
+  }
+  .fCard{
+    background:var(--card);border:1px solid var(--line);border-radius:3px;overflow:hidden;
+    transition:border-color .15s ease, box-shadow .15s ease;width:190px;
+  }
+  .fCard.isFinal{border-color:#C9A227;box-shadow:0 0 0 2px #C9A227 inset;}
+  .fCard .fThumbWrap{
+    position:relative;width:100%;height:190px;background:var(--paper-dim);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+  }
+  .fCard .fThumbWrap img{width:100%;height:100%;object-fit:contain;display:block;}
+  .fCard .fFrameNum{
+    position:absolute;top:6px;left:6px;background:rgba(43,43,36,0.62);color:#fff;
+    font-size:10px;padding:2px 6px;border-radius:2px;letter-spacing:0.3px;
+  }
+  .fCard .starBtn{
+    position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:none;
+    background:rgba(43,43,36,0.55);color:#fff;cursor:pointer;font-size:15px;display:flex;
+    align-items:center;justify-content:center;transition:background .15s ease;
+  }
+  .fCard.isFinal .starBtn{background:#C9A227;}
+  .fCard .fCaption{padding:8px 10px;}
+  .fCard .fCaption .names{font-size:11px;color:var(--ink-soft);line-height:1.4;}
+  .fCard .fCaption .names b{color:var(--ink);}
+  .fCard .fCaption .batchTag{
+    display:inline-block;margin-top:4px;font-size:9px;font-weight:700;text-transform:uppercase;
+    letter-spacing:0.4px;color:#fff;padding:2px 6px;border-radius:8px;
+  }
+  #continueBar{
+    margin-top:36px;padding-top:28px;border-top:1px solid var(--line);text-align:center;
+  }
+  #continueBar a{
+    display:inline-block;padding:12px 28px;background:var(--moss);color:#fff;text-decoration:none;
+    border-radius:4px;font-size:14px;font-weight:700;transition:background .15s ease;
+  }
+  #continueBar a:hover{background:var(--moss-dark);}
+  #continueBar .doneMsg{font-size:14px;color:var(--ink-soft);}
+
+  /* lightbox */
+  #lightbox{
+    position:fixed;inset:0;background:rgba(20,19,15,0.92);display:none;
+    align-items:center;justify-content:center;z-index:150;padding:30px;
+  }
+  #lightbox.open{display:flex;}
+  #lightbox img{max-width:min(80vw,700px);max-height:78vh;object-fit:contain;border-radius:2px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+  #lbImageArea{position:relative;display:flex;align-items:center;justify-content:center;flex:1;min-width:0;}
+  #lightboxPanel{
+    background:var(--card);border-radius:4px;padding:20px;width:260px;margin-left:20px;flex-shrink:0;
+  }
+  #lightboxPanel .fname{font-size:13px;font-weight:700;margin-bottom:4px;}
+  #lightboxPanel .frame{font-size:11px;color:var(--ink-soft);margin-bottom:16px;}
+  #lightboxPanel button{
+    width:100%;padding:10px;border:1px solid var(--moss);border-radius:3px;background:transparent;
+    color:var(--moss-dark);font-weight:700;font-size:13px;cursor:pointer;margin-bottom:16px;
+  }
+  #lightboxPanel button.active{background:var(--moss);color:#fff;}
+  #lbFinalBtn{border-color:#C9A227;color:#C9A227;}
+  #lbFinalBtn.active{background:#C9A227;color:#fff;border-color:#C9A227;}
+  #lightboxPanel .selNames{font-size:12px;color:var(--ink-soft);line-height:1.7;margin-bottom:16px;}
+  #lightboxPanel .selNames b{color:var(--ink);}
+  #lightboxPanel .commentsHeading{
+    font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;
+    color:var(--ink-soft);margin-bottom:8px;
+  }
+  #lbComments{max-height:180px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:10px;}
+  .commentItem{font-size:12px;line-height:1.5;border-bottom:1px solid var(--line);padding-bottom:8px;}
+  .commentItem .cName{font-weight:700;color:var(--ink);}
+  .commentItem .cTime{font-size:10px;color:var(--ink-soft);margin-left:6px;}
+  .commentItem .cDelete{
+    font-size:10px;color:var(--ink-soft);float:right;cursor:pointer;text-decoration:underline;
+  }
+  .commentItem .cDelete:hover{color:var(--moss-dark);}
+  .commentItem .cText{color:var(--ink);margin-top:2px;}
+  #noComments{font-size:12px;color:var(--ink-soft);margin-bottom:10px;}
+  #lbCommentInput{
+    width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:3px;
+    font-family:var(--font-body);font-size:12px;background:var(--paper);resize:vertical;
+    min-height:52px;margin-bottom:8px;
+  }
+  #lbCommentInput:focus{outline:none;border-color:var(--moss);}
+  #lbCommentSubmit{
+    width:100%;padding:9px;border:none;border-radius:3px;background:var(--moss);
+    color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);
+  }
+  #lbCommentSubmit:hover{background:var(--moss-dark);}
+  #closeLightbox{
+    position:absolute;top:20px;right:26px;color:#fff;font-size:26px;cursor:pointer;line-height:1;
+  }
+  #lbNavPrev,#lbNavNext{
+    position:absolute;top:50%;transform:translateY(-50%);color:#fff;font-size:34px;cursor:pointer;
+    padding:10px;user-select:none;opacity:0.7;z-index:2;
+  }
+  #lbNavPrev:hover,#lbNavNext:hover{opacity:1;}
+  #lbNavPrev{left:0;}
+  #lbNavNext{right:0;}
+  @media (max-width:800px){
+    #lightbox{flex-direction:column;padding:14px;}
+    #lightboxPanel{margin-left:0;margin-top:14px;width:100%;max-width:400px;}
+  }
+
+  /* ---- shot list (26OCT BUR DEN) ---- */
+  .slotBadge{
+    position:absolute;bottom:30px;right:6px;font-size:9px;font-weight:700;
+    padding:3px 7px;border-radius:10px;z-index:2;color:var(--ink);background:rgba(255,255,255,0.94);
+    box-shadow:0 1px 3px rgba(0,0,0,0.25);
+  }
+  .cell.isFinal{box-shadow:0 0 0 3px #C9A227 inset;}
+  .cell.isFinal.mine{box-shadow:0 0 0 3px #C9A227 inset, 0 0 0 6px var(--moss) inset;}
+  .finalDot{
+    position:absolute;top:36px;right:6px;width:24px;height:24px;border-radius:50%;background:#C9A227;
+    color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;z-index:3;
+  }
+  select#slotFilter{
+    padding:7px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card);
+    font-family:var(--font-body);font-size:12px;color:var(--ink);
+  }
+  #lightboxPanel .fieldLabel{
+    font-size:11px;font-weight:700;color:var(--ink-soft);margin:0 0 5px;
+  }
+  #lightboxPanel select{
+    width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:3px;background:var(--paper);
+    font-family:var(--font-body);font-size:12px;color:var(--ink);margin-bottom:14px;
+  }
+  #lightboxPanel select:focus{outline:none;border-color:var(--moss);}
+  #lightboxPanel .fieldHint{font-size:11px;color:var(--ink-soft);margin:-10px 0 14px;line-height:1.5;}
+
+  #shotList{display:none;flex-direction:column;gap:34px;max-width:1080px;}
+  .slTop{display:flex;align-items:baseline;gap:22px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--line);}
+  .slTop .big{font-family:var(--font-headline);font-size:30px;font-weight:600;line-height:1;}
+  .slTop .big small{font-size:15px;color:var(--ink-soft);font-weight:500;}
+  .slTop .note{font-size:12px;color:var(--ink-soft);max-width:62ch;line-height:1.6;}
+  .slDay{display:flex;flex-direction:column;gap:22px;}
+  .slDay h2{font-family:var(--font-headline);font-size:15px;font-weight:700;margin:0;color:var(--ink-soft);}
+  .slScene{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:18px 20px;}
+  .slHead{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:4px;}
+  .slHead h3{margin:0;font-size:17px;font-weight:700;font-family:var(--font-headline);}
+  .slHead .tot{font-size:13px;font-weight:700;}
+  .slHead .tot.done{color:#2E7D32;}
+  .slMeta{font-size:12px;color:var(--ink-soft);line-height:1.6;margin-bottom:12px;}
+  .slMeta a{color:var(--moss-dark);font-weight:700;cursor:pointer;text-decoration:underline;}
+  .slRow{display:grid;grid-template-columns:200px 120px 1fr;gap:14px;align-items:center;padding:9px 0;border-top:1px solid var(--line);}
+  .slRow .sName{font-size:13px;font-weight:600;}
+  .slRow .sName span{font-size:11px;color:var(--ink-soft);font-weight:500;display:block;}
+  .slRow .sCount{font-size:12px;line-height:1.5;}
+  .slRow .sCount b{font-size:14px;}
+  .slRow.met .sCount b{color:#2E7D32;}
+  .slRow.over .sCount b{color:#B26A00;}
+  .slRow.empty .sCount b{color:var(--ink-soft);}
+  .slRow .sCount .sub{color:var(--ink-soft);display:block;font-size:11px;}
+  .slThumbs{display:flex;gap:6px;flex-wrap:wrap;min-height:20px;}
+  .slThumbs .t{position:relative;height:64px;cursor:pointer;border-radius:2px;overflow:hidden;background:var(--paper-dim);}
+  .slThumbs .t img{height:100%;width:auto;display:block;}
+  .slThumbs .t.final{box-shadow:0 0 0 2px #C9A227 inset;}
+  .slThumbs .t.final::after{content:'\2605';position:absolute;top:2px;right:3px;color:#C9A227;font-size:11px;text-shadow:0 0 2px #fff;}
+  .slThumbs .t:not(.final){opacity:0.55;}
+  .slThumbs .t:not(.final):hover{opacity:1;}
+  .slThumbs .none{font-size:11px;color:var(--ink-soft);}
+  .slWarn{font-size:12px;color:#B26A00;margin-top:10px;line-height:1.5;}
+  .slBts{font-size:12px;color:var(--ink-soft);line-height:1.6;}
+  @media (max-width:760px){
+    .slRow{grid-template-columns:1fr 1fr;}
+    .slThumbs{grid-column:1 / -1;}
+  }
+
+  ::selection{background:var(--moss);color:#fff;}
+</style>
+</head>
+<body>
+<script>
+/* ===== Site-wide look, controlled from /admin/ ===== */
+const BRAND_SLUG = 'burrow';
+const PROJECT_SLUG = '26oct-bur-den';
+function darkenHex(hex, amt){
+  let c = hex.replace('#','');
+  if(c.length === 3) c = c.split('').map(ch=>ch+ch).join('');
+  const num = parseInt(c, 16);
+  let r = (num >> 16) & 0xFF, g = (num >> 8) & 0xFF, b = num & 0xFF;
+  r = Math.max(0, Math.round(r * (1 - amt)));
+  g = Math.max(0, Math.round(g * (1 - amt)));
+  b = Math.max(0, Math.round(b * (1 - amt)));
+  return '#' + [r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+(async function(){
+  try{
+    const res = await fetch('https://asset-review-8bfb6-default-rtdb.firebaseio.com/theme.json', {cache:'no-store'});
+    if(res.ok){
+      const t = await res.json();
+      if(t){
+        const root = document.documentElement.style;
+        const HEADLINE_FONT_MAP = {
+          fraunces: "'Fraunces', serif", playfair: "'Playfair Display', serif",
+          lora: "'Lora', serif", sourceserif: "'Source Serif 4', serif",
+          spacegrotesk: "'Space Grotesk', sans-serif", worksans: "'Work Sans', sans-serif"
+        };
+        const BODY_FONT_MAP = {
+          overpass: "'Overpass', sans-serif", inter: "'Inter', sans-serif",
+          worksans: "'Work Sans', sans-serif", plexsans: "'IBM Plex Sans', sans-serif",
+          sourcesans: "'Source Sans 3', sans-serif"
+        };
+        if(t.paper) root.setProperty('--paper', t.paper);
+        if(t.ink) root.setProperty('--ink', t.ink);
+        if(t.inkSoft) root.setProperty('--ink-soft', t.inkSoft);
+        if(t.line) root.setProperty('--line', t.line);
+        if(t.headlineFont) root.setProperty('--font-headline', HEADLINE_FONT_MAP[t.headlineFont] || HEADLINE_FONT_MAP.fraunces);
+        if(t.bodyFont) root.setProperty('--font-body', BODY_FONT_MAP[t.bodyFont] || BODY_FONT_MAP.overpass);
+        if(t.brandAccents && t.brandAccents[BRAND_SLUG]){
+          const accent = t.brandAccents[BRAND_SLUG];
+          root.setProperty('--moss', accent);
+          root.setProperty('--moss-dark', darkenHex(accent, 0.28));
+        }
+        const info = t.projectStatus && t.projectStatus[BRAND_SLUG] && t.projectStatus[BRAND_SLUG][PROJECT_SLUG];
+        if(info && info.finalAssetsUrl){
+          const linkEl = document.getElementById('finalAssetsBackLink');
+          if(linkEl){
+            linkEl.href = info.finalAssetsUrl;
+            linkEl.style.display = '';
+          }
+        }
+      }
+    }
+  }catch(e){ console.error('[theme] failed to load, using page defaults', e); }
+})();
+</script>
+
+<div id="nameGate">
+  <div class="gateCard">
+    <h2>Sign in to review</h2>
+    <p>Havenly team members only. Your name and email are attached to every select and comment.</p>
+    <button id="googleSignInBtn" class="googleBtn">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.5 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3c-7.8 0-14.5 4.4-17.7 11.7z"/><path fill="#4CAF50" d="M24 45c5.4 0 10.3-1.9 14-5.2l-6.5-5.5c-2 1.4-4.6 2.2-7.5 2.2-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 40.5 16.2 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.5 5.5C41.4 36 45 30.5 45 24c0-1.4-.1-2.7-.4-3.5z"/></svg>
+      Sign in with Google
+    </button>
+    <div id="signInError" style="display:none;"></div>
+  </div>
+</div>
+
+<header>
+  <div class="titleBlock">
+    <h1>26OCT BUR DEN - Where I Land</h1>
+    <div class="sub"><span id="photoCount">180</span> images · click to shortlist for edit</div>
+  </div>
+  <div class="controls">
+    <div class="segmented" id="viewToggle">
+      <button data-view="grid" class="active">Grid</button>
+      <button data-view="mine">My picks</button>
+      <button data-view="tally">Tally</button>
+      <button data-view="finals">Finals</button>
+      <button data-view="shotlist">Shot list</button>
+    </div>
+    <select id="batchFilter"></select>
+    <select id="slotFilter" style="display:none;"></select>
+    <select id="reviewerFilter">
+      <option value="">All reviewers</option>
+    </select>
+    <button id="exportBtn" class="exportBtn">Export</button>
+        <a href="../" class="r2LinkBtn">Project Home &rarr;</a>
+    <a href="#" id="finalAssetsBackLink" class="r2LinkBtn" style="display:none;" target="_blank" rel="noopener">Final assets &rarr;</a>
+    <a href="../../../" class="r2LinkBtn" style="margin-left:auto;">All Brands &rarr;</a>
+    <div class="finalCounter" id="finalCounterBadge" title="Final picks so far">
+      &#9733; <span id="finalCounterNum">0</span> final
+      <span id="finalCounterBreakdown" class="finalCounterBreakdown"></span>
+    </div>
+    <div class="whoami" id="whoami"><span class="dot"></span><b id="meName">—</b></div>
+  </div>
+</header>
+
+<div id="statsStrip">
+  <div><b id="statTotal">0</b> selects so far</div>
+  <div><b id="statReviewers">0</b> reviewers</div>
+  <div><b id="statTop">—</b> most-picked frame</div>
+</div>
+
+<main>
+  <div id="grid"></div>
+  <div id="tallyList" style="display:none;"></div>
+  <div id="finalsList" style="display:none;"></div>
+  <div id="shotList"></div>
+  <div id="emptyMsg">Nothing here yet.</div>
+</main>
+
+<div id="exportModal">
+  <div class="exportCard">
+    <h3>Export</h3>
+    <div class="segmented" id="exportScopeToggle" style="margin-bottom:14px;">
+      <button data-scope="team" class="active">Team Shortlist</button>
+      <button data-scope="final">Final Selects</button>
+    </div>
+    <div class="sub" id="exportSub">Selected photos and their comments — ready to share with the photographer.</div>
+    <div class="exportQuickRow">
+      <span id="exportCountLabel"></span>
+      <span class="exportQuickActions">
+        <button id="exportSelectAll" type="button">Check all</button>
+        <button id="exportSelectNone" type="button">Uncheck all</button>
+      </span>
+    </div>
+    <div id="exportVisualList"></div>
+    <textarea id="exportText" readonly></textarea>
+    <div class="exportActions">
+      <button id="copyExportBtn">Copy to clipboard</button>
+      <button id="downloadExportBtn">Download .txt</button>
+      <button id="downloadVisualBtn">Download with photos</button>
+      <button id="downloadZipBtn">Download JPGs (.zip)</button>
+      <button id="closeExportBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="lightbox">
+  <span id="closeLightbox">&times;</span>
+  <div id="lbImageArea">
+    <span id="lbNavPrev">&#8249;</span>
+    <img id="lightboxImg" src="">
+    <span id="lbNavNext">&#8250;</span>
+  </div>
+  <div id="lightboxPanel">
+    <div class="fname" id="lbFname"></div>
+    <div class="frame mono" id="lbFrame"></div>
+    <button id="lbSelectBtn">Select for edit</button>
+    <button id="lbFinalBtn">&#9733; Mark as final</button>
+    <div class="fieldLabel">Scene</div>
+    <select id="lbSceneSelect"></select>
+    <div class="fieldLabel" id="lbSlotLabel">Shot-list slot</div>
+    <select id="lbSlotSelect"></select>
+    <div class="fieldHint" id="lbSlotHint"></div>
+    <div class="selNames" id="lbNames"></div>
+    <div class="commentsHeading">Feedback</div>
+    <div id="lbComments"></div>
+    <div id="noComments" style="display:none;">No comments yet.</div>
+    <textarea id="lbCommentInput" placeholder="Add feedback on this frame..."></textarea>
+    <button id="lbCommentSubmit">Post comment</button>
+  </div>
+</div>
+
+<script>
+/* ====== DATA ====== */
+const BATCHES = [
+  {id: 'd1s1', label: 'Day 1 · Scene 1 · Patio, lounge', short: 'D1 S1'},
+  {id: 'd1s2', label: 'Day 1 · Scene 2 · Dining', short: 'D1 S2'},
+  {id: 'd1s3', label: 'Day 1 · Scene 3 · Living', short: 'D1 S3'},
+  {id: 'd1s4', label: 'Day 1 · Scene 4 · Mercer', short: 'D1 S4'},
+  {id: 'd1s5', label: 'Day 1 · Scene 5 · Patio, dining', short: 'D1 S5'},
+  {id: 'd2s1', label: 'Day 2 · Scene 1 · Patio', short: 'D2 S1'},
+  {id: 'd2s2', label: 'Day 2 · Scene 2 · Living', short: 'D2 S2'},
+  {id: 'd2s3', label: 'Day 2 · Scene 3 · Dining', short: 'D2 S3'},
+  {id: 'fuji', label: 'Second camera (Fuji)', short: 'Fuji'},
+  {id: 'ricoh', label: 'BTS + social (Ricoh)', short: 'BTS'}
+];
+const BATCH_COLORS = {
+  d1s1: '#6E7F5C', d1s2: '#9A6B3F', d1s3: '#8B8B4A', d1s4: '#5E6E7A', d1s5: '#7A5E6E',
+  d2s1: '#4F6B4F', d2s2: '#6B6B2F', d2s3: '#7A4E2C', fuji: '#7D7A70', ricoh: '#9A968A'
+};
+/* Shot list targets, from Where-I-Land_Schedule.pdf */
+const STD_TALENT = [
+  {id:'heroV', label:'Hero', o:'V', target:1},
+  {id:'heroH', label:'Hero', o:'H', target:1},
+  {id:'detV', label:'Detail / action', o:'V', target:4},
+  {id:'detH', label:'Detail / action', o:'H', target:4}
+];
+const SHOT_LIST = {
+  d1s1: {day:1, name:'Patio, lounge', look:'Look 1', action:'Emily reading the paper, Dominick drinking coffee. Dunes sofa, lounge chairs, ottoman, seagrass rug.', slots: STD_TALENT},
+  d1s2: {day:1, name:'Dining', look:'Look 1', action:'Emily at the table, Dominick serving coffee and breakfast. Serif table, Alto chairs and counter stools.', slots: STD_TALENT},
+  d1s3: {day:1, name:'Living', look:'Look 2', action:'Emily heading out for a walk, Dominick knitting on the Mercer, folding laundry together.', slots: STD_TALENT},
+  d1s4: {day:1, name:'Mercer', look:'Look 3', action:'Emily and Dominick assembling the Mercer. 10 horizontal frames for the GIF.', slots: [
+    {id:'gif', label:'GIF frame', o:'H', target:10}
+  ]},
+  d1s5: {day:1, name:'Patio, dining', look:'Look 2', action:'Emily journaling or sketching at the table, Dominick repotting a plant nearby. Dunes outdoor dining.', slots: STD_TALENT},
+  d2s1: {day:2, name:'Patio', look:'No talent', action:'Dunes sofa, lounge chairs, ottoman, tray, rug, plus Dunes outdoor dining.', slots: [
+    {id:'heroV', label:'Hero', o:'V', target:1}, {id:'heroH', label:'Hero', o:'H', target:1},
+    {id:'sofaV', label:'Dunes sofa', o:'V', target:1}, {id:'sofaH', label:'Dunes sofa', o:'H', target:1},
+    {id:'dinV', label:'Dunes dining', o:'V', target:1}, {id:'dinH', label:'Dunes dining', o:'H', target:1},
+    {id:'detV', label:'Detail', o:'V', target:2}, {id:'detH', label:'Detail', o:'H', target:2}
+  ]},
+  d2s2: {day:2, name:'Living', look:'No talent', action:'Mercer, Cassette coffee table, Opera console, Airmail chair and ottoman.', slots: [
+    {id:'heroV', label:'Hero', o:'V', target:1}, {id:'heroH', label:'Hero', o:'H', target:1},
+    {id:'mercerV', label:'Mercer', o:'V', target:1}, {id:'mercerH', label:'Mercer', o:'H', target:1},
+    {id:'airmailV', label:'Airmail', o:'V', target:1}, {id:'airmailH', label:'Airmail', o:'H', target:1},
+    {id:'detV', label:'Detail', o:'V', target:2}, {id:'detH', label:'Detail', o:'H', target:2}
+  ]},
+  d2s3: {day:2, name:'Dining', look:'No talent', action:'Serif table, Alto dining chairs, Alto counter stools.', slots: [
+    {id:'heroV', label:'Hero', o:'V', target:1}, {id:'heroH', label:'Hero', o:'H', target:1},
+    {id:'serifV', label:'Serif table', o:'V', target:1}, {id:'serifH', label:'Serif table', o:'H', target:1},
+    {id:'stoolsV', label:'Alto counter stools', o:'V', target:1}, {id:'stoolsH', label:'Alto counter stools', o:'H', target:1},
+    {id:'detV', label:'Detail', o:'V', target:2}, {id:'detH', label:'Detail', o:'H', target:2}
+  ]}
+};
+const ORIENT_WORD = {V:'vertical', H:'horizontal'};
+const IMAGES = [{"id":"web-1","file":"RaeScott_Burrow_web-1.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-2","file":"RaeScott_Burrow_web-2.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-3","file":"RaeScott_Burrow_web-3.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-4","file":"RaeScott_Burrow_web-4.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-5","file":"RaeScott_Burrow_web-5.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-6","file":"RaeScott_Burrow_web-6.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-7","file":"RaeScott_Burrow_web-7.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-8","file":"RaeScott_Burrow_web-8.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-9","file":"RaeScott_Burrow_web-9.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-10","file":"RaeScott_Burrow_web-10.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-11","file":"RaeScott_Burrow_web-11.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-12","file":"RaeScott_Burrow_web-12.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-13","file":"RaeScott_Burrow_web-13.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-14","file":"RaeScott_Burrow_web-14.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-15","file":"RaeScott_Burrow_web-15.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-16","file":"RaeScott_Burrow_web-16.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-17","file":"RaeScott_Burrow_web-17.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-18","file":"RaeScott_Burrow_web-18.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-19","file":"RaeScott_Burrow_web-19.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-20","file":"RaeScott_Burrow_web-20.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-21","file":"RaeScott_Burrow_web-21.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-22","file":"RaeScott_Burrow_web-22.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-23","file":"RaeScott_Burrow_web-23.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-24","file":"RaeScott_Burrow_web-24.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-25","file":"RaeScott_Burrow_web-25.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-26","file":"RaeScott_Burrow_web-26.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-27","file":"RaeScott_Burrow_web-27.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-28","file":"RaeScott_Burrow_web-28.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-29","file":"RaeScott_Burrow_web-29.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-30","file":"RaeScott_Burrow_web-30.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-31","file":"RaeScott_Burrow_web-31.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-32","file":"RaeScott_Burrow_web-32.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-33","file":"RaeScott_Burrow_web-33.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-34","file":"RaeScott_Burrow_web-34.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-35","file":"RaeScott_Burrow_web-35.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-36","file":"RaeScott_Burrow_web-36.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-37","file":"RaeScott_Burrow_web-37.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-38","file":"RaeScott_Burrow_web-38.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-39","file":"RaeScott_Burrow_web-39.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-40","file":"RaeScott_Burrow_web-40.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-41","file":"RaeScott_Burrow_web-41.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-42","file":"RaeScott_Burrow_web-42.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-43","file":"RaeScott_Burrow_web-43.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-44","file":"RaeScott_Burrow_web-44.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-45","file":"RaeScott_Burrow_web-45.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-46","file":"RaeScott_Burrow_web-46.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-47","file":"RaeScott_Burrow_web-47.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-48","file":"RaeScott_Burrow_web-48.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-49","file":"RaeScott_Burrow_web-49.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-50","file":"RaeScott_Burrow_web-50.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-51","file":"RaeScott_Burrow_web-51.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-52","file":"RaeScott_Burrow_web-52.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-53","file":"RaeScott_Burrow_web-53.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-54","file":"RaeScott_Burrow_web-54.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-55","file":"RaeScott_Burrow_web-55.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-56","file":"RaeScott_Burrow_web-56.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-57","file":"RaeScott_Burrow_web-57.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-58","file":"RaeScott_Burrow_web-58.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-59","file":"RaeScott_Burrow_web-59.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-60","file":"RaeScott_Burrow_web-60.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-61","file":"RaeScott_Burrow_web-61.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-62","file":"RaeScott_Burrow_web-62.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-63","file":"RaeScott_Burrow_web-63.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-64","file":"RaeScott_Burrow_web-64.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-65","file":"RaeScott_Burrow_web-65.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-66","file":"RaeScott_Burrow_web-66.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-67","file":"RaeScott_Burrow_web-67.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-68","file":"RaeScott_Burrow_web-68.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-69","file":"RaeScott_Burrow_web-69.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-70","file":"RaeScott_Burrow_web-70.jpg","batch":"d1s1","o":"H","talent":true},{"id":"web-71","file":"RaeScott_Burrow_web-71.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-72","file":"RaeScott_Burrow_web-72.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-73","file":"RaeScott_Burrow_web-73.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-74","file":"RaeScott_Burrow_web-74.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-75","file":"RaeScott_Burrow_web-75.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-76","file":"RaeScott_Burrow_web-76.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-77","file":"RaeScott_Burrow_web-77.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-78","file":"RaeScott_Burrow_web-78.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-79","file":"RaeScott_Burrow_web-79.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-80","file":"RaeScott_Burrow_web-80.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-81","file":"RaeScott_Burrow_web-81.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-82","file":"RaeScott_Burrow_web-82.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-83","file":"RaeScott_Burrow_web-83.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-84","file":"RaeScott_Burrow_web-84.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-85","file":"RaeScott_Burrow_web-85.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-86","file":"RaeScott_Burrow_web-86.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-87","file":"RaeScott_Burrow_web-87.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-88","file":"RaeScott_Burrow_web-88.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-89","file":"RaeScott_Burrow_web-89.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-90","file":"RaeScott_Burrow_web-90.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-91","file":"RaeScott_Burrow_web-91.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-92","file":"RaeScott_Burrow_web-92.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-93","file":"RaeScott_Burrow_web-93.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-94","file":"RaeScott_Burrow_web-94.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-95","file":"RaeScott_Burrow_web-95.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-96","file":"RaeScott_Burrow_web-96.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-97","file":"RaeScott_Burrow_web-97.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-98","file":"RaeScott_Burrow_web-98.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-99","file":"RaeScott_Burrow_web-99.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-100","file":"RaeScott_Burrow_web-100.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-101","file":"RaeScott_Burrow_web-101.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-102","file":"RaeScott_Burrow_web-102.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-103","file":"RaeScott_Burrow_web-103.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-104","file":"RaeScott_Burrow_web-104.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-105","file":"RaeScott_Burrow_web-105.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-106","file":"RaeScott_Burrow_web-106.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-107","file":"RaeScott_Burrow_web-107.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-108","file":"RaeScott_Burrow_web-108.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-109","file":"RaeScott_Burrow_web-109.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-110","file":"RaeScott_Burrow_web-110.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-111","file":"RaeScott_Burrow_web-111.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-112","file":"RaeScott_Burrow_web-112.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-113","file":"RaeScott_Burrow_web-113.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-114","file":"RaeScott_Burrow_web-114.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-115","file":"RaeScott_Burrow_web-115.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-116","file":"RaeScott_Burrow_web-116.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-117","file":"RaeScott_Burrow_web-117.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-118","file":"RaeScott_Burrow_web-118.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-119","file":"RaeScott_Burrow_web-119.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-120","file":"RaeScott_Burrow_web-120.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-121","file":"RaeScott_Burrow_web-121.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-122","file":"RaeScott_Burrow_web-122.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-123","file":"RaeScott_Burrow_web-123.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-124","file":"RaeScott_Burrow_web-124.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-125","file":"RaeScott_Burrow_web-125.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-126","file":"RaeScott_Burrow_web-126.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-127","file":"RaeScott_Burrow_web-127.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-128","file":"RaeScott_Burrow_web-128.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-129","file":"RaeScott_Burrow_web-129.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-130","file":"RaeScott_Burrow_web-130.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-131","file":"RaeScott_Burrow_web-131.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-132","file":"RaeScott_Burrow_web-132.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-133","file":"RaeScott_Burrow_web-133.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-134","file":"RaeScott_Burrow_web-134.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-135","file":"RaeScott_Burrow_web-135.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-136","file":"RaeScott_Burrow_web-136.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-137","file":"RaeScott_Burrow_web-137.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-138","file":"RaeScott_Burrow_web-138.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-139","file":"RaeScott_Burrow_web-139.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-140","file":"RaeScott_Burrow_web-140.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-141","file":"RaeScott_Burrow_web-141.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-142","file":"RaeScott_Burrow_web-142.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-143","file":"RaeScott_Burrow_web-143.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-144","file":"RaeScott_Burrow_web-144.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-145","file":"RaeScott_Burrow_web-145.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-146","file":"RaeScott_Burrow_web-146.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-147","file":"RaeScott_Burrow_web-147.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-148","file":"RaeScott_Burrow_web-148.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-149","file":"RaeScott_Burrow_web-149.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-150","file":"RaeScott_Burrow_web-150.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-151","file":"RaeScott_Burrow_web-151.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-152","file":"RaeScott_Burrow_web-152.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-153","file":"RaeScott_Burrow_web-153.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-154","file":"RaeScott_Burrow_web-154.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-155","file":"RaeScott_Burrow_web-155.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-156","file":"RaeScott_Burrow_web-156.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-157","file":"RaeScott_Burrow_web-157.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-158","file":"RaeScott_Burrow_web-158.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-159","file":"RaeScott_Burrow_web-159.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-160","file":"RaeScott_Burrow_web-160.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-161","file":"RaeScott_Burrow_web-161.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-162","file":"RaeScott_Burrow_web-162.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-163","file":"RaeScott_Burrow_web-163.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-164","file":"RaeScott_Burrow_web-164.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-165","file":"RaeScott_Burrow_web-165.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-166","file":"RaeScott_Burrow_web-166.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-167","file":"RaeScott_Burrow_web-167.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-168","file":"RaeScott_Burrow_web-168.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-169","file":"RaeScott_Burrow_web-169.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-170","file":"RaeScott_Burrow_web-170.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-171","file":"RaeScott_Burrow_web-171.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-172","file":"RaeScott_Burrow_web-172.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-173","file":"RaeScott_Burrow_web-173.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-174","file":"RaeScott_Burrow_web-174.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-175","file":"RaeScott_Burrow_web-175.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-176","file":"RaeScott_Burrow_web-176.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-177","file":"RaeScott_Burrow_web-177.jpg","batch":"d1s1","o":"V","talent":true},{"id":"web-178","file":"RaeScott_Burrow_web-178.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-179","file":"RaeScott_Burrow_web-179.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-180","file":"RaeScott_Burrow_web-180.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-181","file":"RaeScott_Burrow_web-181.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-182","file":"RaeScott_Burrow_web-182.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-183","file":"RaeScott_Burrow_web-183.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-184","file":"RaeScott_Burrow_web-184.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-185","file":"RaeScott_Burrow_web-185.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-186","file":"RaeScott_Burrow_web-186.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-187","file":"RaeScott_Burrow_web-187.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-188","file":"RaeScott_Burrow_web-188.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-189","file":"RaeScott_Burrow_web-189.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-190","file":"RaeScott_Burrow_web-190.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-191","file":"RaeScott_Burrow_web-191.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-192","file":"RaeScott_Burrow_web-192.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-193","file":"RaeScott_Burrow_web-193.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-194","file":"RaeScott_Burrow_web-194.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-195","file":"RaeScott_Burrow_web-195.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-196","file":"RaeScott_Burrow_web-196.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-197","file":"RaeScott_Burrow_web-197.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-198","file":"RaeScott_Burrow_web-198.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-199","file":"RaeScott_Burrow_web-199.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-200","file":"RaeScott_Burrow_web-200.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-201","file":"RaeScott_Burrow_web-201.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-202","file":"RaeScott_Burrow_web-202.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-203","file":"RaeScott_Burrow_web-203.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-204","file":"RaeScott_Burrow_web-204.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-205","file":"RaeScott_Burrow_web-205.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-206","file":"RaeScott_Burrow_web-206.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-207","file":"RaeScott_Burrow_web-207.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-208","file":"RaeScott_Burrow_web-208.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-209","file":"RaeScott_Burrow_web-209.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-210","file":"RaeScott_Burrow_web-210.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-211","file":"RaeScott_Burrow_web-211.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-212","file":"RaeScott_Burrow_web-212.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-213","file":"RaeScott_Burrow_web-213.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-214","file":"RaeScott_Burrow_web-214.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-215","file":"RaeScott_Burrow_web-215.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-216","file":"RaeScott_Burrow_web-216.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-217","file":"RaeScott_Burrow_web-217.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-218","file":"RaeScott_Burrow_web-218.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-219","file":"RaeScott_Burrow_web-219.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-220","file":"RaeScott_Burrow_web-220.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-221","file":"RaeScott_Burrow_web-221.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-222","file":"RaeScott_Burrow_web-222.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-223","file":"RaeScott_Burrow_web-223.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-224","file":"RaeScott_Burrow_web-224.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-225","file":"RaeScott_Burrow_web-225.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-226","file":"RaeScott_Burrow_web-226.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-227","file":"RaeScott_Burrow_web-227.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-228","file":"RaeScott_Burrow_web-228.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-229","file":"RaeScott_Burrow_web-229.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-230","file":"RaeScott_Burrow_web-230.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-231","file":"RaeScott_Burrow_web-231.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-232","file":"RaeScott_Burrow_web-232.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-233","file":"RaeScott_Burrow_web-233.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-234","file":"RaeScott_Burrow_web-234.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-235","file":"RaeScott_Burrow_web-235.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-236","file":"RaeScott_Burrow_web-236.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-237","file":"RaeScott_Burrow_web-237.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-238","file":"RaeScott_Burrow_web-238.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-239","file":"RaeScott_Burrow_web-239.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-240","file":"RaeScott_Burrow_web-240.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-241","file":"RaeScott_Burrow_web-241.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-242","file":"RaeScott_Burrow_web-242.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-243","file":"RaeScott_Burrow_web-243.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-244","file":"RaeScott_Burrow_web-244.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-245","file":"RaeScott_Burrow_web-245.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-246","file":"RaeScott_Burrow_web-246.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-247","file":"RaeScott_Burrow_web-247.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-248","file":"RaeScott_Burrow_web-248.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-249","file":"RaeScott_Burrow_web-249.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-250","file":"RaeScott_Burrow_web-250.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-251","file":"RaeScott_Burrow_web-251.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-252","file":"RaeScott_Burrow_web-252.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-253","file":"RaeScott_Burrow_web-253.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-254","file":"RaeScott_Burrow_web-254.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-255","file":"RaeScott_Burrow_web-255.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-256","file":"RaeScott_Burrow_web-256.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-257","file":"RaeScott_Burrow_web-257.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-258","file":"RaeScott_Burrow_web-258.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-259","file":"RaeScott_Burrow_web-259.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-260","file":"RaeScott_Burrow_web-260.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-261","file":"RaeScott_Burrow_web-261.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-262","file":"RaeScott_Burrow_web-262.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-263","file":"RaeScott_Burrow_web-263.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-264","file":"RaeScott_Burrow_web-264.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-265","file":"RaeScott_Burrow_web-265.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-266","file":"RaeScott_Burrow_web-266.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-267","file":"RaeScott_Burrow_web-267.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-268","file":"RaeScott_Burrow_web-268.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-269","file":"RaeScott_Burrow_web-269.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-270","file":"RaeScott_Burrow_web-270.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-271","file":"RaeScott_Burrow_web-271.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-272","file":"RaeScott_Burrow_web-272.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-273","file":"RaeScott_Burrow_web-273.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-274","file":"RaeScott_Burrow_web-274.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-275","file":"RaeScott_Burrow_web-275.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-276","file":"RaeScott_Burrow_web-276.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-277","file":"RaeScott_Burrow_web-277.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-278","file":"RaeScott_Burrow_web-278.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-279","file":"RaeScott_Burrow_web-279.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-280","file":"RaeScott_Burrow_web-280.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-281","file":"RaeScott_Burrow_web-281.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-282","file":"RaeScott_Burrow_web-282.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-283","file":"RaeScott_Burrow_web-283.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-284","file":"RaeScott_Burrow_web-284.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-285","file":"RaeScott_Burrow_web-285.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-286","file":"RaeScott_Burrow_web-286.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-287","file":"RaeScott_Burrow_web-287.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-288","file":"RaeScott_Burrow_web-288.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-289","file":"RaeScott_Burrow_web-289.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-290","file":"RaeScott_Burrow_web-290.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-291","file":"RaeScott_Burrow_web-291.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-292","file":"RaeScott_Burrow_web-292.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-293","file":"RaeScott_Burrow_web-293.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-294","file":"RaeScott_Burrow_web-294.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-295","file":"RaeScott_Burrow_web-295.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-296","file":"RaeScott_Burrow_web-296.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-297","file":"RaeScott_Burrow_web-297.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-298","file":"RaeScott_Burrow_web-298.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-299","file":"RaeScott_Burrow_web-299.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-300","file":"RaeScott_Burrow_web-300.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-301","file":"RaeScott_Burrow_web-301.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-302","file":"RaeScott_Burrow_web-302.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-303","file":"RaeScott_Burrow_web-303.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-304","file":"RaeScott_Burrow_web-304.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-305","file":"RaeScott_Burrow_web-305.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-306","file":"RaeScott_Burrow_web-306.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-307","file":"RaeScott_Burrow_web-307.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-308","file":"RaeScott_Burrow_web-308.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-309","file":"RaeScott_Burrow_web-309.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-310","file":"RaeScott_Burrow_web-310.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-311","file":"RaeScott_Burrow_web-311.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-312","file":"RaeScott_Burrow_web-312.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-313","file":"RaeScott_Burrow_web-313.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-314","file":"RaeScott_Burrow_web-314.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-315","file":"RaeScott_Burrow_web-315.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-316","file":"RaeScott_Burrow_web-316.jpg","batch":"d1s2","o":"H","talent":true},{"id":"web-317","file":"RaeScott_Burrow_web-317.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-318","file":"RaeScott_Burrow_web-318.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-319","file":"RaeScott_Burrow_web-319.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-320","file":"RaeScott_Burrow_web-320.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-321","file":"RaeScott_Burrow_web-321.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-322","file":"RaeScott_Burrow_web-322.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-323","file":"RaeScott_Burrow_web-323.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-324","file":"RaeScott_Burrow_web-324.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-325","file":"RaeScott_Burrow_web-325.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-326","file":"RaeScott_Burrow_web-326.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-327","file":"RaeScott_Burrow_web-327.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-328","file":"RaeScott_Burrow_web-328.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-329","file":"RaeScott_Burrow_web-329.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-330","file":"RaeScott_Burrow_web-330.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-331","file":"RaeScott_Burrow_web-331.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-332","file":"RaeScott_Burrow_web-332.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-333","file":"RaeScott_Burrow_web-333.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-334","file":"RaeScott_Burrow_web-334.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-335","file":"RaeScott_Burrow_web-335.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-336","file":"RaeScott_Burrow_web-336.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-337","file":"RaeScott_Burrow_web-337.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-338","file":"RaeScott_Burrow_web-338.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-339","file":"RaeScott_Burrow_web-339.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-340","file":"RaeScott_Burrow_web-340.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-341","file":"RaeScott_Burrow_web-341.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-342","file":"RaeScott_Burrow_web-342.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-343","file":"RaeScott_Burrow_web-343.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-344","file":"RaeScott_Burrow_web-344.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-345","file":"RaeScott_Burrow_web-345.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-346","file":"RaeScott_Burrow_web-346.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-347","file":"RaeScott_Burrow_web-347.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-348","file":"RaeScott_Burrow_web-348.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-349","file":"RaeScott_Burrow_web-349.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-350","file":"RaeScott_Burrow_web-350.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-351","file":"RaeScott_Burrow_web-351.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-352","file":"RaeScott_Burrow_web-352.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-353","file":"RaeScott_Burrow_web-353.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-354","file":"RaeScott_Burrow_web-354.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-355","file":"RaeScott_Burrow_web-355.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-356","file":"RaeScott_Burrow_web-356.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-357","file":"RaeScott_Burrow_web-357.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-358","file":"RaeScott_Burrow_web-358.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-359","file":"RaeScott_Burrow_web-359.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-360","file":"RaeScott_Burrow_web-360.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-361","file":"RaeScott_Burrow_web-361.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-362","file":"RaeScott_Burrow_web-362.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-363","file":"RaeScott_Burrow_web-363.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-364","file":"RaeScott_Burrow_web-364.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-365","file":"RaeScott_Burrow_web-365.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-366","file":"RaeScott_Burrow_web-366.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-367","file":"RaeScott_Burrow_web-367.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-368","file":"RaeScott_Burrow_web-368.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-369","file":"RaeScott_Burrow_web-369.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-370","file":"RaeScott_Burrow_web-370.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-371","file":"RaeScott_Burrow_web-371.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-372","file":"RaeScott_Burrow_web-372.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-373","file":"RaeScott_Burrow_web-373.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-374","file":"RaeScott_Burrow_web-374.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-375","file":"RaeScott_Burrow_web-375.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-376","file":"RaeScott_Burrow_web-376.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-377","file":"RaeScott_Burrow_web-377.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-378","file":"RaeScott_Burrow_web-378.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-379","file":"RaeScott_Burrow_web-379.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-380","file":"RaeScott_Burrow_web-380.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-381","file":"RaeScott_Burrow_web-381.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-382","file":"RaeScott_Burrow_web-382.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-383","file":"RaeScott_Burrow_web-383.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-384","file":"RaeScott_Burrow_web-384.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-385","file":"RaeScott_Burrow_web-385.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-386","file":"RaeScott_Burrow_web-386.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-387","file":"RaeScott_Burrow_web-387.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-388","file":"RaeScott_Burrow_web-388.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-389","file":"RaeScott_Burrow_web-389.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-390","file":"RaeScott_Burrow_web-390.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-915","file":"RaeScott_Burrow_web-915.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-916","file":"RaeScott_Burrow_web-916.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-917","file":"RaeScott_Burrow_web-917.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-918","file":"RaeScott_Burrow_web-918.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-919","file":"RaeScott_Burrow_web-919.jpg","batch":"d1s2","o":"V","talent":true},{"id":"web-391","file":"RaeScott_Burrow_web-391.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-392","file":"RaeScott_Burrow_web-392.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-393","file":"RaeScott_Burrow_web-393.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-394","file":"RaeScott_Burrow_web-394.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-395","file":"RaeScott_Burrow_web-395.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-396","file":"RaeScott_Burrow_web-396.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-397","file":"RaeScott_Burrow_web-397.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-398","file":"RaeScott_Burrow_web-398.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-399","file":"RaeScott_Burrow_web-399.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-400","file":"RaeScott_Burrow_web-400.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-401","file":"RaeScott_Burrow_web-401.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-402","file":"RaeScott_Burrow_web-402.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-403","file":"RaeScott_Burrow_web-403.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-404","file":"RaeScott_Burrow_web-404.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-405","file":"RaeScott_Burrow_web-405.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-406","file":"RaeScott_Burrow_web-406.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-407","file":"RaeScott_Burrow_web-407.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-408","file":"RaeScott_Burrow_web-408.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-409","file":"RaeScott_Burrow_web-409.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-410","file":"RaeScott_Burrow_web-410.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-411","file":"RaeScott_Burrow_web-411.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-412","file":"RaeScott_Burrow_web-412.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-413","file":"RaeScott_Burrow_web-413.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-414","file":"RaeScott_Burrow_web-414.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-415","file":"RaeScott_Burrow_web-415.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-416","file":"RaeScott_Burrow_web-416.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-417","file":"RaeScott_Burrow_web-417.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-418","file":"RaeScott_Burrow_web-418.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-419","file":"RaeScott_Burrow_web-419.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-420","file":"RaeScott_Burrow_web-420.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-421","file":"RaeScott_Burrow_web-421.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-422","file":"RaeScott_Burrow_web-422.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-423","file":"RaeScott_Burrow_web-423.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-424","file":"RaeScott_Burrow_web-424.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-425","file":"RaeScott_Burrow_web-425.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-426","file":"RaeScott_Burrow_web-426.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-427","file":"RaeScott_Burrow_web-427.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-428","file":"RaeScott_Burrow_web-428.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-429","file":"RaeScott_Burrow_web-429.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-430","file":"RaeScott_Burrow_web-430.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-431","file":"RaeScott_Burrow_web-431.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-432","file":"RaeScott_Burrow_web-432.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-433","file":"RaeScott_Burrow_web-433.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-434","file":"RaeScott_Burrow_web-434.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-435","file":"RaeScott_Burrow_web-435.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-436","file":"RaeScott_Burrow_web-436.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-437","file":"RaeScott_Burrow_web-437.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-438","file":"RaeScott_Burrow_web-438.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-439","file":"RaeScott_Burrow_web-439.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-440","file":"RaeScott_Burrow_web-440.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-441","file":"RaeScott_Burrow_web-441.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-442","file":"RaeScott_Burrow_web-442.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-443","file":"RaeScott_Burrow_web-443.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-444","file":"RaeScott_Burrow_web-444.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-445","file":"RaeScott_Burrow_web-445.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-446","file":"RaeScott_Burrow_web-446.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-447","file":"RaeScott_Burrow_web-447.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-448","file":"RaeScott_Burrow_web-448.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-449","file":"RaeScott_Burrow_web-449.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-450","file":"RaeScott_Burrow_web-450.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-451","file":"RaeScott_Burrow_web-451.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-452","file":"RaeScott_Burrow_web-452.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-453","file":"RaeScott_Burrow_web-453.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-454","file":"RaeScott_Burrow_web-454.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-455","file":"RaeScott_Burrow_web-455.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-456","file":"RaeScott_Burrow_web-456.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-457","file":"RaeScott_Burrow_web-457.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-458","file":"RaeScott_Burrow_web-458.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-459","file":"RaeScott_Burrow_web-459.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-460","file":"RaeScott_Burrow_web-460.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-461","file":"RaeScott_Burrow_web-461.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-462","file":"RaeScott_Burrow_web-462.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-463","file":"RaeScott_Burrow_web-463.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-464","file":"RaeScott_Burrow_web-464.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-465","file":"RaeScott_Burrow_web-465.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-466","file":"RaeScott_Burrow_web-466.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-467","file":"RaeScott_Burrow_web-467.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-468","file":"RaeScott_Burrow_web-468.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-469","file":"RaeScott_Burrow_web-469.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-470","file":"RaeScott_Burrow_web-470.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-471","file":"RaeScott_Burrow_web-471.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-472","file":"RaeScott_Burrow_web-472.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-473","file":"RaeScott_Burrow_web-473.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-474","file":"RaeScott_Burrow_web-474.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-475","file":"RaeScott_Burrow_web-475.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-476","file":"RaeScott_Burrow_web-476.jpg","batch":"d1s3","o":"H","talent":true},{"id":"web-477","file":"RaeScott_Burrow_web-477.jpg","batch":"d1s3","o":"V","talent":true},{"id":"web-478","file":"RaeScott_Burrow_web-478.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-479","file":"RaeScott_Burrow_web-479.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-480","file":"RaeScott_Burrow_web-480.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-481","file":"RaeScott_Burrow_web-481.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-482","file":"RaeScott_Burrow_web-482.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-483","file":"RaeScott_Burrow_web-483.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-484","file":"RaeScott_Burrow_web-484.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-485","file":"RaeScott_Burrow_web-485.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-486","file":"RaeScott_Burrow_web-486.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-487","file":"RaeScott_Burrow_web-487.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-488","file":"RaeScott_Burrow_web-488.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-489","file":"RaeScott_Burrow_web-489.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-490","file":"RaeScott_Burrow_web-490.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-491","file":"RaeScott_Burrow_web-491.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-492","file":"RaeScott_Burrow_web-492.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-493","file":"RaeScott_Burrow_web-493.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-494","file":"RaeScott_Burrow_web-494.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-495","file":"RaeScott_Burrow_web-495.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-496","file":"RaeScott_Burrow_web-496.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-497","file":"RaeScott_Burrow_web-497.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-498","file":"RaeScott_Burrow_web-498.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-499","file":"RaeScott_Burrow_web-499.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-500","file":"RaeScott_Burrow_web-500.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-501","file":"RaeScott_Burrow_web-501.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-502","file":"RaeScott_Burrow_web-502.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-503","file":"RaeScott_Burrow_web-503.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-504","file":"RaeScott_Burrow_web-504.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-505","file":"RaeScott_Burrow_web-505.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-506","file":"RaeScott_Burrow_web-506.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-507","file":"RaeScott_Burrow_web-507.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-508","file":"RaeScott_Burrow_web-508.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-509","file":"RaeScott_Burrow_web-509.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-510","file":"RaeScott_Burrow_web-510.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-511","file":"RaeScott_Burrow_web-511.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-512","file":"RaeScott_Burrow_web-512.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-513","file":"RaeScott_Burrow_web-513.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-514","file":"RaeScott_Burrow_web-514.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-515","file":"RaeScott_Burrow_web-515.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-516","file":"RaeScott_Burrow_web-516.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-517","file":"RaeScott_Burrow_web-517.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-518","file":"RaeScott_Burrow_web-518.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-519","file":"RaeScott_Burrow_web-519.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-520","file":"RaeScott_Burrow_web-520.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-521","file":"RaeScott_Burrow_web-521.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-522","file":"RaeScott_Burrow_web-522.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-523","file":"RaeScott_Burrow_web-523.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-524","file":"RaeScott_Burrow_web-524.jpg","batch":"d1s4","o":"H","talent":true},{"id":"web-525","file":"RaeScott_Burrow_web-525.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-526","file":"RaeScott_Burrow_web-526.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-527","file":"RaeScott_Burrow_web-527.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-528","file":"RaeScott_Burrow_web-528.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-529","file":"RaeScott_Burrow_web-529.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-530","file":"RaeScott_Burrow_web-530.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-531","file":"RaeScott_Burrow_web-531.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-532","file":"RaeScott_Burrow_web-532.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-533","file":"RaeScott_Burrow_web-533.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-534","file":"RaeScott_Burrow_web-534.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-535","file":"RaeScott_Burrow_web-535.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-536","file":"RaeScott_Burrow_web-536.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-537","file":"RaeScott_Burrow_web-537.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-538","file":"RaeScott_Burrow_web-538.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-539","file":"RaeScott_Burrow_web-539.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-540","file":"RaeScott_Burrow_web-540.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-541","file":"RaeScott_Burrow_web-541.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-542","file":"RaeScott_Burrow_web-542.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-543","file":"RaeScott_Burrow_web-543.jpg","batch":"d1s4","o":"V","talent":true},{"id":"web-544","file":"RaeScott_Burrow_web-544.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-545","file":"RaeScott_Burrow_web-545.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-546","file":"RaeScott_Burrow_web-546.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-547","file":"RaeScott_Burrow_web-547.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-548","file":"RaeScott_Burrow_web-548.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-549","file":"RaeScott_Burrow_web-549.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-550","file":"RaeScott_Burrow_web-550.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-551","file":"RaeScott_Burrow_web-551.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-552","file":"RaeScott_Burrow_web-552.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-553","file":"RaeScott_Burrow_web-553.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-554","file":"RaeScott_Burrow_web-554.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-555","file":"RaeScott_Burrow_web-555.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-556","file":"RaeScott_Burrow_web-556.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-557","file":"RaeScott_Burrow_web-557.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-558","file":"RaeScott_Burrow_web-558.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-559","file":"RaeScott_Burrow_web-559.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-560","file":"RaeScott_Burrow_web-560.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-561","file":"RaeScott_Burrow_web-561.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-562","file":"RaeScott_Burrow_web-562.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-563","file":"RaeScott_Burrow_web-563.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-564","file":"RaeScott_Burrow_web-564.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-565","file":"RaeScott_Burrow_web-565.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-566","file":"RaeScott_Burrow_web-566.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-567","file":"RaeScott_Burrow_web-567.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-568","file":"RaeScott_Burrow_web-568.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-569","file":"RaeScott_Burrow_web-569.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-570","file":"RaeScott_Burrow_web-570.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-571","file":"RaeScott_Burrow_web-571.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-572","file":"RaeScott_Burrow_web-572.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-573","file":"RaeScott_Burrow_web-573.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-574","file":"RaeScott_Burrow_web-574.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-575","file":"RaeScott_Burrow_web-575.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-576","file":"RaeScott_Burrow_web-576.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-577","file":"RaeScott_Burrow_web-577.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-578","file":"RaeScott_Burrow_web-578.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-579","file":"RaeScott_Burrow_web-579.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-580","file":"RaeScott_Burrow_web-580.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-581","file":"RaeScott_Burrow_web-581.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-582","file":"RaeScott_Burrow_web-582.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-583","file":"RaeScott_Burrow_web-583.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-584","file":"RaeScott_Burrow_web-584.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-585","file":"RaeScott_Burrow_web-585.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-586","file":"RaeScott_Burrow_web-586.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-587","file":"RaeScott_Burrow_web-587.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-588","file":"RaeScott_Burrow_web-588.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-589","file":"RaeScott_Burrow_web-589.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-590","file":"RaeScott_Burrow_web-590.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-591","file":"RaeScott_Burrow_web-591.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-592","file":"RaeScott_Burrow_web-592.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-593","file":"RaeScott_Burrow_web-593.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-594","file":"RaeScott_Burrow_web-594.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-595","file":"RaeScott_Burrow_web-595.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-596","file":"RaeScott_Burrow_web-596.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-597","file":"RaeScott_Burrow_web-597.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-598","file":"RaeScott_Burrow_web-598.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-599","file":"RaeScott_Burrow_web-599.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-600","file":"RaeScott_Burrow_web-600.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-601","file":"RaeScott_Burrow_web-601.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-602","file":"RaeScott_Burrow_web-602.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-603","file":"RaeScott_Burrow_web-603.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-604","file":"RaeScott_Burrow_web-604.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-605","file":"RaeScott_Burrow_web-605.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-606","file":"RaeScott_Burrow_web-606.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-607","file":"RaeScott_Burrow_web-607.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-608","file":"RaeScott_Burrow_web-608.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-609","file":"RaeScott_Burrow_web-609.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-610","file":"RaeScott_Burrow_web-610.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-611","file":"RaeScott_Burrow_web-611.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-612","file":"RaeScott_Burrow_web-612.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-613","file":"RaeScott_Burrow_web-613.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-614","file":"RaeScott_Burrow_web-614.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-615","file":"RaeScott_Burrow_web-615.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-616","file":"RaeScott_Burrow_web-616.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-617","file":"RaeScott_Burrow_web-617.jpg","batch":"d1s5","o":"V","talent":true},{"id":"web-618","file":"RaeScott_Burrow_web-618.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-619","file":"RaeScott_Burrow_web-619.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-620","file":"RaeScott_Burrow_web-620.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-621","file":"RaeScott_Burrow_web-621.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-622","file":"RaeScott_Burrow_web-622.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-623","file":"RaeScott_Burrow_web-623.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-624","file":"RaeScott_Burrow_web-624.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-625","file":"RaeScott_Burrow_web-625.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-626","file":"RaeScott_Burrow_web-626.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-627","file":"RaeScott_Burrow_web-627.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-628","file":"RaeScott_Burrow_web-628.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-629","file":"RaeScott_Burrow_web-629.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-630","file":"RaeScott_Burrow_web-630.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-631","file":"RaeScott_Burrow_web-631.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-632","file":"RaeScott_Burrow_web-632.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-633","file":"RaeScott_Burrow_web-633.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-634","file":"RaeScott_Burrow_web-634.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-635","file":"RaeScott_Burrow_web-635.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-636","file":"RaeScott_Burrow_web-636.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-637","file":"RaeScott_Burrow_web-637.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-638","file":"RaeScott_Burrow_web-638.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-639","file":"RaeScott_Burrow_web-639.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-640","file":"RaeScott_Burrow_web-640.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-641","file":"RaeScott_Burrow_web-641.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-642","file":"RaeScott_Burrow_web-642.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-643","file":"RaeScott_Burrow_web-643.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-644","file":"RaeScott_Burrow_web-644.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-645","file":"RaeScott_Burrow_web-645.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-646","file":"RaeScott_Burrow_web-646.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-647","file":"RaeScott_Burrow_web-647.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-648","file":"RaeScott_Burrow_web-648.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-649","file":"RaeScott_Burrow_web-649.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-650","file":"RaeScott_Burrow_web-650.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-651","file":"RaeScott_Burrow_web-651.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-652","file":"RaeScott_Burrow_web-652.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-653","file":"RaeScott_Burrow_web-653.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-654","file":"RaeScott_Burrow_web-654.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-655","file":"RaeScott_Burrow_web-655.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-656","file":"RaeScott_Burrow_web-656.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-657","file":"RaeScott_Burrow_web-657.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-658","file":"RaeScott_Burrow_web-658.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-659","file":"RaeScott_Burrow_web-659.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-660","file":"RaeScott_Burrow_web-660.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-661","file":"RaeScott_Burrow_web-661.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-662","file":"RaeScott_Burrow_web-662.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-663","file":"RaeScott_Burrow_web-663.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-664","file":"RaeScott_Burrow_web-664.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-665","file":"RaeScott_Burrow_web-665.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-666","file":"RaeScott_Burrow_web-666.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-667","file":"RaeScott_Burrow_web-667.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-668","file":"RaeScott_Burrow_web-668.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-669","file":"RaeScott_Burrow_web-669.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-670","file":"RaeScott_Burrow_web-670.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-671","file":"RaeScott_Burrow_web-671.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-672","file":"RaeScott_Burrow_web-672.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-673","file":"RaeScott_Burrow_web-673.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-674","file":"RaeScott_Burrow_web-674.jpg","batch":"d1s5","o":"H","talent":true},{"id":"web-675","file":"RaeScott_Burrow_web-675.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-676","file":"RaeScott_Burrow_web-676.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-677","file":"RaeScott_Burrow_web-677.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-678","file":"RaeScott_Burrow_web-678.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-679","file":"RaeScott_Burrow_web-679.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-680","file":"RaeScott_Burrow_web-680.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-681","file":"RaeScott_Burrow_web-681.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-682","file":"RaeScott_Burrow_web-682.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-683","file":"RaeScott_Burrow_web-683.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-684","file":"RaeScott_Burrow_web-684.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-685","file":"RaeScott_Burrow_web-685.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-686","file":"RaeScott_Burrow_web-686.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-687","file":"RaeScott_Burrow_web-687.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-688","file":"RaeScott_Burrow_web-688.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-689","file":"RaeScott_Burrow_web-689.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-690","file":"RaeScott_Burrow_web-690.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-691","file":"RaeScott_Burrow_web-691.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-692","file":"RaeScott_Burrow_web-692.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-693","file":"RaeScott_Burrow_web-693.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-694","file":"RaeScott_Burrow_web-694.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-695","file":"RaeScott_Burrow_web-695.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-696","file":"RaeScott_Burrow_web-696.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-697","file":"RaeScott_Burrow_web-697.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-698","file":"RaeScott_Burrow_web-698.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-699","file":"RaeScott_Burrow_web-699.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-700","file":"RaeScott_Burrow_web-700.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-701","file":"RaeScott_Burrow_web-701.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-702","file":"RaeScott_Burrow_web-702.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-703","file":"RaeScott_Burrow_web-703.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-704","file":"RaeScott_Burrow_web-704.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-705","file":"RaeScott_Burrow_web-705.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-706","file":"RaeScott_Burrow_web-706.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-707","file":"RaeScott_Burrow_web-707.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-708","file":"RaeScott_Burrow_web-708.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-709","file":"RaeScott_Burrow_web-709.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-710","file":"RaeScott_Burrow_web-710.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-711","file":"RaeScott_Burrow_web-711.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-712","file":"RaeScott_Burrow_web-712.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-713","file":"RaeScott_Burrow_web-713.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-714","file":"RaeScott_Burrow_web-714.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-715","file":"RaeScott_Burrow_web-715.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-716","file":"RaeScott_Burrow_web-716.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-717","file":"RaeScott_Burrow_web-717.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-718","file":"RaeScott_Burrow_web-718.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-719","file":"RaeScott_Burrow_web-719.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-720","file":"RaeScott_Burrow_web-720.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-721","file":"RaeScott_Burrow_web-721.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-722","file":"RaeScott_Burrow_web-722.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-723","file":"RaeScott_Burrow_web-723.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-724","file":"RaeScott_Burrow_web-724.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-725","file":"RaeScott_Burrow_web-725.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-726","file":"RaeScott_Burrow_web-726.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-727","file":"RaeScott_Burrow_web-727.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-728","file":"RaeScott_Burrow_web-728.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-729","file":"RaeScott_Burrow_web-729.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-730","file":"RaeScott_Burrow_web-730.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-731","file":"RaeScott_Burrow_web-731.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-732","file":"RaeScott_Burrow_web-732.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-733","file":"RaeScott_Burrow_web-733.jpg","batch":"d2s1","o":"V","talent":false},{"id":"web-734","file":"RaeScott_Burrow_web-734.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-735","file":"RaeScott_Burrow_web-735.jpg","batch":"d2s1","o":"H","talent":false},{"id":"web-763","file":"RaeScott_Burrow_web-763.jpg","batch":"d2s2","o":"H","talent":false},{"id":"web-764","file":"RaeScott_Burrow_web-764.jpg","batch":"d2s2","o":"H","talent":false},{"id":"web-765","file":"RaeScott_Burrow_web-765.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-766","file":"RaeScott_Burrow_web-766.jpg","batch":"d2s2","o":"H","talent":false},{"id":"web-767","file":"RaeScott_Burrow_web-767.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-768","file":"RaeScott_Burrow_web-768.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-769","file":"RaeScott_Burrow_web-769.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-770","file":"RaeScott_Burrow_web-770.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-771","file":"RaeScott_Burrow_web-771.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-772","file":"RaeScott_Burrow_web-772.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-773","file":"RaeScott_Burrow_web-773.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-774","file":"RaeScott_Burrow_web-774.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-775","file":"RaeScott_Burrow_web-775.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-776","file":"RaeScott_Burrow_web-776.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-777","file":"RaeScott_Burrow_web-777.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-778","file":"RaeScott_Burrow_web-778.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-779","file":"RaeScott_Burrow_web-779.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-780","file":"RaeScott_Burrow_web-780.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-781","file":"RaeScott_Burrow_web-781.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-782","file":"RaeScott_Burrow_web-782.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-783","file":"RaeScott_Burrow_web-783.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-784","file":"RaeScott_Burrow_web-784.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-785","file":"RaeScott_Burrow_web-785.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-786","file":"RaeScott_Burrow_web-786.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-787","file":"RaeScott_Burrow_web-787.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-788","file":"RaeScott_Burrow_web-788.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-789","file":"RaeScott_Burrow_web-789.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-790","file":"RaeScott_Burrow_web-790.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-791","file":"RaeScott_Burrow_web-791.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-792","file":"RaeScott_Burrow_web-792.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-793","file":"RaeScott_Burrow_web-793.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-794","file":"RaeScott_Burrow_web-794.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-795","file":"RaeScott_Burrow_web-795.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-796","file":"RaeScott_Burrow_web-796.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-797","file":"RaeScott_Burrow_web-797.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-798","file":"RaeScott_Burrow_web-798.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-799","file":"RaeScott_Burrow_web-799.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-800","file":"RaeScott_Burrow_web-800.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-801","file":"RaeScott_Burrow_web-801.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-802","file":"RaeScott_Burrow_web-802.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-803","file":"RaeScott_Burrow_web-803.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-804","file":"RaeScott_Burrow_web-804.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-805","file":"RaeScott_Burrow_web-805.jpg","batch":"d2s2","o":"V","talent":false},{"id":"web-806","file":"RaeScott_Burrow_web-806.jpg","batch":"d2s2","o":"H","talent":false},{"id":"web-807","file":"RaeScott_Burrow_web-807.jpg","batch":"d2s2","o":"H","talent":false},{"id":"web-736","file":"RaeScott_Burrow_web-736.jpg","batch":"d2s3","o":"H","talent":false},{"id":"web-737","file":"RaeScott_Burrow_web-737.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-738","file":"RaeScott_Burrow_web-738.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-739","file":"RaeScott_Burrow_web-739.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-740","file":"RaeScott_Burrow_web-740.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-741","file":"RaeScott_Burrow_web-741.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-742","file":"RaeScott_Burrow_web-742.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-743","file":"RaeScott_Burrow_web-743.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-744","file":"RaeScott_Burrow_web-744.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-745","file":"RaeScott_Burrow_web-745.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-746","file":"RaeScott_Burrow_web-746.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-747","file":"RaeScott_Burrow_web-747.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-748","file":"RaeScott_Burrow_web-748.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-749","file":"RaeScott_Burrow_web-749.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-750","file":"RaeScott_Burrow_web-750.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-751","file":"RaeScott_Burrow_web-751.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-752","file":"RaeScott_Burrow_web-752.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-753","file":"RaeScott_Burrow_web-753.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-754","file":"RaeScott_Burrow_web-754.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-755","file":"RaeScott_Burrow_web-755.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-756","file":"RaeScott_Burrow_web-756.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-757","file":"RaeScott_Burrow_web-757.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-758","file":"RaeScott_Burrow_web-758.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-759","file":"RaeScott_Burrow_web-759.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-760","file":"RaeScott_Burrow_web-760.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-761","file":"RaeScott_Burrow_web-761.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-762","file":"RaeScott_Burrow_web-762.jpg","batch":"d2s3","o":"V","talent":false},{"id":"web-808","file":"RaeScott_Burrow_web-808.jpg","batch":"fuji","o":"H"},{"id":"web-809","file":"RaeScott_Burrow_web-809.jpg","batch":"fuji","o":"V"},{"id":"web-810","file":"RaeScott_Burrow_web-810.jpg","batch":"fuji","o":"V"},{"id":"web-811","file":"RaeScott_Burrow_web-811.jpg","batch":"fuji","o":"V"},{"id":"web-812","file":"RaeScott_Burrow_web-812.jpg","batch":"fuji","o":"V"},{"id":"web-813","file":"RaeScott_Burrow_web-813.jpg","batch":"fuji","o":"V"},{"id":"web-814","file":"RaeScott_Burrow_web-814.jpg","batch":"fuji","o":"V"},{"id":"web-815","file":"RaeScott_Burrow_web-815.jpg","batch":"fuji","o":"V"},{"id":"web-816","file":"RaeScott_Burrow_web-816.jpg","batch":"fuji","o":"V"},{"id":"web-817","file":"RaeScott_Burrow_web-817.jpg","batch":"fuji","o":"H"},{"id":"web-818","file":"RaeScott_Burrow_web-818.jpg","batch":"fuji","o":"H"},{"id":"web-819","file":"RaeScott_Burrow_web-819.jpg","batch":"fuji","o":"H"},{"id":"web-820","file":"RaeScott_Burrow_web-820.jpg","batch":"fuji","o":"H"},{"id":"web-821","file":"RaeScott_Burrow_web-821.jpg","batch":"fuji","o":"V"},{"id":"web-822","file":"RaeScott_Burrow_web-822.jpg","batch":"fuji","o":"V"},{"id":"web-823","file":"RaeScott_Burrow_web-823.jpg","batch":"fuji","o":"V"},{"id":"web-824","file":"RaeScott_Burrow_web-824.jpg","batch":"fuji","o":"V"},{"id":"web-825","file":"RaeScott_Burrow_web-825.jpg","batch":"fuji","o":"V"},{"id":"web-826","file":"RaeScott_Burrow_web-826.jpg","batch":"fuji","o":"V"},{"id":"web-827","file":"RaeScott_Burrow_web-827.jpg","batch":"fuji","o":"V"},{"id":"web-828","file":"RaeScott_Burrow_web-828.jpg","batch":"fuji","o":"V"},{"id":"web-829","file":"RaeScott_Burrow_web-829.jpg","batch":"fuji","o":"V"},{"id":"web-830","file":"RaeScott_Burrow_web-830.jpg","batch":"fuji","o":"V"},{"id":"web-831","file":"RaeScott_Burrow_web-831.jpg","batch":"fuji","o":"H"},{"id":"web-832","file":"RaeScott_Burrow_web-832.jpg","batch":"fuji","o":"V"},{"id":"web-833","file":"RaeScott_Burrow_web-833.jpg","batch":"fuji","o":"V"},{"id":"web-834","file":"RaeScott_Burrow_web-834.jpg","batch":"fuji","o":"V"},{"id":"web-835","file":"RaeScott_Burrow_web-835.jpg","batch":"fuji","o":"V"},{"id":"web-836","file":"RaeScott_Burrow_web-836.jpg","batch":"fuji","o":"V"},{"id":"web-837","file":"RaeScott_Burrow_web-837.jpg","batch":"fuji","o":"V"},{"id":"web-838","file":"RaeScott_Burrow_web-838.jpg","batch":"fuji","o":"V"},{"id":"web-839","file":"RaeScott_Burrow_web-839.jpg","batch":"fuji","o":"V"},{"id":"web-840","file":"RaeScott_Burrow_web-840.jpg","batch":"fuji","o":"V"},{"id":"web-841","file":"RaeScott_Burrow_web-841.jpg","batch":"fuji","o":"V"},{"id":"web-842","file":"RaeScott_Burrow_web-842.jpg","batch":"fuji","o":"V"},{"id":"web-843","file":"RaeScott_Burrow_web-843.jpg","batch":"fuji","o":"V"},{"id":"web-844","file":"RaeScott_Burrow_web-844.jpg","batch":"fuji","o":"V"},{"id":"web-845","file":"RaeScott_Burrow_web-845.jpg","batch":"fuji","o":"H"},{"id":"web-846","file":"RaeScott_Burrow_web-846.jpg","batch":"fuji","o":"V"},{"id":"web-847","file":"RaeScott_Burrow_web-847.jpg","batch":"fuji","o":"V"},{"id":"web-848","file":"RaeScott_Burrow_web-848.jpg","batch":"fuji","o":"V"},{"id":"web-849","file":"RaeScott_Burrow_web-849.jpg","batch":"fuji","o":"V"},{"id":"web-850","file":"RaeScott_Burrow_web-850.jpg","batch":"fuji","o":"V"},{"id":"web-851","file":"RaeScott_Burrow_web-851.jpg","batch":"fuji","o":"V"},{"id":"web-852","file":"RaeScott_Burrow_web-852.jpg","batch":"fuji","o":"V"},{"id":"web-853","file":"RaeScott_Burrow_web-853.jpg","batch":"fuji","o":"V"},{"id":"web-854","file":"RaeScott_Burrow_web-854.jpg","batch":"fuji","o":"V"},{"id":"web-855","file":"RaeScott_Burrow_web-855.jpg","batch":"fuji","o":"H"},{"id":"web-856","file":"RaeScott_Burrow_web-856.jpg","batch":"fuji","o":"V"},{"id":"web-857","file":"RaeScott_Burrow_web-857.jpg","batch":"fuji","o":"V"},{"id":"web-858","file":"RaeScott_Burrow_web-858.jpg","batch":"fuji","o":"V"},{"id":"web-859","file":"RaeScott_Burrow_web-859.jpg","batch":"fuji","o":"H"},{"id":"web-860","file":"RaeScott_Burrow_web-860.jpg","batch":"fuji","o":"V"},{"id":"web-861","file":"RaeScott_Burrow_web-861.jpg","batch":"fuji","o":"V"},{"id":"web-862","file":"RaeScott_Burrow_web-862.jpg","batch":"fuji","o":"V"},{"id":"web-863","file":"RaeScott_Burrow_web-863.jpg","batch":"fuji","o":"V"},{"id":"web-864","file":"RaeScott_Burrow_web-864.jpg","batch":"fuji","o":"H"},{"id":"web-865","file":"RaeScott_Burrow_web-865.jpg","batch":"fuji","o":"V"},{"id":"web-866","file":"RaeScott_Burrow_web-866.jpg","batch":"fuji","o":"V"},{"id":"web-867","file":"RaeScott_Burrow_web-867.jpg","batch":"fuji","o":"V"},{"id":"web-868","file":"RaeScott_Burrow_web-868.jpg","batch":"fuji","o":"V"},{"id":"web-869","file":"RaeScott_Burrow_web-869.jpg","batch":"fuji","o":"V"},{"id":"web-870","file":"RaeScott_Burrow_web-870.jpg","batch":"fuji","o":"V"},{"id":"web-871","file":"RaeScott_Burrow_web-871.jpg","batch":"fuji","o":"V"},{"id":"web-872","file":"RaeScott_Burrow_web-872.jpg","batch":"fuji","o":"V"},{"id":"web-873","file":"RaeScott_Burrow_web-873.jpg","batch":"fuji","o":"V"},{"id":"web-874","file":"RaeScott_Burrow_web-874.jpg","batch":"fuji","o":"H"},{"id":"web-875","file":"RaeScott_Burrow_web-875.jpg","batch":"fuji","o":"V"},{"id":"web-876","file":"RaeScott_Burrow_web-876.jpg","batch":"fuji","o":"H"},{"id":"web-877","file":"RaeScott_Burrow_web-877.jpg","batch":"fuji","o":"V"},{"id":"web-878","file":"RaeScott_Burrow_web-878.jpg","batch":"fuji","o":"V"},{"id":"web-879","file":"RaeScott_Burrow_web-879.jpg","batch":"fuji","o":"V"},{"id":"web-880","file":"RaeScott_Burrow_web-880.jpg","batch":"fuji","o":"V"},{"id":"web-881","file":"RaeScott_Burrow_web-881.jpg","batch":"fuji","o":"H"},{"id":"web-882","file":"RaeScott_Burrow_web-882.jpg","batch":"fuji","o":"V"},{"id":"web-883","file":"RaeScott_Burrow_web-883.jpg","batch":"fuji","o":"H"},{"id":"web-884","file":"RaeScott_Burrow_web-884.jpg","batch":"fuji","o":"V"},{"id":"web-885","file":"RaeScott_Burrow_web-885.jpg","batch":"fuji","o":"V"},{"id":"web-886","file":"RaeScott_Burrow_web-886.jpg","batch":"fuji","o":"V"},{"id":"web-887","file":"RaeScott_Burrow_web-887.jpg","batch":"fuji","o":"H"},{"id":"web-888","file":"RaeScott_Burrow_web-888.jpg","batch":"fuji","o":"H"},{"id":"web-889","file":"RaeScott_Burrow_web-889.jpg","batch":"fuji","o":"V"},{"id":"web-890","file":"RaeScott_Burrow_web-890.jpg","batch":"fuji","o":"V"},{"id":"web-891","file":"RaeScott_Burrow_web-891.jpg","batch":"fuji","o":"V"},{"id":"web-892","file":"RaeScott_Burrow_web-892.jpg","batch":"fuji","o":"H"},{"id":"web-893","file":"RaeScott_Burrow_web-893.jpg","batch":"fuji","o":"V"},{"id":"web-894","file":"RaeScott_Burrow_web-894.jpg","batch":"fuji","o":"V"},{"id":"web-895","file":"RaeScott_Burrow_web-895.jpg","batch":"fuji","o":"H"},{"id":"web-896","file":"RaeScott_Burrow_web-896.jpg","batch":"fuji","o":"H"},{"id":"web-897","file":"RaeScott_Burrow_web-897.jpg","batch":"fuji","o":"H"},{"id":"web-898","file":"RaeScott_Burrow_web-898.jpg","batch":"fuji","o":"H"},{"id":"web-899","file":"RaeScott_Burrow_web-899.jpg","batch":"fuji","o":"V"},{"id":"web-900","file":"RaeScott_Burrow_web-900.jpg","batch":"fuji","o":"H"},{"id":"web-901","file":"RaeScott_Burrow_web-901.jpg","batch":"fuji","o":"H"},{"id":"web-902","file":"RaeScott_Burrow_web-902.jpg","batch":"fuji","o":"H"},{"id":"web-903","file":"RaeScott_Burrow_web-903.jpg","batch":"fuji","o":"H"},{"id":"web-904","file":"RaeScott_Burrow_web-904.jpg","batch":"fuji","o":"V"},{"id":"web-905","file":"RaeScott_Burrow_web-905.jpg","batch":"fuji","o":"V"},{"id":"web-906","file":"RaeScott_Burrow_web-906.jpg","batch":"fuji","o":"V"},{"id":"web-907","file":"RaeScott_Burrow_web-907.jpg","batch":"fuji","o":"H"},{"id":"web-908","file":"RaeScott_Burrow_web-908.jpg","batch":"fuji","o":"H"},{"id":"web-909","file":"RaeScott_Burrow_web-909.jpg","batch":"fuji","o":"H"},{"id":"web-910","file":"RaeScott_Burrow_web-910.jpg","batch":"fuji","o":"H"},{"id":"web-911","file":"RaeScott_Burrow_web-911.jpg","batch":"fuji","o":"H"},{"id":"web-912","file":"RaeScott_Burrow_web-912.jpg","batch":"fuji","o":"H"},{"id":"web-913","file":"RaeScott_Burrow_web-913.jpg","batch":"fuji","o":"H"},{"id":"web-914","file":"RaeScott_Burrow_web-914.jpg","batch":"fuji","o":"H"},{"id":"web-920","file":"RaeScott_Burrow_web-920.jpg","batch":"ricoh","o":"V"},{"id":"web-921","file":"RaeScott_Burrow_web-921.jpg","batch":"ricoh","o":"V"},{"id":"web-922","file":"RaeScott_Burrow_web-922.jpg","batch":"ricoh","o":"V"},{"id":"web-923","file":"RaeScott_Burrow_web-923.jpg","batch":"ricoh","o":"V"},{"id":"web-924","file":"RaeScott_Burrow_web-924.jpg","batch":"ricoh","o":"V"},{"id":"web-925","file":"RaeScott_Burrow_web-925.jpg","batch":"ricoh","o":"V"},{"id":"web-926","file":"RaeScott_Burrow_web-926.jpg","batch":"ricoh","o":"V"},{"id":"web-927","file":"RaeScott_Burrow_web-927.jpg","batch":"ricoh","o":"V"},{"id":"web-928","file":"RaeScott_Burrow_web-928.jpg","batch":"ricoh","o":"V"},{"id":"web-929","file":"RaeScott_Burrow_web-929.jpg","batch":"ricoh","o":"V"},{"id":"web-930","file":"RaeScott_Burrow_web-930.jpg","batch":"ricoh","o":"V"},{"id":"web-931","file":"RaeScott_Burrow_web-931.jpg","batch":"ricoh","o":"V"},{"id":"web-932","file":"RaeScott_Burrow_web-932.jpg","batch":"ricoh","o":"V"},{"id":"web-933","file":"RaeScott_Burrow_web-933.jpg","batch":"ricoh","o":"V"},{"id":"web-934","file":"RaeScott_Burrow_web-934.jpg","batch":"ricoh","o":"V"},{"id":"web-935","file":"RaeScott_Burrow_web-935.jpg","batch":"ricoh","o":"V"},{"id":"web-936","file":"RaeScott_Burrow_web-936.jpg","batch":"ricoh","o":"H"},{"id":"web-937","file":"RaeScott_Burrow_web-937.jpg","batch":"ricoh","o":"H"},{"id":"web-938","file":"RaeScott_Burrow_web-938.jpg","batch":"ricoh","o":"H"},{"id":"web-939","file":"RaeScott_Burrow_web-939.jpg","batch":"ricoh","o":"V"},{"id":"web-940","file":"RaeScott_Burrow_web-940.jpg","batch":"ricoh","o":"V"},{"id":"web-941","file":"RaeScott_Burrow_web-941.jpg","batch":"ricoh","o":"V"},{"id":"web-942","file":"RaeScott_Burrow_web-942.jpg","batch":"ricoh","o":"V"},{"id":"web-943","file":"RaeScott_Burrow_web-943.jpg","batch":"ricoh","o":"V"},{"id":"web-944","file":"RaeScott_Burrow_web-944.jpg","batch":"ricoh","o":"V"},{"id":"web-945","file":"RaeScott_Burrow_web-945.jpg","batch":"ricoh","o":"V"},{"id":"web-946","file":"RaeScott_Burrow_web-946.jpg","batch":"ricoh","o":"V"},{"id":"web-947","file":"RaeScott_Burrow_web-947.jpg","batch":"ricoh","o":"V"},{"id":"web-948","file":"RaeScott_Burrow_web-948.jpg","batch":"ricoh","o":"V"},{"id":"web-949","file":"RaeScott_Burrow_web-949.jpg","batch":"ricoh","o":"V"},{"id":"web-950","file":"RaeScott_Burrow_web-950.jpg","batch":"ricoh","o":"V"},{"id":"web-951","file":"RaeScott_Burrow_web-951.jpg","batch":"ricoh","o":"V"},{"id":"web-952","file":"RaeScott_Burrow_web-952.jpg","batch":"ricoh","o":"V"},{"id":"web-953","file":"RaeScott_Burrow_web-953.jpg","batch":"ricoh","o":"H"},{"id":"web-954","file":"RaeScott_Burrow_web-954.jpg","batch":"ricoh","o":"H"},{"id":"web-955","file":"RaeScott_Burrow_web-955.jpg","batch":"ricoh","o":"V"},{"id":"web-956","file":"RaeScott_Burrow_web-956.jpg","batch":"ricoh","o":"H"},{"id":"web-957","file":"RaeScott_Burrow_web-957.jpg","batch":"ricoh","o":"H"},{"id":"web-958","file":"RaeScott_Burrow_web-958.jpg","batch":"ricoh","o":"V"},{"id":"web-959","file":"RaeScott_Burrow_web-959.jpg","batch":"ricoh","o":"H"},{"id":"web-960","file":"RaeScott_Burrow_web-960.jpg","batch":"ricoh","o":"V"},{"id":"web-961","file":"RaeScott_Burrow_web-961.jpg","batch":"ricoh","o":"V"},{"id":"web-962","file":"RaeScott_Burrow_web-962.jpg","batch":"ricoh","o":"V"},{"id":"web-963","file":"RaeScott_Burrow_web-963.jpg","batch":"ricoh","o":"V"},{"id":"web-964","file":"RaeScott_Burrow_web-964.jpg","batch":"ricoh","o":"V"},{"id":"web-965","file":"RaeScott_Burrow_web-965.jpg","batch":"ricoh","o":"V"},{"id":"web-966","file":"RaeScott_Burrow_web-966.jpg","batch":"ricoh","o":"V"},{"id":"web-967","file":"RaeScott_Burrow_web-967.jpg","batch":"ricoh","o":"V"},{"id":"web-968","file":"RaeScott_Burrow_web-968.jpg","batch":"ricoh","o":"V"},{"id":"web-969","file":"RaeScott_Burrow_web-969.jpg","batch":"ricoh","o":"V"},{"id":"web-970","file":"RaeScott_Burrow_web-970.jpg","batch":"ricoh","o":"H"},{"id":"web-971","file":"RaeScott_Burrow_web-971.jpg","batch":"ricoh","o":"H"},{"id":"web-972","file":"RaeScott_Burrow_web-972.jpg","batch":"ricoh","o":"V"},{"id":"web-973","file":"RaeScott_Burrow_web-973.jpg","batch":"ricoh","o":"H"},{"id":"web-974","file":"RaeScott_Burrow_web-974.jpg","batch":"ricoh","o":"H"},{"id":"web-975","file":"RaeScott_Burrow_web-975.jpg","batch":"ricoh","o":"V"},{"id":"web-976","file":"RaeScott_Burrow_web-976.jpg","batch":"ricoh","o":"H"},{"id":"web-977","file":"RaeScott_Burrow_web-977.jpg","batch":"ricoh","o":"V"},{"id":"web-978","file":"RaeScott_Burrow_web-978.jpg","batch":"ricoh","o":"H"},{"id":"web-979","file":"RaeScott_Burrow_web-979.jpg","batch":"ricoh","o":"H"},{"id":"web-980","file":"RaeScott_Burrow_web-980.jpg","batch":"ricoh","o":"V"},{"id":"web-981","file":"RaeScott_Burrow_web-981.jpg","batch":"ricoh","o":"H"},{"id":"web-982","file":"RaeScott_Burrow_web-982.jpg","batch":"ricoh","o":"V"},{"id":"web-983","file":"RaeScott_Burrow_web-983.jpg","batch":"ricoh","o":"H"},{"id":"web-984","file":"RaeScott_Burrow_web-984.jpg","batch":"ricoh","o":"V"},{"id":"web-985","file":"RaeScott_Burrow_web-985.jpg","batch":"ricoh","o":"H"},{"id":"web-986","file":"RaeScott_Burrow_web-986.jpg","batch":"ricoh","o":"H"},{"id":"web-987","file":"RaeScott_Burrow_web-987.jpg","batch":"ricoh","o":"V"},{"id":"web-988","file":"RaeScott_Burrow_web-988.jpg","batch":"ricoh","o":"V"},{"id":"web-989","file":"RaeScott_Burrow_web-989.jpg","batch":"ricoh","o":"V"},{"id":"web-990","file":"RaeScott_Burrow_web-990.jpg","batch":"ricoh","o":"H"},{"id":"web-991","file":"RaeScott_Burrow_web-991.jpg","batch":"ricoh","o":"H"},{"id":"web-992","file":"RaeScott_Burrow_web-992.jpg","batch":"ricoh","o":"H"},{"id":"web-993","file":"RaeScott_Burrow_web-993.jpg","batch":"ricoh","o":"H"},{"id":"web-994","file":"RaeScott_Burrow_web-994.jpg","batch":"ricoh","o":"H"},{"id":"web-995","file":"RaeScott_Burrow_web-995.jpg","batch":"ricoh","o":"H"},{"id":"web-996","file":"RaeScott_Burrow_web-996.jpg","batch":"ricoh","o":"V"},{"id":"web-997","file":"RaeScott_Burrow_web-997.jpg","batch":"ricoh","o":"V"},{"id":"web-998","file":"RaeScott_Burrow_web-998.jpg","batch":"ricoh","o":"V"},{"id":"web-999","file":"RaeScott_Burrow_web-999.jpg","batch":"ricoh","o":"V"},{"id":"web-1000","file":"RaeScott_Burrow_web-1000.jpg","batch":"ricoh","o":"H"},{"id":"web-1001","file":"RaeScott_Burrow_web-1001.jpg","batch":"ricoh","o":"V"},{"id":"web-1002","file":"RaeScott_Burrow_web-1002.jpg","batch":"ricoh","o":"V"},{"id":"web-1003","file":"RaeScott_Burrow_web-1003.jpg","batch":"ricoh","o":"H"},{"id":"web-1004","file":"RaeScott_Burrow_web-1004.jpg","batch":"ricoh","o":"V"},{"id":"web-1005","file":"RaeScott_Burrow_web-1005.jpg","batch":"ricoh","o":"V"},{"id":"web-1006","file":"RaeScott_Burrow_web-1006.jpg","batch":"ricoh","o":"V"},{"id":"web-1007","file":"RaeScott_Burrow_web-1007.jpg","batch":"ricoh","o":"H"},{"id":"web-1008","file":"RaeScott_Burrow_web-1008.jpg","batch":"ricoh","o":"H"},{"id":"web-1009","file":"RaeScott_Burrow_web-1009.jpg","batch":"ricoh","o":"V"},{"id":"web-1010","file":"RaeScott_Burrow_web-1010.jpg","batch":"ricoh","o":"H"},{"id":"web-1011","file":"RaeScott_Burrow_web-1011.jpg","batch":"ricoh","o":"H"},{"id":"web-1012","file":"RaeScott_Burrow_web-1012.jpg","batch":"ricoh","o":"H"},{"id":"web-1013","file":"RaeScott_Burrow_web-1013.jpg","batch":"ricoh","o":"H"},{"id":"web-1014","file":"RaeScott_Burrow_web-1014.jpg","batch":"ricoh","o":"H"},{"id":"web-1015","file":"RaeScott_Burrow_web-1015.jpg","batch":"ricoh","o":"V"},{"id":"web-1016","file":"RaeScott_Burrow_web-1016.jpg","batch":"ricoh","o":"V"},{"id":"web-1017","file":"RaeScott_Burrow_web-1017.jpg","batch":"ricoh","o":"V"},{"id":"web-1018","file":"RaeScott_Burrow_web-1018.jpg","batch":"ricoh","o":"H"},{"id":"web-1019","file":"RaeScott_Burrow_web-1019.jpg","batch":"ricoh","o":"V"},{"id":"web-1020","file":"RaeScott_Burrow_web-1020.jpg","batch":"ricoh","o":"V"},{"id":"web-1021","file":"RaeScott_Burrow_web-1021.jpg","batch":"ricoh","o":"V"},{"id":"web-1022","file":"RaeScott_Burrow_web-1022.jpg","batch":"ricoh","o":"V"},{"id":"web-1023","file":"RaeScott_Burrow_web-1023.jpg","batch":"ricoh","o":"V"},{"id":"web-1024","file":"RaeScott_Burrow_web-1024.jpg","batch":"ricoh","o":"V"},{"id":"web-1025","file":"RaeScott_Burrow_web-1025.jpg","batch":"ricoh","o":"V"},{"id":"web-1026","file":"RaeScott_Burrow_web-1026.jpg","batch":"ricoh","o":"V"},{"id":"web-1027","file":"RaeScott_Burrow_web-1027.jpg","batch":"ricoh","o":"V"},{"id":"web-1028","file":"RaeScott_Burrow_web-1028.jpg","batch":"ricoh","o":"V"},{"id":"web-1029","file":"RaeScott_Burrow_web-1029.jpg","batch":"ricoh","o":"V"},{"id":"web-1030","file":"RaeScott_Burrow_web-1030.jpg","batch":"ricoh","o":"H"},{"id":"web-1031","file":"RaeScott_Burrow_web-1031.jpg","batch":"ricoh","o":"V"},{"id":"web-1032","file":"RaeScott_Burrow_web-1032.jpg","batch":"ricoh","o":"V"},{"id":"web-1033","file":"RaeScott_Burrow_web-1033.jpg","batch":"ricoh","o":"V"},{"id":"web-1034","file":"RaeScott_Burrow_web-1034.jpg","batch":"ricoh","o":"H"},{"id":"web-1035","file":"RaeScott_Burrow_web-1035.jpg","batch":"ricoh","o":"V"},{"id":"web-1036","file":"RaeScott_Burrow_web-1036.jpg","batch":"ricoh","o":"V"},{"id":"web-1037","file":"RaeScott_Burrow_web-1037.jpg","batch":"ricoh","o":"V"},{"id":"web-1038","file":"RaeScott_Burrow_web-1038.jpg","batch":"ricoh","o":"V"},{"id":"web-1039","file":"RaeScott_Burrow_web-1039.jpg","batch":"ricoh","o":"H"},{"id":"web-1040","file":"RaeScott_Burrow_web-1040.jpg","batch":"ricoh","o":"V"},{"id":"web-1041","file":"RaeScott_Burrow_web-1041.jpg","batch":"ricoh","o":"H"},{"id":"web-1042","file":"RaeScott_Burrow_web-1042.jpg","batch":"ricoh","o":"V"},{"id":"web-1043","file":"RaeScott_Burrow_web-1043.jpg","batch":"ricoh","o":"V"},{"id":"web-1044","file":"RaeScott_Burrow_web-1044.jpg","batch":"ricoh","o":"V"},{"id":"web-1045","file":"RaeScott_Burrow_web-1045.jpg","batch":"ricoh","o":"V"},{"id":"web-1046","file":"RaeScott_Burrow_web-1046.jpg","batch":"ricoh","o":"H"},{"id":"web-1047","file":"RaeScott_Burrow_web-1047.jpg","batch":"ricoh","o":"V"},{"id":"web-1048","file":"RaeScott_Burrow_web-1048.jpg","batch":"ricoh","o":"V"},{"id":"web-1049","file":"RaeScott_Burrow_web-1049.jpg","batch":"ricoh","o":"V"},{"id":"web-1050","file":"RaeScott_Burrow_web-1050.jpg","batch":"ricoh","o":"H"},{"id":"web-1051","file":"RaeScott_Burrow_web-1051.jpg","batch":"ricoh","o":"V"},{"id":"web-1052","file":"RaeScott_Burrow_web-1052.jpg","batch":"ricoh","o":"V"},{"id":"web-1053","file":"RaeScott_Burrow_web-1053.jpg","batch":"ricoh","o":"H"},{"id":"web-1054","file":"RaeScott_Burrow_web-1054.jpg","batch":"ricoh","o":"H"},{"id":"web-1055","file":"RaeScott_Burrow_web-1055.jpg","batch":"ricoh","o":"H"},{"id":"web-1056","file":"RaeScott_Burrow_web-1056.jpg","batch":"ricoh","o":"H"},{"id":"web-1057","file":"RaeScott_Burrow_web-1057.jpg","batch":"ricoh","o":"V"},{"id":"web-1058","file":"RaeScott_Burrow_web-1058.jpg","batch":"ricoh","o":"V"},{"id":"web-1059","file":"RaeScott_Burrow_web-1059.jpg","batch":"ricoh","o":"V"},{"id":"web-1060","file":"RaeScott_Burrow_web-1060.jpg","batch":"ricoh","o":"V"},{"id":"web-1061","file":"RaeScott_Burrow_web-1061.jpg","batch":"ricoh","o":"H"},{"id":"web-1062","file":"RaeScott_Burrow_web-1062.jpg","batch":"ricoh","o":"V"},{"id":"web-1063","file":"RaeScott_Burrow_web-1063.jpg","batch":"ricoh","o":"V"},{"id":"web-1064","file":"RaeScott_Burrow_web-1064.jpg","batch":"ricoh","o":"V"},{"id":"web-1065","file":"RaeScott_Burrow_web-1065.jpg","batch":"ricoh","o":"H"},{"id":"web-1066","file":"RaeScott_Burrow_web-1066.jpg","batch":"ricoh","o":"H"},{"id":"web-1067","file":"RaeScott_Burrow_web-1067.jpg","batch":"ricoh","o":"H"},{"id":"web-1068","file":"RaeScott_Burrow_web-1068.jpg","batch":"ricoh","o":"V"},{"id":"web-1069","file":"RaeScott_Burrow_web-1069.jpg","batch":"ricoh","o":"V"},{"id":"web-1070","file":"RaeScott_Burrow_web-1070.jpg","batch":"ricoh","o":"V"},{"id":"web-1071","file":"RaeScott_Burrow_web-1071.jpg","batch":"ricoh","o":"V"},{"id":"web-1072","file":"RaeScott_Burrow_web-1072.jpg","batch":"ricoh","o":"V"},{"id":"web-1073","file":"RaeScott_Burrow_web-1073.jpg","batch":"ricoh","o":"V"},{"id":"web-1074","file":"RaeScott_Burrow_web-1074.jpg","batch":"ricoh","o":"V"},{"id":"web-1075","file":"RaeScott_Burrow_web-1075.jpg","batch":"ricoh","o":"V"},{"id":"web-1076","file":"RaeScott_Burrow_web-1076.jpg","batch":"ricoh","o":"V"},{"id":"web-1077","file":"RaeScott_Burrow_web-1077.jpg","batch":"ricoh","o":"V"},{"id":"web-1078","file":"RaeScott_Burrow_web-1078.jpg","batch":"ricoh","o":"V"},{"id":"web-1079","file":"RaeScott_Burrow_web-1079.jpg","batch":"ricoh","o":"V"},{"id":"web-1080","file":"RaeScott_Burrow_web-1080.jpg","batch":"ricoh","o":"V"},{"id":"web-1081","file":"RaeScott_Burrow_web-1081.jpg","batch":"ricoh","o":"V"},{"id":"web-1082","file":"RaeScott_Burrow_web-1082.jpg","batch":"ricoh","o":"V"},{"id":"web-1083","file":"RaeScott_Burrow_web-1083.jpg","batch":"ricoh","o":"V"},{"id":"web-1084","file":"RaeScott_Burrow_web-1084.jpg","batch":"ricoh","o":"H"},{"id":"web-1085","file":"RaeScott_Burrow_web-1085.jpg","batch":"ricoh","o":"H"},{"id":"web-1086","file":"RaeScott_Burrow_web-1086.jpg","batch":"ricoh","o":"H"},{"id":"web-1087","file":"RaeScott_Burrow_web-1087.jpg","batch":"ricoh","o":"H"},{"id":"web-1088","file":"RaeScott_Burrow_web-1088.jpg","batch":"ricoh","o":"V"},{"id":"web-1089","file":"RaeScott_Burrow_web-1089.jpg","batch":"ricoh","o":"V"},{"id":"web-1090","file":"RaeScott_Burrow_web-1090.jpg","batch":"ricoh","o":"V"},{"id":"web-1091","file":"RaeScott_Burrow_web-1091.jpg","batch":"ricoh","o":"V"},{"id":"web-1092","file":"RaeScott_Burrow_web-1092.jpg","batch":"ricoh","o":"V"},{"id":"web-1093","file":"RaeScott_Burrow_web-1093.jpg","batch":"ricoh","o":"V"},{"id":"web-1094","file":"RaeScott_Burrow_web-1094.jpg","batch":"ricoh","o":"H"},{"id":"web-1095","file":"RaeScott_Burrow_web-1095.jpg","batch":"ricoh","o":"V"},{"id":"web-1096","file":"RaeScott_Burrow_web-1096.jpg","batch":"ricoh","o":"V"},{"id":"web-1097","file":"RaeScott_Burrow_web-1097.jpg","batch":"ricoh","o":"V"},{"id":"web-1098","file":"RaeScott_Burrow_web-1098.jpg","batch":"ricoh","o":"V"},{"id":"web-1099","file":"RaeScott_Burrow_web-1099.jpg","batch":"ricoh","o":"H"},{"id":"web-1100","file":"RaeScott_Burrow_web-1100.jpg","batch":"ricoh","o":"H"},{"id":"web-1101","file":"RaeScott_Burrow_web-1101.jpg","batch":"ricoh","o":"V"},{"id":"web-1102","file":"RaeScott_Burrow_web-1102.jpg","batch":"ricoh","o":"V"},{"id":"web-1103","file":"RaeScott_Burrow_web-1103.jpg","batch":"ricoh","o":"V"},{"id":"web-1104","file":"RaeScott_Burrow_web-1104.jpg","batch":"ricoh","o":"V"},{"id":"web-1105","file":"RaeScott_Burrow_web-1105.jpg","batch":"ricoh","o":"V"},{"id":"web-1106","file":"RaeScott_Burrow_web-1106.jpg","batch":"ricoh","o":"V"},{"id":"web-1107","file":"RaeScott_Burrow_web-1107.jpg","batch":"ricoh","o":"V"},{"id":"web-1108","file":"RaeScott_Burrow_web-1108.jpg","batch":"ricoh","o":"H"},{"id":"web-1109","file":"RaeScott_Burrow_web-1109.jpg","batch":"ricoh","o":"H"},{"id":"web-1110","file":"RaeScott_Burrow_web-1110.jpg","batch":"ricoh","o":"H"},{"id":"web-1111","file":"RaeScott_Burrow_web-1111.jpg","batch":"ricoh","o":"H"},{"id":"web-1112","file":"RaeScott_Burrow_web-1112.jpg","batch":"ricoh","o":"H"},{"id":"web-1113","file":"RaeScott_Burrow_web-1113.jpg","batch":"ricoh","o":"H"},{"id":"web-1114","file":"RaeScott_Burrow_web-1114.jpg","batch":"ricoh","o":"H"},{"id":"web-1115","file":"RaeScott_Burrow_web-1115.jpg","batch":"ricoh","o":"H"}];
+
+/* ====== STATE ====== */
+let myName = null;
+let selectionsByReviewer = {}; // { name: Set(ids) }
+let commentsByImage = {}; // { imageId: [{name, text, ts}] }
+let finalSelects = new Set(); // curated final picks (creative director)
+let currentView = 'grid';
+let filterReviewer = '';
+let currentBatch = 'all';
+let currentSlot = '';
+let slotAssign = {};    // { imageId: slotId } shared
+let sceneOverride = {}; // { imageId: sceneId } shared, for frames moved to another scene
+let finalsTalentFilter = 'all';
+let lbIndex = -1;
+let lbSourceList = [];
+
+/* ====== STORAGE (Firebase Realtime Database + localStorage) ====== */
+const FIREBASE_URL = 'https://asset-review-8bfb6-default-rtdb.firebaseio.com';
+const DATA_PREFIX = 'shoots/26octBurDen'; // isolates this shoot's data from other shoots in the same Firebase project
+const SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/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';
+
+async function notifySlack(text){
+  try{
+    await fetch(SLACK_WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: 'payload=' + encodeURIComponent(JSON.stringify({text}))
+    });
+  }catch(e){ console.error('slack notify failed', e); }
+}
+
+const ALLOWED_DOMAINS = ['havenly.com', 'interiordefine.com'];
+
+const firebaseApp = firebase.initializeApp({
+  apiKey: "AIzaSyCruCqUQi5HpPAroRTXs6Xxd-Ajf9ASB-o",
+  authDomain: "asset-review-8bfb6.firebaseapp.com",
+  databaseURL: "https://asset-review-8bfb6-default-rtdb.firebaseio.com",
+  projectId: "asset-review-8bfb6",
+  storageBucket: "asset-review-8bfb6.firebasestorage.app",
+  messagingSenderId: "895411644257",
+  appId: "1:895411644257:web:e5444ace279d996a258720"
+});
+const auth = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+// Always show the Google account chooser, even if a session is already active/denied —
+// otherwise a rejected or wrong account gets silently reused on retry with no way to switch.
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+// No 'hd' hint set — hd only supports a single domain, but we allow multiple (see ALLOWED_DOMAINS below).
+
+function showSignInError(msg){
+  const el = document.getElementById('signInError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function clearSignInError(){
+  document.getElementById('signInError').style.display = 'none';
+}
+
+async function handleSignedInUser(user){
+  const email = user.email || '';
+  if(!ALLOWED_DOMAINS.some(d => email.toLowerCase().endsWith('@' + d))){
+    showSignInError('Please sign in with a Havenly Brands work email (' + ALLOWED_DOMAINS.map(d=>'@'+d).join(' or ') + '). Signed-in account: ' + email);
+    await auth.signOut();
+    return false;
+  }
+  clearSignInError();
+  myName = user.displayName || email.split('@')[0];
+  document.getElementById('nameGate').classList.add('hidden');
+  document.getElementById('meName').textContent = myName;
+  return true;
+}
+
+async function getAuthToken(){
+  const user = auth.currentUser;
+  if(!user) return null;
+  try{ return await user.getIdToken(); }catch(e){ return null; }
+}
+
+async function fbGet(path){
+  try{
+    const token = await getAuthToken();
+    const url = FIREBASE_URL + '/' + path + '.json' + (token ? '?auth=' + token : '');
+    const r = await fetch(url);
+    if(!r.ok){
+      console.error('firebase get failed', r.status, await r.text().catch(()=>''));
+      return null;
+    }
+    return await r.json();
+  }catch(e){ console.error('firebase get failed', e); return null; }
+}
+async function fbSet(path, value){
+  try{
+    const token = await getAuthToken();
+    const url = FIREBASE_URL + '/' + path + '.json' + (token ? '?auth=' + token : '');
+    const r = await fetch(url, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(value)
+    });
+    if(!r.ok){
+      const errText = await r.text().catch(()=>'');
+      console.error('firebase set failed', r.status, errText);
+      alert('Could not save — ' + (r.status === 401 || r.status === 403 ? 'you may need to sign in again.' : 'something went wrong (status ' + r.status + ').'));
+      return false;
+    }
+    return true;
+  }catch(e){
+    console.error('firebase set failed', e);
+    alert('Could not save — check your connection and try again.');
+    return false;
+  }
+}
+
+/* ====== INIT ====== */
+async function init(){
+  document.getElementById('photoCount').textContent = IMAGES.length;
+  buildBatchFilter();
+
+  document.getElementById('googleSignInBtn').addEventListener('click', async ()=>{
+    clearSignInError();
+    try{
+      await auth.signInWithPopup(googleProvider);
+    }catch(e){
+      if(e.code !== 'auth/popup-closed-by-user'){
+        showSignInError('Sign-in failed: ' + (e.message || e.code));
+      }
+    }
+  });
+  document.getElementById('whoami').addEventListener('click', ()=>{
+    if(confirm('Sign out of the asset review?')){
+      auth.signOut();
+    }
+  });
+
+  auth.onAuthStateChanged(async user=>{
+    if(user){
+      const ok = await handleSignedInUser(user);
+      if(ok) startApp();
+    }else{
+      myName = null;
+      document.getElementById('nameGate').classList.remove('hidden');
+      document.getElementById('meName').textContent = '—';
+    }
+  });
+
+  wireStaticListeners();
+}
+
+async function startApp(){
+  await loadAllSelections();
+  await loadAllComments();
+  await loadFinals();
+  await loadShotListData();
+  buildReviewerFilter();
+  render();
+
+  // Live refresh: keeps selections/comments/finals current for anyone who leaves
+  // the tab open, instead of only ever showing a snapshot from page-load time.
+  // Only ever applies an update on a CONFIRMED successful fetch (r.ok) — a failed
+  // or transient request leaves existing state untouched rather than blanking it.
+  setInterval(async ()=>{
+    let changed = false;
+    try{
+      const token = await getAuthToken();
+      const qs = token ? ('?auth=' + token) : '';
+
+      const [selRes, comRes, finRes, slotRes, sceneRes] = await Promise.all([
+        fetch(FIREBASE_URL + '/' + DATA_PREFIX + '/selections.json' + qs),
+        fetch(FIREBASE_URL + '/' + DATA_PREFIX + '/comments.json' + qs),
+        fetch(FIREBASE_URL + '/' + DATA_PREFIX + '/finalSelects.json' + qs),
+        fetch(FIREBASE_URL + '/' + DATA_PREFIX + '/slots.json' + qs),
+        fetch(FIREBASE_URL + '/' + DATA_PREFIX + '/sceneOverride.json' + qs)
+      ]);
+
+      if(selRes.ok){
+        const data = await selRes.json();
+        const fresh = {};
+        if(data){
+          for(const key of Object.keys(data)){
+            const entry = data[key];
+            if(entry && entry.name) fresh[entry.name] = new Set(entry.ids || []);
+          }
+        }
+        if(myName && !(myName in fresh)) fresh[myName] = new Set();
+        selectionsByReviewer = fresh;
+        changed = true;
+      }
+      if(comRes.ok){
+        const data = await comRes.json();
+        commentsByImage = data || {};
+        changed = true;
+      }
+      if(finRes.ok){
+        const data = await finRes.json();
+        finalSelects = new Set(data || []);
+        updateFinalCounter(finalSelects);
+        changed = true;
+      }
+      if(slotRes.ok){ slotAssign = (await slotRes.json()) || {}; changed = true; }
+      if(sceneRes.ok){ sceneOverride = (await sceneRes.json()) || {}; changed = true; }
+    }catch(e){ /* network hiccup — leave existing state as-is */ }
+    if(changed){
+      buildReviewerFilter();
+      render();
+    }
+  }, 5000);
+}
+
+function wireStaticListeners(){
+  document.getElementById('batchFilter').addEventListener('change', e=>{
+    currentBatch = e.target.value;
+    buildSlotFilter();
+    render();
+  });
+  document.getElementById('slotFilter').addEventListener('change', e=>{
+    currentSlot = e.target.value;
+    render();
+  });
+  document.getElementById('lbSlotSelect').addEventListener('change', e=>{
+    const img = lbSourceList[lbIndex];
+    if(img) setSlot(img.id, e.target.value);
+  });
+  document.getElementById('lbSceneSelect').addEventListener('change', e=>{
+    const img = lbSourceList[lbIndex];
+    if(img) setScene(img, e.target.value);
+  });
+  document.querySelectorAll('#viewToggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#viewToggle button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentView = btn.dataset.view;
+      render();
+    });
+  });
+  document.getElementById('reviewerFilter').addEventListener('change', e=>{
+    filterReviewer = e.target.value;
+    render();
+  });
+  document.getElementById('closeLightbox').addEventListener('click', closeLightbox);
+  document.getElementById('lightbox').addEventListener('click', e=>{ if(e.target.id==='lightbox') closeLightbox(); });
+  document.getElementById('lbSelectBtn').addEventListener('click', ()=>{
+    const img = lbSourceList[lbIndex];
+    if(img) toggleSelect(img.id);
+  });
+  document.getElementById('lbFinalBtn').addEventListener('click', ()=>{
+    const img = lbSourceList[lbIndex];
+    if(img) toggleFinal(img.id).then(updateLightboxPanel);
+  });
+  document.getElementById('lbCommentSubmit').addEventListener('click', postComment);
+  document.getElementById('exportBtn').addEventListener('click', openExportModal);
+  document.getElementById('exportSelectAll').addEventListener('click', ()=>{
+    exportIncluded = new Set(getRowsForScope().map(r=>r.img.id));
+    document.getElementById('exportText').value = buildExportText();
+    renderExportVisualList();
+  });
+  document.getElementById('exportSelectNone').addEventListener('click', ()=>{
+    exportIncluded = new Set();
+    document.getElementById('exportText').value = buildExportText();
+    renderExportVisualList();
+  });
+  document.querySelectorAll('#exportScopeToggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#exportScopeToggle button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      exportScope = btn.dataset.scope;
+      exportIncluded = new Set(getRowsForScope().map(r=>r.img.id));
+      document.getElementById('exportText').value = buildExportText();
+      renderExportVisualList();
+      updateExportSub();
+    });
+  });
+  document.getElementById('closeExportBtn').addEventListener('click', ()=>{
+    document.getElementById('exportModal').classList.remove('open');
+  });
+  document.getElementById('copyExportBtn').addEventListener('click', copyExportText);
+  document.getElementById('downloadExportBtn').addEventListener('click', downloadExportText);
+  document.getElementById('downloadVisualBtn').addEventListener('click', downloadVisualExport);
+  document.getElementById('downloadZipBtn').addEventListener('click', downloadJpgZip);
+  document.getElementById('lbNavPrev').addEventListener('click', ()=>navLightbox(-1));
+  document.getElementById('lbNavNext').addEventListener('click', ()=>navLightbox(1));
+  document.addEventListener('keydown', e=>{
+    if(!document.getElementById('lightbox').classList.contains('open')) return;
+    if(e.key==='Escape') closeLightbox();
+    if(e.key==='ArrowLeft') navLightbox(-1);
+    if(e.key==='ArrowRight') navLightbox(1);
+  });
+}
+
+async function loadAllComments(){
+  const data = await fbGet(DATA_PREFIX + '/comments');
+  commentsByImage = data || {};
+}
+
+async function loadFinals(){
+  const data = await fbGet(DATA_PREFIX + '/finalSelects');
+  finalSelects = new Set(data || []);
+  updateFinalCounter(finalSelects);
+}
+
+function updateFinalCounter(selectedIdsSet){
+  const count = selectedIdsSet.size;
+  const numEl = document.getElementById('finalCounterNum');
+  if(numEl) numEl.textContent = count;
+
+  let talentCount = 0, noTalentCount = 0, untagged = 0;
+  selectedIdsSet.forEach(id=>{
+    const img = IMAGES.find(i=>i.id===id);
+    if(!img || talentOf(img) === undefined) untagged++;
+    else if(talentOf(img) === true) talentCount++;
+    else noTalentCount++;
+  });
+  const parts = [];
+  if(talentCount || noTalentCount) parts.push(talentCount + ' talent / ' + noTalentCount + ' no-talent');
+  if(untagged) parts.push(untagged + ' untagged');
+  const bEl = document.getElementById('finalCounterBreakdown');
+  if(bEl) bEl.textContent = parts.length ? '(' + parts.join(', ') + ')' : '';
+}
+
+async function toggleFinal(id){
+  if(finalSelects.has(id)) finalSelects.delete(id); else finalSelects.add(id);
+  await fbSet(DATA_PREFIX + '/finalSelects', Array.from(finalSelects));
+  updateFinalCounter(finalSelects);
+  render();
+}
+
+async function postComment(){
+  if(!myName){
+    document.getElementById('nameGate').classList.remove('hidden');
+    return;
+  }
+  const input = document.getElementById('lbCommentInput');
+  const text = input.value.trim();
+  if(!text) return;
+  const img = lbSourceList[lbIndex];
+  if(!img) return;
+  const arr = commentsByImage[img.id] || [];
+  arr.push({name: myName, text, ts: Date.now()});
+  const ok = await fbSet(DATA_PREFIX + '/comments/' + img.id, arr);
+  if(!ok) return; // save failed — alert already shown, leave input text so it isn't lost
+  commentsByImage[img.id] = arr;
+  notifySlack('💬 *' + myName + '* commented on `' + img.file + '` (26OCT BUR DEN): "' + text + '"\n<https://k8-harrison.github.io/asset-review/burrow/26oct-bur-den/main/|Open review>');
+  input.value = '';
+  renderComments(img.id);
+  render();
+}
+
+function renderComments(id){
+  const arr = commentsByImage[id] || [];
+  const list = document.getElementById('lbComments');
+  const empty = document.getElementById('noComments');
+  if(arr.length === 0){
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = arr.map((c,i)=>`
+    <div class="commentItem">
+      <span class="cName">${escapeHtml(c.name)}</span><span class="cTime">${timeAgo(c.ts)}</span>
+      ${myName === c.name ? `<span class="cDelete" data-idx="${i}">Delete</span>` : ''}
+      <div class="cText">${escapeHtml(c.text)}</div>
+    </div>`).join('');
+  list.querySelectorAll('.cDelete').forEach(btn=>{
+    btn.addEventListener('click', ()=>deleteComment(id, parseInt(btn.dataset.idx)));
+  });
+}
+
+async function deleteComment(imageId, idx){
+  const arr = commentsByImage[imageId] || [];
+  arr.splice(idx, 1);
+  commentsByImage[imageId] = arr;
+  await fbSet(DATA_PREFIX + '/comments/' + imageId, arr);
+  renderComments(imageId);
+  render();
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function timeAgo(ts){
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if(s < 60) return 'just now';
+  const m = Math.floor(s/60); if(m < 60) return m + 'm ago';
+  const h = Math.floor(m/60); if(h < 24) return h + 'h ago';
+  const dd = Math.floor(h/24); return dd + 'd ago';
+}
+
+function sanitizeKey(name){
+  return name.replace(/[.#$\[\]\/]/g, '_');
+}
+
+async function loadAllSelections(){
+  const data = await fbGet(DATA_PREFIX + '/selections');
+  if(data){
+    const fresh = {};
+    for(const key of Object.keys(data)){
+      const entry = data[key];
+      if(entry && entry.name){
+        fresh[entry.name] = new Set(entry.ids || []);
+      }
+    }
+    selectionsByReviewer = fresh;
+  }
+  // if the fetch failed, keep whatever was already loaded rather than wiping it
+  if(myName && !(myName in selectionsByReviewer)) selectionsByReviewer[myName] = new Set();
+}
+
+function buildBatchFilter(){
+  const sel = document.getElementById('batchFilter');
+  sel.innerHTML = '<option value="all">All Photos</option>' +
+    BATCHES.map(b=>`<option value="${b.id}">${escapeHtml(b.label)}</option>`).join('');
+  sel.value = currentBatch;
+}
+
+function buildReviewerFilter(){
+  const sel = document.getElementById('reviewerFilter');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All reviewers</option>';
+  Object.keys(selectionsByReviewer).sort().forEach(name=>{
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    sel.appendChild(opt);
+  });
+  sel.value = current;
+}
+
+function selectorsFor(id){
+  const names = [];
+  for(const [name, set] of Object.entries(selectionsByReviewer)){
+    if(set.has(id)) names.push(name);
+  }
+  return names;
+}
+
+async function toggleSelect(id){
+  if(!myName){
+    document.getElementById('nameGate').classList.remove('hidden');
+    return;
+  }
+  if(!selectionsByReviewer[myName]) selectionsByReviewer[myName] = new Set();
+  const set = selectionsByReviewer[myName];
+  if(set.has(id)) set.delete(id); else set.add(id);
+  await fbSet(DATA_PREFIX + '/selections/' + sanitizeKey(myName), {name: myName, ids: Array.from(set)});
+  buildReviewerFilter();
+  render();
+  if(document.getElementById('lightbox').classList.contains('open')) updateLightboxPanel();
+}
+
+
+/* ====== SHOT LIST HELPERS ====== */
+function sceneOf(img){ return sceneOverride[img.id] || img.batch; }
+function talentOf(img){
+  const s = sceneOf(img);
+  if(s.startsWith('d1')) return true;
+  if(s.startsWith('d2')) return false;
+  return undefined;
+}
+function slotDef(sceneId, slotId){
+  const sc = SHOT_LIST[sceneId];
+  return sc ? sc.slots.find(s=>s.id === slotId) : null;
+}
+function slotOf(img){
+  // a slot only counts if it exists in the image's current scene
+  const sl = slotAssign[img.id];
+  return sl && slotDef(sceneOf(img), sl) ? sl : null;
+}
+function slotLabel(sceneId, slotId){
+  const d = slotDef(sceneId, slotId);
+  return d ? d.label + ', ' + ORIENT_WORD[d.o] : '';
+}
+function slotShort(sceneId, slotId){
+  const d = slotDef(sceneId, slotId);
+  return d ? d.label + ' ' + d.o : '';
+}
+function isShortlisted(id){
+  return Object.values(selectionsByReviewer).some(set=>set.has(id));
+}
+function slotCoverage(sceneId){
+  const sc = SHOT_LIST[sceneId];
+  const inScene = IMAGES.filter(img=>sceneOf(img) === sceneId);
+  const rows = sc.slots.map(slot=>{
+    const tagged = inScene.filter(img=>slotOf(img) === slot.id);
+    const finals = tagged.filter(img=>finalSelects.has(img.id));
+    const picks = tagged.filter(img=>!finalSelects.has(img.id) && isShortlisted(img.id));
+    return {slot, tagged, finals, picks};
+  });
+  const untaggedFinals = inScene.filter(img=>finalSelects.has(img.id) && !slotOf(img));
+  const target = sc.slots.reduce((a,s)=>a+s.target,0);
+  const filled = rows.reduce((a,r)=>a+Math.min(r.finals.length, r.slot.target),0);
+  return {rows, untaggedFinals, target, filled, inScene};
+}
+
+async function loadShotListData(){
+  const [sl, so] = await Promise.all([fbGet(DATA_PREFIX + '/slots'), fbGet(DATA_PREFIX + '/sceneOverride')]);
+  if(sl !== null) slotAssign = sl || {};
+  if(so !== null) sceneOverride = so || {};
+}
+
+async function setSlot(id, slotId){
+  const ok = await fbSet(DATA_PREFIX + '/slots/' + id, slotId || null);
+  if(!ok) return;
+  if(slotId) slotAssign[id] = slotId; else delete slotAssign[id];
+  render();
+  if(document.getElementById('lightbox').classList.contains('open')) updateLightboxPanel();
+}
+
+async function setScene(img, sceneId){
+  const value = (sceneId && sceneId !== img.batch) ? sceneId : null;
+  const ok = await fbSet(DATA_PREFIX + '/sceneOverride/' + img.id, value);
+  if(!ok) return;
+  if(value) sceneOverride[img.id] = value; else delete sceneOverride[img.id];
+  // a slot from the old scene no longer applies
+  if(slotAssign[img.id] && !slotDef(sceneOf(img), slotAssign[img.id])){
+    await fbSet(DATA_PREFIX + '/slots/' + img.id, null);
+    delete slotAssign[img.id];
+  }
+  render();
+  if(document.getElementById('lightbox').classList.contains('open')) updateLightboxPanel();
+}
+
+function buildSlotFilter(){
+  const sel = document.getElementById('slotFilter');
+  const sc = SHOT_LIST[currentBatch];
+  if(!sc){ sel.style.display = 'none'; currentSlot = ''; return; }
+  sel.style.display = '';
+  sel.innerHTML = '<option value="">All slots</option><option value="__none">No slot yet</option>' +
+    sc.slots.map(s=>`<option value="${s.id}">${escapeHtml(s.label + ', ' + ORIENT_WORD[s.o])}</option>`).join('');
+  if(currentSlot && currentSlot !== '__none' && !sc.slots.some(s=>s.id === currentSlot)) currentSlot = '';
+  sel.value = currentSlot;
+}
+
+function renderShotList(){
+  const el = document.getElementById('shotList');
+  el.style.display = 'flex';
+  const thumbIds = [];
+  let totTarget = 0, totFilled = 0, totFinals = 0;
+  const sceneHtml = {};
+  Object.keys(SHOT_LIST).forEach(sceneId=>{
+    const sc = SHOT_LIST[sceneId];
+    const cov = slotCoverage(sceneId);
+    totTarget += cov.target; totFilled += cov.filled;
+    totFinals += cov.inScene.filter(img=>finalSelects.has(img.id)).length;
+    const oCount = {H:0, V:0};
+    cov.inScene.forEach(img=>oCount[img.o]++);
+    const rowsHtml = cov.rows.map(r=>{
+      const n = r.finals.length, t = r.slot.target;
+      const cls = n === 0 ? 'empty' : (n > t ? 'over' : (n === t ? 'met' : ''));
+      const thumbs = r.finals.concat(r.picks).map(img=>{
+        thumbIds.push(img.id);
+        return `<div class="t ${finalSelects.has(img.id) ? 'final' : ''}" data-open="${img.id}" title="${escapeHtml(img.file)}"><img loading="lazy" src="images/thumb/${img.file}"></div>`;
+      }).join('');
+      const picksNote = r.picks.length ? `<span class="sub">${r.picks.length} more shortlisted</span>` : '';
+      const overNote = n > t ? `<span class="sub">${n - t} over target</span>` : '';
+      return `
+        <div class="slRow ${cls}">
+          <div class="sName">${escapeHtml(r.slot.label)}<span>${ORIENT_WORD[r.slot.o]}</span></div>
+          <div class="sCount"><b>${n} / ${t}</b> final${overNote}${picksNote}</div>
+          <div class="slThumbs">${thumbs || '<span class="none">No frames tagged to this slot yet</span>'}</div>
+        </div>`;
+    }).join('');
+    const thinH = SHOT_LIST[sceneId].slots.filter(s=>s.o==='H').reduce((a,s)=>a+s.target,0);
+    let warnHtml = '';
+    if(oCount.H < thinH * 2){
+      warnHtml = `<div class="slWarn">Only ${oCount.H} horizontal frame${oCount.H===1?'':'s'} were shot for this scene, against ${thinH} horizontal slots. The horizontal slots may need crops or swaps.</div>`;
+    }
+    const untagged = cov.untaggedFinals.length
+      ? ` · <a data-untagged="${sceneId}">${cov.untaggedFinals.length} final${cov.untaggedFinals.length===1?'':'s'} not assigned to a slot</a>` : '';
+    sceneHtml[sceneId] = `
+      <div class="slScene">
+        <div class="slHead">
+          <h3>Scene ${sceneId.slice(-1)} · ${escapeHtml(sc.name)}</h3>
+          <div class="tot ${cov.filled === cov.target ? 'done' : ''}">${cov.filled} of ${cov.target} slots filled</div>
+        </div>
+        <div class="slMeta">${escapeHtml(sc.look)}. ${escapeHtml(sc.action)}<br>
+          ${cov.inScene.length} frames (${oCount.H} horizontal, ${oCount.V} vertical) · <a data-browse="${sceneId}">Browse this scene</a>${untagged}</div>
+        ${rowsHtml}
+        ${warnHtml}
+      </div>`;
+  });
+  const day = d => Object.keys(SHOT_LIST).filter(k=>SHOT_LIST[k].day === d).map(k=>sceneHtml[k]).join('');
+  const btsCount = IMAGES.filter(img=>!SHOT_LIST[sceneOf(img)]).length;
+  el.innerHTML = `
+    <div class="slTop">
+      <div class="big">${totFilled} <small>of ${totTarget} shot-list slots filled</small></div>
+      <div class="note">A slot counts as filled when a frame tagged to it is marked final. Tag a frame to a slot from its lightbox. Faded thumbnails are shortlisted but not final yet. Over-target slots stay allowed, so alternates are fine.</div>
+    </div>
+    <div class="slDay"><h2>Day 1 · Talent · Tuesday, Oct 20</h2>${day(1)}</div>
+    <div class="slDay"><h2>Day 2 · Furniture · Wednesday, Oct 21</h2>${day(2)}</div>
+    <div class="slBts">${btsCount} more frames from the Fuji second camera and the Ricoh BTS camera sit outside the shot list. Find them under the scene filter.</div>`;
+  lbSourceList = thumbIds.map(id=>IMAGES.find(i=>i.id===id));
+  el.querySelectorAll('[data-open]').forEach((t)=>{
+    t.addEventListener('click', ()=>{
+      const idx = lbSourceList.findIndex(i=>i.id === t.dataset.open);
+      openLightbox(idx);
+    });
+  });
+  el.querySelectorAll('[data-browse]').forEach(a=>a.addEventListener('click', ()=>goToScene(a.dataset.browse, '')));
+  el.querySelectorAll('[data-untagged]').forEach(a=>a.addEventListener('click', ()=>goToScene(a.dataset.untagged, '__finalsNoSlot')));
+}
+
+function goToScene(sceneId, mode){
+  currentBatch = sceneId;
+  document.getElementById('batchFilter').value = sceneId;
+  currentSlot = '';
+  buildSlotFilter();
+  const view = mode === '__finalsNoSlot' ? 'finals' : 'grid';
+  if(mode === '__finalsNoSlot'){ currentSlot = '__none'; document.getElementById('slotFilter').value = '__none'; }
+  currentView = view;
+  document.querySelectorAll('#viewToggle button').forEach(b=>b.classList.toggle('active', b.dataset.view === view));
+  render();
+  window.scrollTo(0,0);
+}
+
+function applySlotFilter(list){
+  if(!currentSlot || !SHOT_LIST[currentBatch]) return list;
+  if(currentSlot === '__none') return list.filter(img=>!slotOf(img));
+  return list.filter(img=>slotOf(img) === currentSlot);
+}
+
+function exportSortKey(img){
+  const s = sceneOf(img);
+  const bi = BATCHES.findIndex(b=>b.id === s);
+  const sc = SHOT_LIST[s];
+  const si = sc && slotOf(img) ? sc.slots.findIndex(x=>x.id === slotOf(img)) : 99;
+  return [bi, si, parseInt(img.id.replace(/\D/g,''),10)];
+}
+function cmpExport(a,b){
+  const ka = exportSortKey(a.img), kb = exportSortKey(b.img);
+  for(let i=0;i<3;i++){ if(ka[i] !== kb[i]) return ka[i] - kb[i]; }
+  return 0;
+}
+
+/* ====== RENDER ====== */
+function render(){
+  updateStats();
+  document.getElementById('grid').style.display = 'none';
+  document.getElementById('tallyList').style.display = 'none';
+  document.getElementById('finalsList').style.display = 'none';
+  document.getElementById('shotList').style.display = 'none';
+  document.getElementById('emptyMsg').style.display = 'none';
+  document.getElementById('slotFilter').style.display = (SHOT_LIST[currentBatch] && currentView !== 'shotlist') ? '' : 'none';
+
+  if(currentView === 'shotlist'){ renderShotList(); return; }
+  if(currentView === 'tally'){ renderTally(); return; }
+  if(currentView === 'finals'){ renderFinals(); return; }
+
+  let list = IMAGES;
+  if(currentBatch !== 'all'){
+    list = list.filter(img=>sceneOf(img) === currentBatch);
+  }
+  if(currentView === 'mine'){
+    const mySet = (myName && selectionsByReviewer[myName]) || new Set();
+    list = list.filter(img=>mySet.has(img.id));
+  }
+  if(filterReviewer){
+    const set = selectionsByReviewer[filterReviewer] || new Set();
+    list = list.filter(img=>set.has(img.id));
+  }
+  list = applySlotFilter(list);
+  renderGrid(list);
+}
+
+function renderGrid(list){
+  const grid = document.getElementById('grid');
+  if(list.length === 0){
+    document.getElementById('emptyMsg').style.display = 'block';
+    grid.innerHTML = '';
+    return;
+  }
+  grid.style.display = 'flex';
+  lbSourceList = list;
+  grid.innerHTML = list.map((img, i)=>{
+    const names = selectorsFor(img.id);
+    const mine = myName && names.includes(myName);
+    const commentCount = (commentsByImage[img.id] || []).length;
+    return `
+      <div class="cell ${mine?'mine':''} ${finalSelects.has(img.id)?'isFinal':''}" data-idx="${i}">
+        <div class="frameNum mono">${frameLabel(img.id)}</div>
+        <div class="commentBadge" data-action="comment" title="Add a comment">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-4.5 4V17H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          ${commentCount ? `<span>${commentCount}</span>` : ''}
+        </div>
+        <div class="checkBadge" data-action="select" title="${mine ? 'Remove from shortlist' : 'Select for edit'}">${mine ? '&#10003;' : ''}</div>
+        <div class="thumbWrap" data-action="view"><img loading="lazy" src="images/thumb/${img.file}"></div>
+        <div class="batchBadge" style="background:${BATCH_COLORS[sceneOf(img)] || 'var(--moss)'}">${batchShort(sceneOf(img))}</div>
+        ${slotOf(img) ? `<div class="slotBadge">${escapeHtml(slotShort(sceneOf(img), slotOf(img)))}</div>` : ''}
+        ${finalSelects.has(img.id) ? '<div class="finalDot" title="Final pick">&#9733;</div>' : ''}
+        ${names.length ? `<div class="tallyPill">&#9679;<span class="n">${names.length}</span></div>` : ''}
+        ${names.length ? `<div class="namesRow">${names.join(', ')}</div>` : ''}
+      </div>`;
+  }).join('');
+  grid.querySelectorAll('.cell').forEach(cell=>{
+    const idx = parseInt(cell.dataset.idx);
+    const img = list[idx];
+    cell.querySelector('[data-action="select"]').addEventListener('click', e=>{
+      e.stopPropagation();
+      toggleSelect(img.id);
+    });
+    cell.querySelector('[data-action="comment"]').addEventListener('click', e=>{
+      e.stopPropagation();
+      openLightbox(idx, true);
+    });
+    cell.querySelector('[data-action="view"]').addEventListener('click', ()=>openLightbox(idx));
+  });
+}
+
+function renderTally(){
+  let baseList = IMAGES;
+  if(currentBatch !== 'all'){
+    baseList = baseList.filter(img=>sceneOf(img) === currentBatch);
+  }
+  const rows = baseList.map(img=>({img, names: selectorsFor(img.id)}))
+    .filter(r=>r.names.length>0)
+    .sort((a,b)=>b.names.length - a.names.length);
+  const container = document.getElementById('tallyList');
+  if(rows.length===0){
+    document.getElementById('emptyMsg').style.display='block';
+    container.innerHTML=''; container.style.display='none';
+    return;
+  }
+  container.style.display = 'flex';
+  lbSourceList = rows.map(r=>r.img);
+  container.innerHTML = rows.map((r,i)=>{
+    const cCount = (commentsByImage[r.img.id] || []).length;
+    return `
+    <div class="tRow" data-idx="${i}">
+      <img src="images/thumb/${r.img.file}">
+      <div class="fname mono">${frameLabel(r.img.id)}</div>
+      <div class="names">${r.names.join(', ')}${cCount ? ' · &#128172;' + cCount : ''}</div>
+      <div class="count">${r.names.length}</div>
+    </div>`;
+  }).join('');
+  container.querySelectorAll('.tRow').forEach(row=>{
+    row.addEventListener('click', ()=>openLightbox(parseInt(row.dataset.idx)));
+  });
+}
+
+function renderFinals(){
+  let baseList = IMAGES;
+  if(currentBatch !== 'all'){
+    baseList = baseList.filter(img=>sceneOf(img) === currentBatch);
+  }
+  baseList = applySlotFilter(baseList);
+  let rows = baseList.map(img=>({img, names: selectorsFor(img.id)}))
+    .filter(r=>r.names.length>0 || finalSelects.has(r.img.id))
+    .sort(cmpExport);
+
+  if(finalsTalentFilter === 'talent'){
+    rows = rows.filter(r=>talentOf(r.img) === true);
+  }else if(finalsTalentFilter === 'notalent'){
+    rows = rows.filter(r=>talentOf(r.img) === false);
+  }
+
+  const container = document.getElementById('finalsList');
+  updateFinalCounter(finalSelects);
+
+  if(rows.length===0){
+    document.getElementById('emptyMsg').style.display='block';
+    document.getElementById('emptyMsg').textContent = 'Nothing matches this filter yet.';
+    container.innerHTML=''; container.style.display='none';
+    return;
+  }
+  document.getElementById('emptyMsg').textContent = 'Nothing here yet.';
+  container.style.display = 'flex';
+  lbSourceList = rows.map(r=>r.img);
+  container.innerHTML = `
+    <div id="finalsIntro">
+      Browsing the team's shortlist (${rows.length} photos). Tap the star to mark a photo as a final pick.
+      Use Export → Final Selects to share just those with the photographer.
+    </div>
+    <div class="segmented" id="finalsTalentToggle" style="margin-bottom:14px;width:fit-content;">
+      <button data-tf="all" class="${finalsTalentFilter==='all'?'active':''}">All</button>
+      <button data-tf="talent" class="${finalsTalentFilter==='talent'?'active':''}">Talent</button>
+      <button data-tf="notalent" class="${finalsTalentFilter==='notalent'?'active':''}">No Talent</button>
+    </div>` +
+    rows.map((r,i)=>{
+    const isFinal = finalSelects.has(r.img.id);
+    return `
+    <div class="fCard ${isFinal?'isFinal':''}" data-idx="${i}">
+      <div class="fThumbWrap" data-action="view">
+        <div class="fFrameNum mono">${frameLabel(r.img.id)}</div>
+        <button class="starBtn" data-action="star" title="${isFinal ? 'Remove from finals' : 'Mark as final'}">&#9733;</button>
+        <img src="images/thumb/${r.img.file}">
+      </div>
+      <div class="fCaption"><div class="names"><b>Picked by:</b> ${r.names.join(', ')}</div><div class="batchTag" style="background:${BATCH_COLORS[sceneOf(r.img)] || 'var(--moss)'}">${batchShort(sceneOf(r.img))}${slotOf(r.img) ? ' · ' + escapeHtml(slotShort(sceneOf(r.img), slotOf(r.img))) : ''}</div></div>
+    </div>`;
+  }).join('');
+  container.querySelectorAll('#finalsTalentToggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      finalsTalentFilter = btn.dataset.tf;
+      renderFinals();
+    });
+  });
+  container.querySelectorAll('.fCard').forEach(card=>{
+    const idx = parseInt(card.dataset.idx);
+    const img = rows[idx].img;
+    card.querySelector('[data-action="view"]').addEventListener('click', ()=>openLightbox(idx));
+    card.querySelector('[data-action="star"]').addEventListener('click', e=>{
+      e.stopPropagation();
+      toggleFinal(img.id);
+    });
+  });
+}
+
+function frameLabel(id){
+  // e.g. web-27 -> 27
+  const m = id.match(/(\d+)$/);
+  return m ? m[1] : id;
+}
+
+function batchShort(batchId){
+  const b = BATCHES.find(x=>x.id === batchId);
+  return b ? b.short : (batchId || '');
+}
+function batchLabel(batchId){
+  const b = BATCHES.find(x=>x.id === batchId);
+  return b ? b.label : (batchId || '');
+}
+
+function updateStats(){
+  let scopeIds = null;
+  if(currentBatch !== 'all'){
+    scopeIds = new Set(IMAGES.filter(img=>sceneOf(img) === currentBatch).map(img=>img.id));
+  }
+  const reviewers = [];
+  let total = 0;
+  const counts = {};
+  Object.entries(selectionsByReviewer).forEach(([name, set])=>{
+    let hasAny = false;
+    set.forEach(id=>{
+      if(scopeIds && !scopeIds.has(id)) return;
+      hasAny = true;
+      total++;
+      counts[id] = (counts[id]||0) + 1;
+    });
+    if(hasAny) reviewers.push(name);
+  });
+  let topId = null, topCount = 0;
+  Object.entries(counts).forEach(([id,c])=>{ if(c>topCount){topCount=c; topId=id;} });
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statReviewers').textContent = reviewers.length;
+  document.getElementById('statTop').textContent = topId ? (frameLabel(topId) + ' (' + topCount + ')') : '—';
+}
+
+/* ====== LIGHTBOX ====== */
+function openLightbox(idx, focusComment){
+  lbIndex = idx;
+  const img = lbSourceList[idx];
+  if(!img) return;
+  document.getElementById('lightboxImg').src = 'images/full/' + img.file;
+  document.getElementById('lbFname').textContent = img.file;
+  document.getElementById('lbFrame').textContent = 'Frame ' + frameLabel(img.id) + ' · ' + ORIENT_WORD[img.o];
+  document.getElementById('lightbox').classList.add('open');
+  updateLightboxPanel();
+  if(focusComment){
+    requestAnimationFrame(()=>{
+      const input = document.getElementById('lbCommentInput');
+      input.scrollIntoView({block:'nearest'});
+      input.focus();
+    });
+  }
+}
+function updateLightboxPanel(){
+  const img = lbSourceList[lbIndex];
+  if(!img) return;
+  const names = selectorsFor(img.id);
+  const mine = myName && names.includes(myName);
+  const btn = document.getElementById('lbSelectBtn');
+  btn.textContent = mine ? 'Selected — remove' : 'Select for edit';
+  btn.classList.toggle('active', mine);
+  const isFinal = finalSelects.has(img.id);
+  const finalBtn = document.getElementById('lbFinalBtn');
+  finalBtn.innerHTML = isFinal ? '&#9733; Final pick — remove' : '&#9733; Mark as final';
+  finalBtn.classList.toggle('active', isFinal);
+  document.getElementById('lbNames').innerHTML = names.length
+    ? '<b>Selected by:</b><br>' + names.join('<br>')
+    : 'No one has selected this yet.';
+  const sceneSel = document.getElementById('lbSceneSelect');
+  sceneSel.innerHTML = BATCHES.map(b=>`<option value="${b.id}">${escapeHtml(b.label)}</option>`).join('');
+  sceneSel.value = sceneOf(img);
+  const sc = SHOT_LIST[sceneOf(img)];
+  const slotSel = document.getElementById('lbSlotSelect');
+  const hint = document.getElementById('lbSlotHint');
+  if(sc){
+    const cov = slotCoverage(sceneOf(img));
+    const opt = s=>{
+      const r = cov.rows.find(x=>x.slot.id === s.id);
+      return `<option value="${s.id}">${escapeHtml(s.label + ', ' + ORIENT_WORD[s.o])} (${r.finals.length}/${s.target})</option>`;
+    };
+    const match = sc.slots.filter(s=>s.o === img.o), other = sc.slots.filter(s=>s.o !== img.o);
+    slotSel.innerHTML = '<option value="">No slot</option>' + match.map(opt).join('') +
+      (other.length ? '<optgroup label="Other orientation (needs a crop)">' + other.map(opt).join('') + '</optgroup>' : '');
+    slotSel.value = slotOf(img) || '';
+    slotSel.style.display = ''; document.getElementById('lbSlotLabel').style.display = '';
+    hint.textContent = 'This frame is ' + ORIENT_WORD[img.o] + '.';
+    hint.style.display = '';
+  }else{
+    slotSel.style.display = 'none'; document.getElementById('lbSlotLabel').style.display = 'none';
+    hint.style.display = 'none';
+  }
+  renderComments(img.id);
+}
+function navLightbox(dir){
+  let next = lbIndex + dir;
+  if(next < 0) next = lbSourceList.length - 1;
+  if(next >= lbSourceList.length) next = 0;
+  openLightbox(next);
+}
+function closeLightbox(){
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+/* ====== EXPORT ====== */
+let exportScope = 'team';
+
+function getSelectedRows(){
+  return IMAGES.map(img=>({
+    img,
+    names: selectorsFor(img.id),
+    comments: commentsByImage[img.id] || []
+  })).filter(r=>r.names.length>0)
+    .sort(cmpExport);
+}
+
+function getFinalRows(){
+  return IMAGES.map(img=>({
+    img,
+    names: selectorsFor(img.id),
+    comments: commentsByImage[img.id] || []
+  })).filter(r=>finalSelects.has(r.img.id))
+    .sort(cmpExport);
+}
+
+function getRowsForScope(){
+  return exportScope === 'final' ? getFinalRows() : getSelectedRows();
+}
+
+let exportIncluded = new Set(); // ids currently checked for this export session
+
+function buildExportText(){
+  const rows = getRowsForScope().filter(r=>exportIncluded.has(r.img.id));
+  const heading = exportScope === 'final' ? '26OCT BUR DEN — FINAL SELECTS' : '26OCT BUR DEN — SELECTED FRAMES';
+  const countLabel = exportScope === 'final' ? ' frame(s) — final selects' : ' frame(s) selected';
+
+  const lines = [];
+  lines.push(heading);
+  lines.push('Generated ' + new Date().toLocaleString());
+  lines.push('');
+  lines.push(rows.length + countLabel + ' (this round)');
+  lines.push('----------------------------------------');
+  lines.push('');
+
+  if(rows.length === 0){
+    lines.push('Nothing checked for export yet.');
+  }
+
+  let lastScene = null;
+  rows.forEach(r=>{
+    const sc = sceneOf(r.img);
+    if(sc !== lastScene){
+      lines.push('== ' + batchLabel(sc).toUpperCase() + ' ==');
+      lines.push('');
+      lastScene = sc;
+    }
+    lines.push(r.img.file + (slotOf(r.img) ? '   [' + slotLabel(sc, slotOf(r.img)) + ']' : ''));
+    if(r.comments.length){
+      r.comments.forEach(c=>{
+        lines.push('  - ' + c.text);
+      });
+    }
+    lines.push('');
+  });
+
+  return lines.join('\n');
+}
+
+function renderExportVisualList(){
+  const rows = getRowsForScope();
+  const container = document.getElementById('exportVisualList');
+  if(rows.length === 0){
+    container.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--ink-soft);">${exportScope === 'final' ? 'No final selects marked yet.' : 'No frames selected yet.'}</div>`;
+    return;
+  }
+  container.innerHTML = rows.map(r=>{
+    const checked = exportIncluded.has(r.img.id);
+    return `
+    <div class="exportRow ${checked ? '' : 'excluded'}" data-id="${r.img.id}">
+      <label class="exportCheck">
+        <input type="checkbox" data-action="toggleInclude" ${checked ? 'checked' : ''}>
+        <span></span>
+      </label>
+      <img src="images/thumb/${r.img.file}">
+      <div class="exportInfo">
+        <div class="exportFname mono">${escapeHtml(r.img.file)}</div>
+        <div class="exportComment">${escapeHtml(batchShort(sceneOf(r.img)))}${slotOf(r.img) ? ' · ' + escapeHtml(slotShort(sceneOf(r.img), slotOf(r.img))) : ''}</div>
+        ${r.comments.map(c=>`<div class="exportComment">${escapeHtml(c.text)}</div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  container.querySelectorAll('[data-action="toggleInclude"]').forEach(cb=>{
+    cb.addEventListener('change', e=>{
+      const cell = e.target.closest('.exportRow');
+      const id = cell.dataset.id;
+      if(e.target.checked){ exportIncluded.add(id); cell.classList.remove('excluded'); }
+      else { exportIncluded.delete(id); cell.classList.add('excluded'); }
+      document.getElementById('exportText').value = buildExportText();
+      updateExportCount();
+    });
+  });
+  updateExportCount();
+}
+
+function updateExportCount(){
+  const total = getRowsForScope().length;
+  const checked = getRowsForScope().filter(r=>exportIncluded.has(r.img.id)).length;
+  const el = document.getElementById('exportCountLabel');
+  if(el) el.textContent = checked + ' of ' + total + ' checked for this round';
+}
+
+function openExportModal(){
+  // default: everything in scope is checked when the modal opens fresh
+  exportIncluded = new Set(getRowsForScope().map(r=>r.img.id));
+  document.getElementById('exportText').value = buildExportText();
+  renderExportVisualList();
+  updateExportSub();
+  document.getElementById('exportModal').classList.add('open');
+}
+
+function updateExportSub(){
+  document.getElementById('exportSub').textContent = exportScope === 'final'
+    ? "The creative director's curated final picks — uncheck any already sent to the photographer."
+    : 'Everything the team has shortlisted so far — uncheck any already sent to the photographer.';
+}
+
+async function copyExportText(){
+  const text = document.getElementById('exportText').value;
+  try{
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById('copyExportBtn');
+    const original = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(()=>{ btn.textContent = original; }, 1500);
+  }catch(e){
+    const ta = document.getElementById('exportText');
+    ta.select();
+    document.execCommand('copy');
+  }
+}
+
+function downloadExportText(){
+  const text = document.getElementById('exportText').value;
+  const blob = new Blob([text], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  const label = exportScope === 'final' ? 'final-selects' : 'selected-frames';
+  a.href = url;
+  a.download = '26oct-bur-den-' + label + '-' + stamp + '.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function imageToDataURL(src){
+  try{
+    const res = await fetch(src);
+    const blob = await res.blob();
+    return await new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }catch(e){ return ''; }
+}
+
+async function downloadVisualExport(){
+  const btn = document.getElementById('downloadVisualBtn');
+  const original = btn.textContent;
+  btn.textContent = 'Building...';
+  btn.disabled = true;
+
+  const rows = getRowsForScope().filter(r=>exportIncluded.has(r.img.id));
+  const rowsHtml = [];
+  for(const r of rows){
+    const dataUrl = await imageToDataURL('images/thumb/' + r.img.file);
+    const commentsHtml = r.comments.length
+      ? r.comments.map(c => `<div class="c">${escapeHtml(c.text)}</div>`).join('')
+      : '';
+    rowsHtml.push(`
+      <div class="cell">
+        <img src="${dataUrl}">
+        <div class="fname">${escapeHtml(r.img.file)}</div>
+        <div class="scene">${escapeHtml(batchShort(sceneOf(r.img)))}${slotOf(r.img) ? ' · ' + escapeHtml(slotLabel(sceneOf(r.img), slotOf(r.img))) : ''}</div>
+        ${commentsHtml}
+      </div>`);
+  }
+
+  const heading = exportScope === 'final' ? '26OCT BUR DEN - Final Selects' : '26OCT BUR DEN - Selected Frames';
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<title>${heading}</title>
+<style>
+  body{font-family:-apple-system,Helvetica,Arial,sans-serif;background:#F6F3EC;color:#2B2B24;margin:0;padding:32px;}
+  h1{font-size:18px;margin:0 0 4px;}
+  .sub{font-size:13px;color:#6B6858;margin-bottom:24px;}
+  .sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;}
+  .cell{background:#fff;border:1px solid #D9D4C4;border-radius:4px;padding:10px;}
+  .cell img{width:100%;height:150px;object-fit:contain;border-radius:3px;background:#EDE9DD;display:block;margin-bottom:8px;}
+  .fname{font-family:'Courier New',monospace;font-size:12px;font-weight:700;margin-bottom:4px;word-break:break-all;}
+  .c{font-size:11px;color:#2B2B24;line-height:1.4;margin-bottom:3px;}
+  .scene{font-size:11px;color:#6B6858;margin-bottom:4px;}
+</style></head>
+<body>
+  <h1>${heading}</h1>
+  <div class="sub">${rows.length}${exportScope === 'final' ? ' final select(s)' : ' frame(s) selected'} · exported ${new Date().toLocaleString()}</div>
+  <div class="sheet">
+  ${rowsHtml.join('')}
+  </div>
+</body></html>`;
+
+  const blob = new Blob([html], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  const dlLabel = exportScope === 'final' ? 'final-selects' : 'selected-frames';
+  a.href = url;
+  a.download = '26oct-bur-den-' + dlLabel + '-' + stamp + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  btn.textContent = original;
+  btn.disabled = false;
+}
+
+async function downloadJpgZip(){
+  const btn = document.getElementById('downloadZipBtn');
+  const original = btn.textContent;
+  const rows = getRowsForScope().filter(r=>exportIncluded.has(r.img.id));
+
+  if(rows.length === 0){
+    btn.textContent = 'Nothing checked above';
+    setTimeout(()=>{ btn.textContent = original; }, 1800);
+    return;
+  }
+
+  btn.disabled = true;
+  const zip = new JSZip();
+  let done = 0, failed = 0;
+
+  for(const r of rows){
+    btn.textContent = `Zipping ${done + 1}/${rows.length}...`;
+    try{
+      const res = await fetch('images/full/' + r.img.file);
+      if(!res.ok) throw new Error('fetch failed');
+      const blob = await res.blob();
+      zip.file(r.img.file, blob);
+    }catch(e){
+      failed++;
+    }
+    done++;
+  }
+
+  btn.textContent = 'Building zip...';
+  const zipBlob = await zip.generateAsync({type:'blob', compression:'STORE'});
+
+  const url = URL.createObjectURL(zipBlob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  const dlLabel = exportScope === 'final' ? 'final-selects' : 'selected-frames';
+  a.href = url;
+  a.download = '26oct-bur-den-' + dlLabel + '-' + stamp + '.zip';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  btn.textContent = failed > 0 ? `Done — ${failed} failed` : original;
+  btn.disabled = false;
+  if(failed > 0) setTimeout(()=>{ btn.textContent = original; }, 3000);
+}
+function imgWithFallback(candidates){
+  const encoded = encodeURIComponent(JSON.stringify(candidates.slice(1)));
+  return `src="${candidates[0]}" data-fallback="${encoded}" onerror="tryNextImageSrc(this)"`;
+}
+function tryNextImageSrc(el){
+  let remaining = [];
+  try{ remaining = JSON.parse(decodeURIComponent(el.dataset.fallback || '[]')); }catch(e){}
+  if(remaining.length === 0){ el.onerror = null; return; }
+  const next = remaining[0];
+  el.dataset.fallback = encodeURIComponent(JSON.stringify(remaining.slice(1)));
+  el.src = next;
+}
+
+init();
+</script>
+<script>
+// --- Update checker: detects when a newer version of this page has been deployed,
+// so nobody gets silently stuck on stale cached code after a future push. ---
+(function(){
+  let baseline = null;
+  async function check(){
+    try{
+      const res = await fetch(location.pathname, {method:'HEAD', cache:'no-store'});
+      const tag = res.headers.get('etag') || res.headers.get('last-modified');
+      if(!tag) return;
+      if(baseline === null){ baseline = tag; return; }
+      if(tag !== baseline){
+        showBanner();
+      }
+    }catch(e){ /* network hiccup, ignore */ }
+  }
+  function showBanner(){
+    if(document.getElementById('updateBanner')) return;
+    const bar = document.createElement('div');
+    bar.id = 'updateBanner';
+    bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:999;'+
+      'background:var(--ink);color:var(--paper);font-family:var(--font-body);font-size:13px;'+
+      'padding:12px 18px;display:flex;align-items:center;justify-content:center;gap:14px;'+
+      'box-shadow:0 -2px 10px rgba(0,0,0,0.15);';
+    bar.innerHTML = 'A newer version of this page is available.'+
+      '<button id="updateBannerBtn" style="background:var(--moss);color:#fff;border:none;'+
+      'padding:6px 14px;border-radius:6px;font-weight:600;cursor:pointer;font-family:Overpass,sans-serif;font-size:13px;">Reload</button>';
+    document.body.appendChild(bar);
+    document.getElementById('updateBannerBtn').addEventListener('click', ()=>location.reload());
+  }
+  check();
+  setInterval(check, 60000);
+})();
+</script>
+
+</body>
+</html>
