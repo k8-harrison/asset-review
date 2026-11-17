@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Where I Land — Video R1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Playfair+Display:wght@500;600;700&family=Lora:wght@500;600;700&family=Source+Serif+4:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+  :root{
+    --paper:#F2EEE3; --paper-dim:color-mix(in srgb, var(--paper) 88%, black);
+    --font-headline:'Fraunces',serif; --font-body:'Overpass',sans-serif; --ink:#211F1A; --ink-soft:#6E6A5E;
+    --moss:#8B8B4A; --moss-dark:#64643A; --line:#DCD6C7; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  #nameGate{position:fixed;inset:0;background:rgba(43,43,36,0.55);display:flex;align-items:center;justify-content:center;z-index:200;}
+  #nameGate.hidden{display:none;}
+  .gateCard{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:32px 36px;width:340px;max-width:90vw;box-shadow:0 12px 40px rgba(0,0,0,0.25);}
+  .gateCard h2{margin:0 0 6px;font-size:19px;font-weight:600;}
+  .gateCard p{margin:0 0 18px;font-size:13px;color:var(--ink-soft);line-height:1.5;}
+  .gateCard button{width:100%;padding:10px 12px;border-radius:3px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font-body);}
+  .googleBtn{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:var(--ink);border:1px solid var(--line);}
+  .googleBtn:hover{background:#F7F7F7;}
+  #signInError{margin-top:12px;font-size:12px;color:#B3261E;background:#FCE8E6;padding:10px 12px;border-radius:3px;line-height:1.5;}
+
+  header{position:sticky;top:0;z-index:50;background:var(--paper);border-bottom:2px solid var(--moss);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .r2Badge{display:inline-block;background:var(--moss);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:0.4px;margin-right:8px;vertical-align:middle;font-family:var(--font-body);}
+  .titleBlock h1{font-size:16px;margin:0;font-weight:700;letter-spacing:0.2px;display:flex;align-items:center;font-family:var(--font-headline);}
+  .titleBlock .sub{font-size:11px;color:var(--ink-soft);margin-top:4px;}
+  .whoami{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-soft);cursor:pointer;padding:6px 10px;border:1px solid var(--line);border-radius:4px;background:var(--card);}
+  .whoami .dot{width:8px;height:8px;border-radius:50%;background:var(--moss);}
+  .whoami b{color:var(--ink);}
+  .backLink{font-size:12px;color:var(--ink-soft);text-decoration:none;border:1px solid var(--line);padding:6px 10px;border-radius:4px;background:var(--card);}
+  .backLink:hover{border-color:var(--moss);color:var(--moss);}
+  .filterSel{font-size:12px;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:var(--card);font-family:var(--font-body);color:var(--ink);}
+
+  main{padding:8px 24px 60px;max-width:1400px;margin:0 auto;}
+  .note{font-size:12px;color:var(--ink-soft);margin:16px 0 0;line-height:1.5;}
+  .section{margin-top:28px;}
+  .section h2{font-family:var(--font-headline);font-weight:500;font-size:19px;margin:0 0 12px;display:flex;align-items:baseline;gap:10px;}
+  .section h2 .cnt{font-family:var(--font-body);font-size:12px;color:var(--ink-soft);font-weight:400;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:4px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .15s ease;}
+  .card:hover{box-shadow:0 6px 18px rgba(0,0,0,0.12);}
+  .card.approved{box-shadow:0 0 0 2px var(--moss) inset;}
+  .thumbArea{position:relative;height:190px;background:var(--paper-dim);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;}
+  .thumbArea img{width:100%;height:100%;object-fit:contain;display:block;}
+  .thumbArea.noimg .playIcon{display:none;}
+  .thumbArea .noThumb{font-size:11px;color:var(--ink-soft);}
+  .playIcon{position:absolute;inset:0;margin:auto;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,0.45);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;pointer-events:none;padding-left:3px;}
+  .pill{position:absolute;font-size:10px;font-weight:700;padding:3px 7px;border-radius:3px;color:#fff;background:rgba(33,31,26,0.7);letter-spacing:0.3px;z-index:2;}
+  .pill.asp{top:6px;left:6px;}
+  .pill.dur{bottom:6px;left:6px;}
+  .checkBadge{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:rgba(43,43,36,0.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;z-index:2;border:none;}
+  .card.approved .checkBadge{background:var(--moss);}
+  .cardFooter{padding:9px 10px 10px;display:flex;flex-direction:column;gap:6px;flex:1;}
+  .cardFooter .fname{font-size:11px;font-weight:700;word-break:break-word;}
+  .commentCount{font-size:10px;color:var(--ink-soft);}
+  .airLink{margin-top:auto;display:inline-block;align-self:flex-start;font-size:11px;font-weight:700;color:var(--moss-dark);border:1px solid var(--moss);border-radius:3px;padding:5px 9px;text-decoration:none;}
+  .airLink:hover{background:var(--moss);color:#fff;}
+
+  #lightbox{position:fixed;inset:0;background:rgba(20,19,15,0.92);display:none;align-items:center;justify-content:center;z-index:150;padding:30px;}
+  #lightbox.open{display:flex;}
+  #lbImageArea{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;flex:1;min-width:0;}
+  #lightboxImg{max-width:min(70vw,760px);max-height:66vh;object-fit:contain;border-radius:2px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+  #lbPlay{background:var(--moss);color:#fff;border:none;border-radius:20px;padding:10px 22px;font-size:13px;font-weight:700;text-decoration:none;font-family:var(--font-body);}
+  #lbPlay:hover{background:var(--moss-dark);}
+  #lightboxPanel{background:var(--card);border-radius:4px;padding:20px;width:290px;margin-left:20px;flex-shrink:0;max-height:88vh;overflow-y:auto;}
+  #lightboxPanel .fname{font-size:13px;font-weight:700;margin-bottom:4px;word-break:break-word;}
+  #lbMeta{font-size:11px;color:var(--ink-soft);margin-bottom:16px;}
+  #lbApproveBtn{width:100%;padding:10px;border:1px solid var(--moss);border-radius:3px;background:transparent;color:var(--moss);font-weight:700;font-size:13px;cursor:pointer;margin-bottom:16px;font-family:var(--font-body);}
+  #lbApproveBtn.active{background:var(--moss);color:#fff;}
+  .commentsHeading{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--ink-soft);margin-bottom:8px;}
+  #lbComments{max-height:200px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:10px;}
+  .commentItem{font-size:12px;line-height:1.5;border-bottom:1px solid var(--line);padding-bottom:8px;}
+  .commentItem .cName{font-weight:700;}
+  .commentItem .cTime{font-size:10px;color:var(--ink-soft);margin-left:6px;}
+  #noComments{font-size:12px;color:var(--ink-soft);margin-bottom:10px;}
+  #lbCommentInput{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:3px;font-family:var(--font-body);font-size:12px;background:var(--paper);resize:vertical;min-height:52px;margin-bottom:8px;}
+  #lbCommentInput:focus{outline:none;border-color:var(--moss);}
+  #lbCommentSubmit{width:100%;padding:9px;border:none;border-radius:3px;background:var(--moss);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-body);}
+  .tsHint{font-size:10px;color:var(--ink-soft);margin:-4px 0 8px;}
+  #closeLightbox{position:absolute;top:20px;right:26px;color:#fff;font-size:26px;cursor:pointer;line-height:1;}
+  #lbNavPrev,#lbNavNext{position:absolute;top:50%;transform:translateY(-50%);color:#fff;font-size:34px;cursor:pointer;padding:10px;user-select:none;opacity:0.7;z-index:2;}
+  #lbNavPrev:hover,#lbNavNext:hover{opacity:1;}
+  #lbNavPrev{left:0;} #lbNavNext{right:0;}
+  @media (max-width:800px){
+    #lightbox{flex-direction:column;padding:14px;overflow-y:auto;}
+    #lightboxPanel{margin-left:0;margin-top:14px;width:100%;max-width:400px;}
+  }
+  .exportBtnHeader{background:var(--moss);color:#fff;border:none;padding:9px 16px;border-radius:3px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font-body);}
+  .exportBtnHeader:hover{background:var(--moss-dark);}
+  #exportModal{position:fixed;inset:0;background:rgba(20,19,15,0.6);display:none;align-items:center;justify-content:center;z-index:180;padding:24px;}
+  #exportModal.open{display:flex;}
+  .exportCard{background:var(--card);border-radius:4px;padding:24px;width:860px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.35);max-height:88vh;overflow-y:auto;}
+  .exportCard h3{margin:0 0 4px;font-size:16px;}
+  .exportCard .sub{font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
+  .exportQuickRow{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:11px;color:var(--ink-soft);}
+  .exportQuickActions button{background:none;border:none;color:var(--moss-dark);font-weight:700;font-size:11px;cursor:pointer;text-decoration:underline;padding:0;margin-left:12px;font-family:var(--font-body);}
+  #exportVisualList{max-height:400px;overflow-y:auto;border:1px solid var(--line);border-radius:3px;margin-bottom:14px;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+  .exportRow{display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid var(--line);border-radius:3px;position:relative;}
+  .exportRow.excluded{opacity:0.35;}
+  .exportRow img{width:100%;height:100px;object-fit:contain;border-radius:2px;background:var(--paper-dim);}
+  .exportFname{font-size:10px;font-weight:700;word-break:break-word;}
+  .exportComment{font-size:10px;color:var(--ink-soft);line-height:1.4;}
+  .exportCheck{position:absolute;top:4px;left:4px;z-index:2;width:20px;height:20px;cursor:pointer;}
+  .exportCheck input{position:absolute;opacity:0;width:20px;height:20px;margin:0;cursor:pointer;}
+  .exportCheck span{display:block;width:20px;height:20px;border-radius:3px;background:rgba(255,255,255,0.9);border:1px solid var(--line);}
+  .exportCheck input:checked + span{background:var(--moss);border-color:var(--moss);}
+  .exportCheck input:checked + span::after{content:'';display:block;width:6px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);margin:2px auto;}
+  #exportText{width:100%;height:200px;font-family:'IBM Plex Mono',monospace;font-size:11px;border:1px solid var(--line);border-radius:3px;padding:12px;background:var(--paper);resize:vertical;line-height:1.6;}
+  .exportActions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .exportActions button{flex:1 1 calc(50% - 5px);padding:10px;border-radius:3px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font-body);border:1px solid var(--moss);background:transparent;color:var(--moss-dark);}
+  #copyExportBtn{background:var(--moss);color:#fff;border:none;}
+  #closeExportBtn{color:var(--ink-soft);border-color:var(--line);}
+</style>
+</head>
+<body>
+<script>
+const BRAND_SLUG = 'burrow';
+const PROJECT_SLUG = '26oct-bur-den';
+function darkenHex(hex, amt){
+  let c = hex.replace('#','');
+  if(c.length === 3) c = c.split('').map(ch=>ch+ch).join('');
+  const num = parseInt(c, 16);
+  let r = (num >> 16) & 0xFF, g = (num >> 8) & 0xFF, b = num & 0xFF;
+  r = Math.max(0, Math.round(r * (1 - amt))); g = Math.max(0, Math.round(g * (1 - amt))); b = Math.max(0, Math.round(b * (1 - amt)));
+  return '#' + [r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+(async function(){
+  try{
+    const res = await fetch('https://asset-review-8bfb6-default-rtdb.firebaseio.com/theme.json', {cache:'no-store'});
+    if(res.ok){
+      const t = await res.json();
+      if(t){
+        const root = document.documentElement.style;
+        const HF = {fraunces:"'Fraunces', serif",playfair:"'Playfair Display', serif",lora:"'Lora', serif",sourceserif:"'Source Serif 4', serif",spacegrotesk:"'Space Grotesk', sans-serif",worksans:"'Work Sans', sans-serif"};
+        const BF = {overpass:"'Overpass', sans-serif",inter:"'Inter', sans-serif",worksans:"'Work Sans', sans-serif",plexsans:"'IBM Plex Sans', sans-serif",sourcesans:"'Source Sans 3', sans-serif"};
+        if(t.paper) root.setProperty('--paper', t.paper);
+        if(t.ink) root.setProperty('--ink', t.ink);
+        if(t.inkSoft) root.setProperty('--ink-soft', t.inkSoft);
+        if(t.line) root.setProperty('--line', t.line);
+        if(t.headlineFont) root.setProperty('--font-headline', HF[t.headlineFont] || HF.fraunces);
+        if(t.bodyFont) root.setProperty('--font-body', BF[t.bodyFont] || BF.overpass);
+        if(t.brandAccents && t.brandAccents[BRAND_SLUG]){
+          const accent = t.brandAccents[BRAND_SLUG];
+          root.setProperty('--moss', accent);
+          root.setProperty('--moss-dark', darkenHex(accent, 0.28));
+        }
+        const info = t.projectStatus && t.projectStatus[BRAND_SLUG] && t.projectStatus[BRAND_SLUG][PROJECT_SLUG];
+        if(info && info.finalAssetsUrl){
+          const linkEl = document.getElementById('finalAssetsBackLink');
+          if(linkEl){ linkEl.href = info.finalAssetsUrl; linkEl.style.display = ''; }
+        }
+      }
+    }
+  }catch(e){ console.error('[theme] failed to load, using page defaults', e); }
+})();
+</script>
+
+<div id="nameGate">
+  <div class="gateCard">
+    <h2>Sign in to review</h2>
+    <p>Havenly Brands team members only. Your name and email are attached to every approval and comment.</p>
+    <button id="googleSignInBtn" class="googleBtn">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.5 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3c-7.8 0-14.5 4.4-17.7 11.7z"/><path fill="#4CAF50" d="M24 45c5.4 0 10.3-1.9 14-5.2l-6.5-5.5c-2 1.4-4.6 2.2-7.5 2.2-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 40.5 16.2 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.5 5.5C41.4 36 45 30.5 45 24c0-1.4-.1-2.7-.4-3.5z"/></svg>
+      Sign in with Google
+    </button>
+    <div id="signInError" style="display:none;"></div>
+  </div>
+</div>
+
+
+<header>
+  <div class="titleBlock">
+    <h1><span class="r2Badge">VIDEO R1</span>Where I Land — Video Round 1</h1>
+    <div class="sub"><span id="totalCount">60</span> videos · <span id="approvedCount">0</span> approved · click a video for details and comments, or open it in Air to play</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <select id="sectionFilter" class="filterSel"><option value="">All sections</option></select>
+    <button class="exportBtnHeader" id="exportBtn">Export</button>
+    <a class="backLink" href="https://app.air.inc/a/b29e011cf" target="_blank" rel="noopener">Full board in Air &#8599;</a>
+    <a class="backLink" href="../">Project home</a>
+    <a class="backLink" href="#" id="finalAssetsBackLink" style="display:none;" target="_blank" rel="noopener">Final assets &rarr;</a>
+    <div class="whoami" id="whoami"><span class="dot"></span><b id="meName">—</b></div>
+  </div>
+</header>
+
+<main>
+  <p class="note">Videos play in Air, since they can’t be embedded here. Use “Open in Air” to watch, then come back to approve and leave feedback. Adding a timestamp to your comment (e.g. 0:12) helps.</p>
+  <div id="sections"></div>
+</main>
+
+<div id="lightbox">
+  <span id="closeLightbox">&times;</span>
+  <div id="lbImageArea">
+    <span id="lbNavPrev">&#8249;</span>
+    <img id="lightboxImg" src="" alt="">
+    <a id="lbPlay" href="#" target="_blank" rel="noopener">&#9654;&nbsp; Play in Air</a>
+    <span id="lbNavNext">&#8250;</span>
+  </div>
+  <div id="lightboxPanel">
+    <div class="fname mono" id="lbFname"></div>
+    <div id="lbMeta"></div>
+    <button id="lbApproveBtn">Approve this video</button>
+    <div class="commentsHeading">Feedback</div>
+    <div id="lbComments"></div>
+    <div id="noComments" style="display:none;">No comments yet.</div>
+    <textarea id="lbCommentInput" placeholder="Add feedback on this video..."></textarea>
+    <div class="tsHint">Tip: include a timestamp, like “0:12 cut the shaky pan”.</div>
+    <button id="lbCommentSubmit">Post comment</button>
+  </div>
+</div>
+
+<div id="exportModal">
+  <div class="exportCard">
+    <h3>Export — Where I Land Video R1</h3>
+    <div class="sub">Approved videos with their Air links and feedback — uncheck any you’ve already sent to the editor.</div>
+    <div class="exportQuickRow">
+      <span id="exportCountLabel"></span>
+      <span class="exportQuickActions">
+        <button id="exportSelectAll" type="button">Check all</button>
+        <button id="exportSelectNone" type="button">Uncheck all</button>
+      </span>
+    </div>
+    <div id="exportVisualList"></div>
+    <textarea id="exportText" readonly></textarea>
+    <div class="exportActions">
+      <button id="copyExportBtn">Copy to clipboard</button>
+      <button id="downloadExportBtn">Download .txt</button>
+      <button id="downloadVisualBtn">Download with thumbnails</button>
+      <button id="closeExportBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const VIDEOS = [{"id": "0fbbbcf0-5245-4079-8e09-09362221a4d8", "file": "Burrow_Arvada_Talent Hero_16x9", "label": "Talent Hero · 16x9", "section": "hero_t", "aspect": "16:9", "dur": 28, "thumb": "https://air-prod.imgix.net/0fbbbcf0-5245-4079-8e09-09362221a4d8/thumbnail.jpg", "air": "https://app.air.inc/b/talent-b263792b-eea3-4aef-8f2e-f4b4bb2a795e/c/0fbbbcf0-5245-4079-8e09-09362221a4d8"}, {"id": "8e2ce2c4-1248-40cd-a119-83ad939bf032", "file": "Burrow_Arvada_Talent Hero_9x16", "label": "Talent Hero · 9x16", "section": "hero_t", "aspect": "9:16", "dur": 28, "thumb": "https://air-prod.imgix.net/8e2ce2c4-1248-40cd-a119-83ad939bf032/thumbnail.jpg", "air": "https://app.air.inc/b/talent-b263792b-eea3-4aef-8f2e-f4b4bb2a795e/c/8e2ce2c4-1248-40cd-a119-83ad939bf032"}, {"id": "190e052a-87c4-4874-8bce-1976aeec7915", "file": "Burrow_Arvada_Talent Hero_1x1", "label": "Talent Hero · 1x1", "section": "hero_t", "aspect": "1:1", "dur": 28, "thumb": "https://air-prod.imgix.net/190e052a-87c4-4874-8bce-1976aeec7915/thumbnail.jpg", "air": "https://app.air.inc/b/talent-b263792b-eea3-4aef-8f2e-f4b4bb2a795e/c/190e052a-87c4-4874-8bce-1976aeec7915"}, {"id": "ebdd6295-b07a-4fee-a1bd-b0f7c5448446", "file": "Burrow_Arvada_Furniture Hero_16x9", "label": "Furniture Hero · 16x9", "section": "hero_f", "aspect": "16:9", "dur": 31, "thumb": "https://air-prod.imgix.net/ebdd6295-b07a-4fee-a1bd-b0f7c5448446/thumbnail.jpg", "air": "https://app.air.inc/b/furniture-9b9acc68-d39c-4122-9ea2-682e5d922707/c/ebdd6295-b07a-4fee-a1bd-b0f7c5448446"}, {"id": "5316890a-a0cd-4310-bbb0-a26e7646868f", "file": "Burrow_Arvada_Furniture Hero_9x16", "label": "Furniture Hero · 9x16", "section": "hero_f", "aspect": "9:16", "dur": 31, "thumb": "https://air-prod.imgix.net/5316890a-a0cd-4310-bbb0-a26e7646868f/thumbnail.jpg", "air": "https://app.air.inc/b/furniture-9b9acc68-d39c-4122-9ea2-682e5d922707/c/5316890a-a0cd-4310-bbb0-a26e7646868f"}, {"id": "521f5d90-53b4-4b6d-a5f8-295079aa93e2", "file": "Burrow_Arvada_Furniture Hero_1x1", "label": "Furniture Hero · 1x1", "section": "hero_f", "aspect": "1:1", "dur": 31, "thumb": "https://air-prod.imgix.net/521f5d90-53b4-4b6d-a5f8-295079aa93e2/thumbnail.jpg", "air": "https://app.air.inc/b/furniture-9b9acc68-d39c-4122-9ea2-682e5d922707/c/521f5d90-53b4-4b6d-a5f8-295079aa93e2"}, {"id": "b6df59e4-e54c-400a-8149-efb00053d09d", "file": "Burrow_Arvada_Couch Assembly_16x9", "label": "Couch Assembly · 16x9", "section": "couch", "aspect": "16:9", "dur": 30, "thumb": "https://air-prod.imgix.net/b6df59e4-e54c-400a-8149-efb00053d09d/thumbnail.jpg", "air": "https://app.air.inc/b/couch-assembly-d6549a1d-d6d3-4694-bef3-00f54c3acbb0/c/b6df59e4-e54c-400a-8149-efb00053d09d"}, {"id": "0ec1f3c0-7d8f-4535-a116-aeb9abab1816", "file": "Burrow_Arvada_Couch Assembly_9x16", "label": "Couch Assembly · 9x16", "section": "couch", "aspect": "9:16", "dur": 30, "thumb": "https://air-prod.imgix.net/0ec1f3c0-7d8f-4535-a116-aeb9abab1816/thumbnail.jpg", "air": "https://app.air.inc/b/couch-assembly-d6549a1d-d6d3-4694-bef3-00f54c3acbb0/c/0ec1f3c0-7d8f-4535-a116-aeb9abab1816"}, {"id": "52ef496c-2034-4e30-b777-f5d4400bc0fa", "file": "Burrow_Arvada_Couch Assembly_1x1", "label": "Couch Assembly · 1x1", "section": "couch", "aspect": "1:1", "dur": 30, "thumb": "https://air-prod.imgix.net/52ef496c-2034-4e30-b777-f5d4400bc0fa/thumbnail.jpg", "air": "https://app.air.inc/b/couch-assembly-d6549a1d-d6d3-4694-bef3-00f54c3acbb0/c/52ef496c-2034-4e30-b777-f5d4400bc0fa"}, {"id": "6f8544f4-d42a-4a72-a30d-487a76e1075b", "file": "Burrow_Arvada_BTS_16x9", "label": "BTS · 16x9", "section": "bts", "aspect": "16:9", "dur": 31, "thumb": "https://air-prod.imgix.net/6f8544f4-d42a-4a72-a30d-487a76e1075b/thumbnail.jpg", "air": "https://app.air.inc/b/bts-c5f536ef-5b1a-425a-a631-1f90681c00d6/c/6f8544f4-d42a-4a72-a30d-487a76e1075b"}, {"id": "4791e04f-d5ae-455e-ac77-2b3da5447a10", "file": "Burrow_Arvada_BTS_9x16", "label": "BTS · 9x16", "section": "bts", "aspect": "9:16", "dur": 31, "thumb": "https://air-prod.imgix.net/4791e04f-d5ae-455e-ac77-2b3da5447a10/thumbnail.jpg", "air": "https://app.air.inc/b/bts-c5f536ef-5b1a-425a-a631-1f90681c00d6/c/4791e04f-d5ae-455e-ac77-2b3da5447a10"}, {"id": "c6874c56-0ee4-4b7c-bc99-76068d0e5ba9", "file": "Burrow_Arvada_BTS_1x1", "label": "BTS · 1x1", "section": "bts", "aspect": "1:1", "dur": 31, "thumb": "https://air-prod.imgix.net/c6874c56-0ee4-4b7c-bc99-76068d0e5ba9/thumbnail.jpg", "air": "https://app.air.inc/b/bts-c5f536ef-5b1a-425a-a631-1f90681c00d6/c/c6874c56-0ee4-4b7c-bc99-76068d0e5ba9"}, {"id": "0628547a-af42-4bcb-9cd1-66d54d6f1a90", "file": "Burrow_Arvada_Talent_scene 1_super 8", "label": "Talent · scene 1 · super 8", "section": "t1", "aspect": "16:9", "dur": 26, "thumb": "https://air-prod.imgix.net/0628547a-af42-4bcb-9cd1-66d54d6f1a90/thumbnail.jpg", "air": "https://app.air.inc/b/scene-1-42149102-0174-4576-a805-2849ad242214/c/0628547a-af42-4bcb-9cd1-66d54d6f1a90"}, {"id": "cd69340e-dbef-40b9-9e05-64eba6549636", "file": "Burrow_Arvada_Talent_scene 1_1", "label": "Talent · scene 1 · 1", "section": "t1", "aspect": "16:9", "dur": 12, "thumb": "https://air-prod.imgix.net/cd69340e-dbef-40b9-9e05-64eba6549636/thumbnail.jpg", "air": "https://app.air.inc/b/scene-1-42149102-0174-4576-a805-2849ad242214/c/cd69340e-dbef-40b9-9e05-64eba6549636"}, {"id": "328a898e-82cc-4825-9bde-ea7a170cc2bd", "file": "Burrow_Arvada_Talent_scene 1_2", "label": "Talent · scene 1 · 2", "section": "t1", "aspect": "16:9", "dur": 13, "thumb": "https://air-prod.imgix.net/328a898e-82cc-4825-9bde-ea7a170cc2bd/thumbnail.jpg", "air": "https://app.air.inc/b/scene-1-42149102-0174-4576-a805-2849ad242214/c/328a898e-82cc-4825-9bde-ea7a170cc2bd"}, {"id": "ec9872e1-2f1f-4e5d-ab17-84b15bf8d1be", "file": "Burrow_Arvada_Talent_scene 1_3", "label": "Talent · scene 1 · 3", "section": "t1", "aspect": "16:9", "dur": 20, "thumb": "https://air-prod.imgix.net/ec9872e1-2f1f-4e5d-ab17-84b15bf8d1be/thumbnail.jpg", "air": "https://app.air.inc/b/scene-1-42149102-0174-4576-a805-2849ad242214/c/ec9872e1-2f1f-4e5d-ab17-84b15bf8d1be"}, {"id": "3227188f-f1d3-4325-886a-686a0e8d7f2d", "file": "Burrow_Arvada_Talent_scene 1_4", "label": "Talent · scene 1 · 4", "section": "t1", "aspect": "16:9", "dur": 33, "thumb": "https://air-prod.imgix.net/3227188f-f1d3-4325-886a-686a0e8d7f2d/thumbnail.jpg", "air": "https://app.air.inc/b/scene-1-42149102-0174-4576-a805-2849ad242214/c/3227188f-f1d3-4325-886a-686a0e8d7f2d"}, {"id": "0c63bfe6-d5c4-4dce-9617-67ef6fc6327a", "file": "Burrow_Arvada_Talent_scene 1_5", "label": "Talent · scene 1 · 5", "section": "t1", "aspect": "16:9", "dur": 36, "thumb": "https://air-prod.imgix.net/0c63bfe6-d5c4-4dce-9617-67ef6fc6327a/thumbnail.jpg", "air": "https://app.air.inc/b/scene-1-42149102-0174-4576-a805-2849ad242214/c/0c63bfe6-d5c4-4dce-9617-67ef6fc6327a"}, {"id": "01867a00-4be4-49ff-b4a4-a543d9490585", "file": "Burrow_Arvada_Talent_scene 2_super 8", "label": "Talent · scene 2 · super 8", "section": "t2", "aspect": "16:9", "dur": 81, "thumb": "https://air-prod.imgix.net/01867a00-4be4-49ff-b4a4-a543d9490585/thumbnail.jpg", "air": "https://app.air.inc/b/scene-2-04c865ba-ab64-4c67-8b0d-1ac0a728b662/c/01867a00-4be4-49ff-b4a4-a543d9490585"}, {"id": "5645ded2-799c-4107-9639-656e379fcc84", "file": "Burrow_Arvada_Talent_scene 2_1", "label": "Talent · scene 2 · 1", "section": "t2", "aspect": "16:9", "dur": 24, "thumb": "https://air-prod.imgix.net/5645ded2-799c-4107-9639-656e379fcc84/thumbnail.jpg", "air": "https://app.air.inc/b/scene-2-04c865ba-ab64-4c67-8b0d-1ac0a728b662/c/5645ded2-799c-4107-9639-656e379fcc84"}, {"id": "1f29104c-8c28-495b-a5cf-6be12c2fdf9d", "file": "Burrow_Arvada_Talent_scene 2_2", "label": "Talent · scene 2 · 2", "section": "t2", "aspect": "16:9", "dur": 37, "thumb": "https://air-prod.imgix.net/1f29104c-8c28-495b-a5cf-6be12c2fdf9d/thumbnail.jpg", "air": "https://app.air.inc/b/scene-2-04c865ba-ab64-4c67-8b0d-1ac0a728b662/c/1f29104c-8c28-495b-a5cf-6be12c2fdf9d"}, {"id": "168e7350-2a47-4728-bfd4-e40bc1ec162a", "file": "Burrow_Arvada_Talent_scene 2_3", "label": "Talent · scene 2 · 3", "section": "t2", "aspect": "16:9", "dur": 32, "thumb": "https://air-prod.imgix.net/168e7350-2a47-4728-bfd4-e40bc1ec162a/thumbnail.jpg", "air": "https://app.air.inc/b/scene-2-04c865ba-ab64-4c67-8b0d-1ac0a728b662/c/168e7350-2a47-4728-bfd4-e40bc1ec162a"}, {"id": "c4344006-d440-4485-8b95-8085ceb76cd9", "file": "Burrow_Arvada_Talent_scene 2_4", "label": "Talent · scene 2 · 4", "section": "t2", "aspect": "16:9", "dur": 23, "thumb": "https://air-prod.imgix.net/c4344006-d440-4485-8b95-8085ceb76cd9/thumbnail.jpg", "air": "https://app.air.inc/b/scene-2-04c865ba-ab64-4c67-8b0d-1ac0a728b662/c/c4344006-d440-4485-8b95-8085ceb76cd9"}, {"id": "dd6d5e66-f99e-41b5-b2cf-6899019a893c", "file": "Burrow_Arvada_Talent_scene 2_5", "label": "Talent · scene 2 · 5", "section": "t2", "aspect": "16:9", "dur": 45, "thumb": "https://air-prod.imgix.net/dd6d5e66-f99e-41b5-b2cf-6899019a893c/thumbnail.jpg", "air": "https://app.air.inc/b/scene-2-04c865ba-ab64-4c67-8b0d-1ac0a728b662/c/dd6d5e66-f99e-41b5-b2cf-6899019a893c"}, {"id": "b7a1c047-af86-43e5-8bba-6b3dc75c8db4", "file": "Burrow_Arvada_Talent_scene 3_super 8", "label": "Talent · scene 3 · super 8", "section": "t3", "aspect": "16:9", "dur": 24, "thumb": "https://air-prod.imgix.net/b7a1c047-af86-43e5-8bba-6b3dc75c8db4/thumbnail.jpg", "air": "https://app.air.inc/b/scene-3-c2fd0c17-e0e5-4e73-8f68-1690bddd0f71/c/b7a1c047-af86-43e5-8bba-6b3dc75c8db4"}, {"id": "b94ff670-e551-414e-8356-df569411d83c", "file": "Burrow_Arvada_Talent_scene 3_1", "label": "Talent · scene 3 · 1", "section": "t3", "aspect": "16:9", "dur": 6, "thumb": "https://air-prod.imgix.net/b94ff670-e551-414e-8356-df569411d83c/thumbnail.jpg", "air": "https://app.air.inc/b/scene-3-c2fd0c17-e0e5-4e73-8f68-1690bddd0f71/c/b94ff670-e551-414e-8356-df569411d83c"}, {"id": "681e56ff-6bf9-43f6-b15e-dcd2f6514cfd", "file": "Burrow_Arvada_Talent_scene 3_2", "label": "Talent · scene 3 · 2", "section": "t3", "aspect": "16:9", "dur": 20, "thumb": "https://air-prod.imgix.net/681e56ff-6bf9-43f6-b15e-dcd2f6514cfd/thumbnail.jpg", "air": "https://app.air.inc/b/scene-3-c2fd0c17-e0e5-4e73-8f68-1690bddd0f71/c/681e56ff-6bf9-43f6-b15e-dcd2f6514cfd"}, {"id": "4f17a5f3-6c66-4fa1-b417-30383c5b9b07", "file": "Burrow_Arvada_Talent_scene 3_3", "label": "Talent · scene 3 · 3", "section": "t3", "aspect": "16:9", "dur": 7, "thumb": "https://air-prod.imgix.net/4f17a5f3-6c66-4fa1-b417-30383c5b9b07/thumbnail.jpg", "air": "https://app.air.inc/b/scene-3-c2fd0c17-e0e5-4e73-8f68-1690bddd0f71/c/4f17a5f3-6c66-4fa1-b417-30383c5b9b07"}, {"id": "3ac69607-82cd-4c0f-a6db-5df7f5aaa0d3", "file": "Burrow_Arvada_Talent_scene 3_4", "label": "Talent · scene 3 · 4", "section": "t3", "aspect": "16:9", "dur": 10, "thumb": "https://air-prod.imgix.net/3ac69607-82cd-4c0f-a6db-5df7f5aaa0d3/thumbnail.jpg", "air": "https://app.air.inc/b/scene-3-c2fd0c17-e0e5-4e73-8f68-1690bddd0f71/c/3ac69607-82cd-4c0f-a6db-5df7f5aaa0d3"}, {"id": "151092b7-3879-4b41-8e44-5705528dedb7", "file": "Burrow_Arvada_Talent_scene 3_5", "label": "Talent · scene 3 · 5", "section": "t3", "aspect": "16:9", "dur": 10, "thumb": "https://air-prod.imgix.net/151092b7-3879-4b41-8e44-5705528dedb7/thumbnail.jpg", "air": "https://app.air.inc/b/scene-3-c2fd0c17-e0e5-4e73-8f68-1690bddd0f71/c/151092b7-3879-4b41-8e44-5705528dedb7"}, {"id": "4ebd0e40-e2ad-445e-b029-67e1e0e9ce01", "file": "Burrow_Arvada_Talent_scene 3_6", "label": "Talent · scene 3 · 6", "section": "t3", "aspect": "16:9", "dur": 25, "thumb": "https://air-prod.imgix.net/4ebd0e40-e2ad-445e-b029-67e1e0e9ce01/thumbnail.jpg", "air": "https://app.air.inc/b/scene-3-c2fd0c17-e0e5-4e73-8f68-1690bddd0f71/c/4ebd0e40-e2ad-445e-b029-67e1e0e9ce01"}, {"id": "a579c900-1d26-4776-93b0-da855c7351b6", "file": "Burrow_Arvada_Talent_scene 4_super 8", "label": "Talent · scene 4 · super 8", "section": "t4", "aspect": "16:9", "dur": 11, "thumb": "https://air-prod.imgix.net/a579c900-1d26-4776-93b0-da855c7351b6/thumbnail.jpg", "air": "https://app.air.inc/b/scene-4-90e8a056-e441-47d9-855c-86215222750e/c/a579c900-1d26-4776-93b0-da855c7351b6"}, {"id": "5634d61d-a966-4055-a8a3-59e07ddaf338", "file": "Burrow_Arvada_Talent_scene 4_1", "label": "Talent · scene 4 · 1", "section": "t4", "aspect": "16:9", "dur": 16, "thumb": "https://air-prod.imgix.net/5634d61d-a966-4055-a8a3-59e07ddaf338/thumbnail.jpg", "air": "https://app.air.inc/b/scene-4-90e8a056-e441-47d9-855c-86215222750e/c/5634d61d-a966-4055-a8a3-59e07ddaf338"}, {"id": "b588ffac-eb3f-4e0a-90af-78aae34f750c", "file": "Burrow_Arvada_Talent_scene 4_2", "label": "Talent · scene 4 · 2", "section": "t4", "aspect": "16:9", "dur": 17, "thumb": "https://air-prod.imgix.net/b588ffac-eb3f-4e0a-90af-78aae34f750c/thumbnail.jpg", "air": "https://app.air.inc/b/scene-4-90e8a056-e441-47d9-855c-86215222750e/c/b588ffac-eb3f-4e0a-90af-78aae34f750c"}, {"id": "b984ba83-6c45-4a9f-a89e-347a5cc8510e", "file": "Burrow_Arvada_Talent_scene 4_3", "label": "Talent · scene 4 · 3", "section": "t4", "aspect": "16:9", "dur": 7, "thumb": "https://air-prod.imgix.net/b984ba83-6c45-4a9f-a89e-347a5cc8510e/thumbnail.jpg", "air": "https://app.air.inc/b/scene-4-90e8a056-e441-47d9-855c-86215222750e/c/b984ba83-6c45-4a9f-a89e-347a5cc8510e"}, {"id": "c8b3a01a-e411-465d-b606-fc37db12b5af", "file": "Burrow_Arvada_Furniture_scene 1_super 8", "label": "Furniture · scene 1 · super 8", "section": "f1", "aspect": "16:9", "dur": 50, "thumb": "https://air-prod.imgix.net/c8b3a01a-e411-465d-b606-fc37db12b5af/thumbnail.jpg", "air": "https://app.air.inc/b/scene-1-dd8bb126-42c5-42e9-ae1e-abd800c3b012/c/c8b3a01a-e411-465d-b606-fc37db12b5af"}, {"id": "b94fb024-e91e-49fc-96c2-8d665ead1b1c", "file": "Burrow_Arvada_Furniture_scene 1_1", "label": "Furniture · scene 1 · 1", "section": "f1", "aspect": "16:9", "dur": 8, "thumb": "https://air-prod.imgix.net/b94fb024-e91e-49fc-96c2-8d665ead1b1c/thumbnail.jpg", "air": "https://app.air.inc/b/scene-1-dd8bb126-42c5-42e9-ae1e-abd800c3b012/c/b94fb024-e91e-49fc-96c2-8d665ead1b1c"}, {"id": "4d6ade1a-8f2c-450d-89c1-aeba0609c953", "file": "Burrow_Arvada_Furniture_scene 1_2", "label": "Furniture · scene 1 · 2", "section": "f1", "aspect": "16:9", "dur": 19, "thumb": "https://air-prod.imgix.net/4d6ade1a-8f2c-450d-89c1-aeba0609c953/thumbnail.jpg", "air": "https://app.air.inc/b/scene-1-dd8bb126-42c5-42e9-ae1e-abd800c3b012/c/4d6ade1a-8f2c-450d-89c1-aeba0609c953"}, {"id": "39f4bd66-0011-4ad1-b7d9-d3bed39e9370", "file": "Burrow_Arvada_Furniture_scene 1_3", "label": "Furniture · scene 1 · 3", "section": "f1", "aspect": "16:9", "dur": 11, "thumb": "https://air-prod.imgix.net/39f4bd66-0011-4ad1-b7d9-d3bed39e9370/thumbnail.jpg", "air": "https://app.air.inc/b/scene-1-dd8bb126-42c5-42e9-ae1e-abd800c3b012/c/39f4bd66-0011-4ad1-b7d9-d3bed39e9370"}, {"id": "3cac52f0-7d6e-4cbe-af0f-57a6278fe45d", "file": "Burrow_Arvada_Furniture_scene 1_4", "label": "Furniture · scene 1 · 4", "section": "f1", "aspect": "16:9", "dur": 19, "thumb": "https://air-prod.imgix.net/3cac52f0-7d6e-4cbe-af0f-57a6278fe45d/thumbnail.jpg", "air": "https://app.air.inc/b/scene-1-dd8bb126-42c5-42e9-ae1e-abd800c3b012/c/3cac52f0-7d6e-4cbe-af0f-57a6278fe45d"}, {"id": "275fe1dd-0de3-4ce5-9cad-2ad2b4cbe9ac", "file": "Burrow_Arvada_Furniture_scene 1_5", "label": "Furniture · scene 1 · 5", "section": "f1", "aspect": "16:9", "dur": 13, "thumb": "https://air-prod.imgix.net/275fe1dd-0de3-4ce5-9cad-2ad2b4cbe9ac/thumbnail.jpg", "air": "https://app.air.inc/b/scene-1-dd8bb126-42c5-42e9-ae1e-abd800c3b012/c/275fe1dd-0de3-4ce5-9cad-2ad2b4cbe9ac"}, {"id": "a858ef5d-3bc5-4492-8134-4844a670e33c", "file": "Burrow_Arvada_Furniture_scene 2_super 8", "label": "Furniture · scene 2 · super 8", "section": "f2", "aspect": "16:9", "dur": 41, "thumb": "https://air-prod.imgix.net/a858ef5d-3bc5-4492-8134-4844a670e33c/thumbnail.jpg", "air": "https://app.air.inc/b/scene-2-15e60099-7ccf-478f-8968-2ada49aebbdb/c/a858ef5d-3bc5-4492-8134-4844a670e33c"}, {"id": "53f68ace-9057-47be-8f1a-54372f3bb640", "file": "Burrow_Arvada_Furniture_scene 2_1", "label": "Furniture · scene 2 · 1", "section": "f2", "aspect": "16:9", "dur": 7, "thumb": "https://air-prod.imgix.net/53f68ace-9057-47be-8f1a-54372f3bb640/thumbnail.jpg", "air": "https://app.air.inc/b/scene-2-15e60099-7ccf-478f-8968-2ada49aebbdb/c/53f68ace-9057-47be-8f1a-54372f3bb640"}, {"id": "d44c973b-d1d4-4cac-9628-54075f23de5d", "file": "Burrow_Arvada_Furniture_scene 2_2", "label": "Furniture · scene 2 · 2", "section": "f2", "aspect": "16:9", "dur": 12, "thumb": "https://air-prod.imgix.net/d44c973b-d1d4-4cac-9628-54075f23de5d/thumbnail.jpg", "air": "https://app.air.inc/b/scene-2-15e60099-7ccf-478f-8968-2ada49aebbdb/c/d44c973b-d1d4-4cac-9628-54075f23de5d"}, {"id": "ac14904e-d9b8-4132-9276-47cde4087356", "file": "Burrow_Arvada_Furniture_scene 2_3", "label": "Furniture · scene 2 · 3", "section": "f2", "aspect": "16:9", "dur": 6, "thumb": "https://air-prod.imgix.net/ac14904e-d9b8-4132-9276-47cde4087356/thumbnail.jpg", "air": "https://app.air.inc/b/scene-2-15e60099-7ccf-478f-8968-2ada49aebbdb/c/ac14904e-d9b8-4132-9276-47cde4087356"}, {"id": "f18c8952-a06e-42ec-b62e-eebaf2cca603", "file": "Burrow_Arvada_Furniture_scene 2_4", "label": "Furniture · scene 2 · 4", "section": "f2", "aspect": "16:9", "dur": 23, "thumb": "https://air-prod.imgix.net/f18c8952-a06e-42ec-b62e-eebaf2cca603/thumbnail.jpg", "air": "https://app.air.inc/b/scene-2-15e60099-7ccf-478f-8968-2ada49aebbdb/c/f18c8952-a06e-42ec-b62e-eebaf2cca603"}, {"id": "b87d040a-9383-4257-925e-6c2dac172e6a", "file": "Burrow_Arvada_Furniture_scene 3_super 8", "label": "Furniture · scene 3 · super 8", "section": "f3", "aspect": "16:9", "dur": 39, "thumb": "https://air-prod.imgix.net/b87d040a-9383-4257-925e-6c2dac172e6a/thumbnail.jpg", "air": "https://app.air.inc/b/scene-3-4a83c4b6-97e9-40f1-8747-c300879988ec/c/b87d040a-9383-4257-925e-6c2dac172e6a"}, {"id": "ee77ffa3-7fb3-468c-98a1-09d4493b28a2", "file": "Burrow_Arvada_Furniture_scene 3_1", "label": "Furniture · scene 3 · 1", "section": "f3", "aspect": "16:9", "dur": 5, "thumb": "https://air-prod.imgix.net/ee77ffa3-7fb3-468c-98a1-09d4493b28a2/thumbnail.jpg", "air": "https://app.air.inc/b/scene-3-4a83c4b6-97e9-40f1-8747-c300879988ec/c/ee77ffa3-7fb3-468c-98a1-09d4493b28a2"}, {"id": "c82ca301-8e77-439e-b251-990398dcc532", "file": "Burrow_Arvada_Furniture_scene 3_2", "label": "Furniture · scene 3 · 2", "section": "f3", "aspect": "16:9", "dur": 6, "thumb": "https://air-prod.imgix.net/c82ca301-8e77-439e-b251-990398dcc532/thumbnail.jpg", "air": "https://app.air.inc/b/scene-3-4a83c4b6-97e9-40f1-8747-c300879988ec/c/c82ca301-8e77-439e-b251-990398dcc532"}, {"id": "ec3f450d-b5a0-47f0-a996-b42a2134d36a", "file": "Burrow_Arvada_Furniture_scene 3_3", "label": "Furniture · scene 3 · 3", "section": "f3", "aspect": "16:9", "dur": 7, "thumb": "https://air-prod.imgix.net/ec3f450d-b5a0-47f0-a996-b42a2134d36a/thumbnail.jpg", "air": "https://app.air.inc/b/scene-3-4a83c4b6-97e9-40f1-8747-c300879988ec/c/ec3f450d-b5a0-47f0-a996-b42a2134d36a"}, {"id": "65cf33ae-7f6f-4d66-95b8-27c894b79b8b", "file": "Burrow_Arvada_Furniture_scene 3_4", "label": "Furniture · scene 3 · 4", "section": "f3", "aspect": "16:9", "dur": 25, "thumb": "https://air-prod.imgix.net/65cf33ae-7f6f-4d66-95b8-27c894b79b8b/thumbnail.jpg", "air": "https://app.air.inc/b/scene-3-4a83c4b6-97e9-40f1-8747-c300879988ec/c/65cf33ae-7f6f-4d66-95b8-27c894b79b8b"}, {"id": "4b43023a-50b1-40f9-81a4-b0e4a796a123", "file": "Burrow_Arvada_Furniture_scene 4_super 8", "label": "Furniture · scene 4 · super 8", "section": "f4", "aspect": "16:9", "dur": 45, "thumb": "https://air-prod.imgix.net/4b43023a-50b1-40f9-81a4-b0e4a796a123/thumbnail.jpg", "air": "https://app.air.inc/b/scene-4-6137d07f-8c69-4a80-975e-418b6e2bae0f/c/4b43023a-50b1-40f9-81a4-b0e4a796a123"}, {"id": "b95e71d4-1553-4ecd-8e94-f91c3ddab470", "file": "Burrow_Arvada_Furniture_scene 4_1", "label": "Furniture · scene 4 · 1", "section": "f4", "aspect": "16:9", "dur": 27, "thumb": "https://air-prod.imgix.net/b95e71d4-1553-4ecd-8e94-f91c3ddab470/thumbnail.jpg", "air": "https://app.air.inc/b/scene-4-6137d07f-8c69-4a80-975e-418b6e2bae0f/c/b95e71d4-1553-4ecd-8e94-f91c3ddab470"}, {"id": "1fee3b8b-226c-451c-94e5-6f8b3077259e", "file": "Burrow_Arvada_Furniture_scene 4_2", "label": "Furniture · scene 4 · 2", "section": "f4", "aspect": "16:9", "dur": 13, "thumb": "https://air-prod.imgix.net/1fee3b8b-226c-451c-94e5-6f8b3077259e/thumbnail.jpg", "air": "https://app.air.inc/b/scene-4-6137d07f-8c69-4a80-975e-418b6e2bae0f/c/1fee3b8b-226c-451c-94e5-6f8b3077259e"}, {"id": "f4e76b8e-8c61-452c-bb92-af6c1950c69c", "file": "Burrow_Arvada_Furniture_scene 4_3", "label": "Furniture · scene 4 · 3", "section": "f4", "aspect": "16:9", "dur": 6, "thumb": "https://air-prod.imgix.net/f4e76b8e-8c61-452c-bb92-af6c1950c69c/thumbnail.jpg", "air": "https://app.air.inc/b/scene-4-6137d07f-8c69-4a80-975e-418b6e2bae0f/c/f4e76b8e-8c61-452c-bb92-af6c1950c69c"}, {"id": "8acd2724-f3ff-4d38-beaa-97b52089f9db", "file": "Burrow_Arvada_Furniture_scene 4_4", "label": "Furniture · scene 4 · 4", "section": "f4", "aspect": "16:9", "dur": 13, "thumb": "https://air-prod.imgix.net/8acd2724-f3ff-4d38-beaa-97b52089f9db/thumbnail.jpg", "air": "https://app.air.inc/b/scene-4-6137d07f-8c69-4a80-975e-418b6e2bae0f/c/8acd2724-f3ff-4d38-beaa-97b52089f9db"}, {"id": "9984a028-7b90-4e6c-928a-d5f566d99323", "file": "Burrow_Arvada_House_establishing shots", "label": "House · establishing shots", "section": "extra", "aspect": "16:9", "dur": 50, "thumb": "https://air-prod.imgix.net/9984a028-7b90-4e6c-928a-d5f566d99323/thumbnail.jpg", "air": "https://app.air.inc/b/extra-scenes-68efc488-a483-4e6d-aa43-e3224502fffd/c/9984a028-7b90-4e6c-928a-d5f566d99323"}, {"id": "172e2c92-af0d-4ceb-887c-a9b54ca0ac33", "file": "Burrow_Arvada_Burrow boxes", "label": "Burrow boxes", "section": "extra", "aspect": "16:9", "dur": 11, "thumb": "https://air-prod.imgix.net/172e2c92-af0d-4ceb-887c-a9b54ca0ac33/thumbnail.jpg", "air": "https://app.air.inc/b/extra-scenes-68efc488-a483-4e6d-aa43-e3224502fffd/c/172e2c92-af0d-4ceb-887c-a9b54ca0ac33"}, {"id": "9c789b96-38a6-405e-bb0a-d2de0aa8bb29", "file": "Burrow_Arvada_House Walk Through_full", "label": "House Walk Through · full", "section": "extra", "aspect": "16:9", "dur": 42, "thumb": "https://air-prod.imgix.net/9c789b96-38a6-405e-bb0a-d2de0aa8bb29/thumbnail.jpg", "air": "https://app.air.inc/b/walk-throughs-10afcbde-664e-4f62-ac6f-78bc883894e4/c/9c789b96-38a6-405e-bb0a-d2de0aa8bb29"}, {"id": "16c7fd78-494a-4343-8faa-00354b91e644", "file": "Burrow_Arvada_House Walk Through_empty", "label": "House Walk Through · empty", "section": "extra", "aspect": "16:9", "dur": 57, "thumb": "https://air-prod.imgix.net/16c7fd78-494a-4343-8faa-00354b91e644/thumbnail.jpg", "air": "https://app.air.inc/b/walk-throughs-10afcbde-664e-4f62-ac6f-78bc883894e4/c/16c7fd78-494a-4343-8faa-00354b91e644"}];
+const SECTIONS = [["hero_t", "Hero · Talent"], ["hero_f", "Hero · Furniture"], ["couch", "Couch Assembly"], ["bts", "BTS"], ["t1", "Day 1 Talent · Scene 1"], ["t2", "Day 1 Talent · Scene 2"], ["t3", "Day 1 Talent · Scene 3"], ["t4", "Day 1 Talent · Scene 4"], ["f1", "Day 2 Furniture · Scene 1"], ["f2", "Day 2 Furniture · Scene 2"], ["f3", "Day 2 Furniture · Scene 3"], ["f4", "Day 2 Furniture · Scene 4"], ["extra", "Extra Scenes"]];
+const SECTION_NAME = Object.fromEntries(SECTIONS);
+const BY_FILE = Object.fromEntries(VIDEOS.map(v=>[v.file, v]));
+const PAGE_URL = 'https://k8-harrison.github.io/asset-review/burrow/26oct-bur-den/video-r1/';
+const DB = 'shoots/26octBurDen/video_r1';
+let FILES = VIDEOS.map(v=>v.file);
+let sectionFilter = '';
+
+const FIREBASE_URL = 'https://asset-review-8bfb6-default-rtdb.firebaseio.com';
+const SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/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';
+
+async function notifySlack(text){
+  try{
+    await fetch(SLACK_WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: 'payload=' + encodeURIComponent(JSON.stringify({text}))
+    });
+  }catch(e){ console.error('slack notify failed', e); }
+}
+let myName = null;
+let myEmail = null;
+const ADMIN_EMAILS = ['kate.harrison@havenly.com'];
+function isAdmin(){ return myEmail && ADMIN_EMAILS.includes(myEmail.toLowerCase()); }
+let approvedSet = new Set();
+let commentsByFile = {};
+let cardState = {}; // file -> 'edit' | 'original'  (grid card state)
+let deletedFiles = new Set();
+let lbIndex = -1;
+let lbState = 'edit'; // lightbox's own toggle state
+
+const ALLOWED_DOMAINS = ['havenly.com', 'interiordefine.com'];
+
+const firebaseApp = firebase.initializeApp({
+  apiKey: "AIzaSyCruCqUQi5HpPAroRTXs6Xxd-Ajf9ASB-o",
+  authDomain: "asset-review-8bfb6.firebaseapp.com",
+  databaseURL: "https://asset-review-8bfb6-default-rtdb.firebaseio.com",
+  projectId: "asset-review-8bfb6",
+  storageBucket: "asset-review-8bfb6.firebasestorage.app",
+  messagingSenderId: "895411644257",
+  appId: "1:895411644257:web:e5444ace279d996a258720"
+});
+const auth = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+// Always show the Google account chooser, even if a session is already active/denied —
+// otherwise a rejected or wrong account gets silently reused on retry with no way to switch.
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+// No 'hd' hint set — hd only supports a single domain, but we allow multiple (see ALLOWED_DOMAINS below).
+
+function showSignInError(msg){
+  const el = document.getElementById('signInError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function clearSignInError(){
+  document.getElementById('signInError').style.display = 'none';
+}
+
+async function handleSignedInUser(user){
+  const email = user.email || '';
+  if(!ALLOWED_DOMAINS.some(d => email.toLowerCase().endsWith('@' + d))){
+    showSignInError('Please sign in with a Havenly Brands work email (' + ALLOWED_DOMAINS.map(d=>'@'+d).join(' or ') + '). Signed-in account: ' + email);
+    await auth.signOut();
+    return false;
+  }
+  clearSignInError();
+  myEmail = email;
+  myName = user.displayName || email.split('@')[0];
+  document.getElementById('nameGate').classList.add('hidden');
+  document.getElementById('meName').textContent = myName;
+  return true;
+}
+
+async function getAuthToken(){
+  const user = auth.currentUser;
+  if(!user) return null;
+  try{ return await user.getIdToken(); }catch(e){ return null; }
+}
+
+async function fbGet(path){
+  try{
+    const token = await getAuthToken();
+    const url = FIREBASE_URL + '/' + path + '.json' + (token ? '?auth=' + token : '');
+    const r = await fetch(url);
+    if(!r.ok){
+      console.error('firebase get failed', r.status, await r.text().catch(()=>''));
+      return null;
+    }
+    return await r.json();
+  }catch(e){ console.error('firebase get failed', e); return null; }
+}
+async function fbSet(path, value){
+  try{
+    const token = await getAuthToken();
+    const url = FIREBASE_URL + '/' + path + '.json' + (token ? '?auth=' + token : '');
+    const r = await fetch(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(value)});
+    if(!r.ok){
+      const errText = await r.text().catch(()=>'');
+      console.error('firebase set failed', r.status, errText);
+      alert('Could not save — ' + (r.status === 401 || r.status === 403 ? 'you may need to sign in again.' : 'something went wrong (status ' + r.status + ').'));
+      return false;
+    }
+    return true;
+  }catch(e){
+    console.error('firebase set failed', e);
+    alert('Could not save — check your connection and try again.');
+    return false;
+  }
+}
+
+
+function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function fKey(file){ return file.replace(/[.#$\[\]\/]/g, '_'); }
+function fmtDur(s){ return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
+function timeAgo(ts){
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if(s < 60) return 'just now';
+  const m = Math.floor(s/60); if(m < 60) return m + 'm ago';
+  const h = Math.floor(m/60); if(h < 24) return h + 'h ago';
+  return Math.floor(h/24) + 'd ago';
+}
+function init(){
+  const sel = document.getElementById('sectionFilter');
+  SECTIONS.forEach(([id,name])=>{
+    const n = VIDEOS.filter(v=>v.section===id).length;
+    const o = document.createElement('option'); o.value = id; o.textContent = name + ' (' + n + ')'; sel.appendChild(o);
+  });
+  sel.addEventListener('change', ()=>{ sectionFilter = sel.value; render(); });
+  document.getElementById('googleSignInBtn').addEventListener('click', async ()=>{
+    clearSignInError();
+    try{ await auth.signInWithPopup(googleProvider); }
+    catch(e){ if(e.code !== 'auth/popup-closed-by-user') showSignInError('Sign-in failed: ' + (e.message || e.code)); }
+  });
+  document.getElementById('whoami').addEventListener('click', ()=>{ if(confirm('Sign out of the video review?')) auth.signOut(); });
+  auth.onAuthStateChanged(async user=>{
+    if(user){ const ok = await handleSignedInUser(user); if(ok) startApp(); }
+    else{
+      myName = null; myEmail = null;
+      document.getElementById('nameGate').classList.remove('hidden');
+      document.getElementById('meName').textContent = '—';
+    }
+  });
+  document.getElementById('closeLightbox').addEventListener('click', closeLightbox);
+  document.getElementById('lightbox').addEventListener('click', e=>{ if(e.target.id==='lightbox') closeLightbox(); });
+  document.getElementById('lbNavPrev').addEventListener('click', ()=>navLightbox(-1));
+  document.getElementById('lbNavNext').addEventListener('click', ()=>navLightbox(1));
+  document.getElementById('lbApproveBtn').addEventListener('click', ()=>toggleApprove(visibleFiles()[lbIndex], true));
+  document.getElementById('lbCommentSubmit').addEventListener('click', postComment);
+  document.getElementById('exportBtn').addEventListener('click', openExportModal);
+  document.getElementById('exportSelectAll').addEventListener('click', ()=>{ exportIncluded = new Set(getExportRows().map(r=>r.file)); refreshExport(); });
+  document.getElementById('exportSelectNone').addEventListener('click', ()=>{ exportIncluded = new Set(); refreshExport(); });
+  document.getElementById('closeExportBtn').addEventListener('click', ()=>document.getElementById('exportModal').classList.remove('open'));
+  document.getElementById('copyExportBtn').addEventListener('click', copyExportText);
+  document.getElementById('downloadExportBtn').addEventListener('click', downloadExportText);
+  document.getElementById('downloadVisualBtn').addEventListener('click', downloadVisualExport);
+  document.addEventListener('keydown', e=>{
+    if(!document.getElementById('lightbox').classList.contains('open')) return;
+    if(e.target && e.target.id === 'lbCommentInput') return;
+    if(e.key==='Escape') closeLightbox();
+    if(e.key==='ArrowLeft') navLightbox(-1);
+    if(e.key==='ArrowRight') navLightbox(1);
+  });
+  render();
+}
+
+let started = false;
+async function startApp(){
+  approvedSet = new Set((await fbGet(DB + '_approved')) || []);
+  commentsByFile = (await fbGet(DB + '_comments')) || {};
+  render();
+  if(started) return; started = true;
+  setInterval(async ()=>{
+    try{
+      const token = await getAuthToken();
+      const qs = token ? ('?auth=' + token) : '';
+      const [a, c] = await Promise.all([fetch(FIREBASE_URL + '/' + DB + '_approved.json' + qs), fetch(FIREBASE_URL + '/' + DB + '_comments.json' + qs)]);
+      if(a.ok) approvedSet = new Set((await a.json()) || []);
+      if(c.ok) commentsByFile = (await c.json()) || {};
+      if(a.ok || c.ok){ render(); if(document.getElementById('lightbox').classList.contains('open')) updateLightboxPanel(true); }
+    }catch(e){}
+  }, 5000);
+}
+
+function visibleFiles(){ return FILES.filter(f=>!sectionFilter || BY_FILE[f].section===sectionFilter); }
+
+function cardHtml(v){
+  const isApproved = approvedSet.has(v.file);
+  const n = (commentsByFile[fKey(v.file)] || []).length;
+  return `
+  <div class="card ${isApproved?'approved':''}" data-file="${escapeHtml(v.file)}">
+    <div class="thumbArea" data-action="view">
+      <span class="pill asp">${v.aspect}</span>
+      <button class="checkBadge" data-action="approve" title="${isApproved?'Remove approval':'Approve this video'}">${isApproved?'&#10003;':''}</button>
+      <img src="${v.thumb}" alt="" loading="lazy" onerror="this.parentNode.classList.add('noimg');this.replaceWith(Object.assign(document.createElement('div'),{className:'noThumb',textContent:'Preview in Air'}))">
+      <span class="playIcon">&#9654;</span>
+      <span class="pill dur">${fmtDur(v.dur)}</span>
+    </div>
+    <div class="cardFooter">
+      <div class="fname mono">${escapeHtml(v.label)}</div>
+      ${n ? `<div class="commentCount">&#128172; ${n} comment${n>1?'s':''}</div>` : ''}
+      <a class="airLink" href="${v.air}" target="_blank" rel="noopener">Open in Air &#8599;</a>
+    </div>
+  </div>`;
+}
+
+function render(){
+  document.getElementById('approvedCount').textContent = FILES.filter(f=>approvedSet.has(f)).length;
+  document.getElementById('totalCount').textContent = FILES.length;
+  const wrap = document.getElementById('sections');
+  wrap.innerHTML = SECTIONS.filter(([id])=>!sectionFilter || id===sectionFilter).map(([id,name])=>{
+    const vids = VIDEOS.filter(v=>v.section===id);
+    if(!vids.length) return '';
+    return `<section class="section"><h2>${escapeHtml(name)} <span class="cnt">${vids.length} video${vids.length>1?'s':''}</span></h2>
+      <div class="grid">${vids.map(cardHtml).join('')}</div></section>`;
+  }).join('');
+  wrap.querySelectorAll('.card').forEach(card=>{
+    const file = card.dataset.file;
+    card.querySelector('[data-action="view"]').addEventListener('click', ()=>openLightbox(visibleFiles().indexOf(file)));
+    card.querySelector('[data-action="approve"]').addEventListener('click', e=>{ e.stopPropagation(); toggleApprove(file, false); });
+  });
+}
+
+async function toggleApprove(file, fromLightbox){
+  if(!myName){ document.getElementById('nameGate').classList.remove('hidden'); return; }
+  if(approvedSet.has(file)) approvedSet.delete(file); else approvedSet.add(file);
+  await fbSet(DB + '_approved', Array.from(approvedSet));
+  render();
+  if(fromLightbox) updateLightboxPanel();
+}
+
+function openLightbox(idx){
+  if(idx < 0) return;
+  lbIndex = idx;
+  document.getElementById('lightbox').classList.add('open');
+  const v = BY_FILE[visibleFiles()[idx]];
+  document.getElementById('lightboxImg').src = v.thumb;
+  document.getElementById('lbPlay').href = v.air;
+  document.getElementById('lbCommentInput').value = '';
+  updateLightboxPanel();
+}
+function updateLightboxPanel(commentsOnly){
+  const file = visibleFiles()[lbIndex];
+  if(!file) return;
+  const v = BY_FILE[file];
+  document.getElementById('lbFname').textContent = v.label;
+  document.getElementById('lbMeta').textContent = SECTION_NAME[v.section] + ' · ' + v.aspect + ' · ' + fmtDur(v.dur);
+  const isApproved = approvedSet.has(file);
+  const btn = document.getElementById('lbApproveBtn');
+  btn.textContent = isApproved ? 'Approved — remove' : 'Approve this video';
+  btn.classList.toggle('active', isApproved);
+  renderComments(file);
+}
+function renderComments(file){
+  const arr = commentsByFile[fKey(file)] || [];
+  const list = document.getElementById('lbComments');
+  const empty = document.getElementById('noComments');
+  if(!arr.length){ list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = arr.map((c,i)=>`
+    <div class="commentItem">
+      <span class="cName">${escapeHtml(c.name)}</span><span class="cTime">${timeAgo(c.ts)}</span>
+      ${myName === c.name ? `<span class="cDelete" data-idx="${i}" style="float:right;font-size:10px;color:var(--ink-soft);cursor:pointer;text-decoration:underline;">Delete</span>` : ''}
+      <div class="cText">${escapeHtml(c.text)}</div>
+    </div>`).join('');
+  list.querySelectorAll('.cDelete').forEach(b=>b.addEventListener('click', ()=>deleteComment(file, parseInt(b.dataset.idx))));
+}
+async function postComment(){
+  if(!myName){ document.getElementById('nameGate').classList.remove('hidden'); return; }
+  const input = document.getElementById('lbCommentInput');
+  const text = input.value.trim();
+  if(!text) return;
+  const file = visibleFiles()[lbIndex];
+  if(!file) return;
+  const arr = (commentsByFile[fKey(file)] || []).slice();
+  arr.push({name: myName, text, ts: Date.now()});
+  const ok = await fbSet(DB + '_comments/' + fKey(file), arr);
+  if(!ok) return;
+  commentsByFile[fKey(file)] = arr;
+  notifySlack('💬 *' + myName + '* commented on Where I Land video `' + BY_FILE[file].label + '`: "' + text + '"\n<' + PAGE_URL + '|Open Video R1 review>');
+  input.value = '';
+  renderComments(file);
+  render();
+}
+async function deleteComment(file, idx){
+  const arr = (commentsByFile[fKey(file)] || []).slice();
+  arr.splice(idx, 1);
+  commentsByFile[fKey(file)] = arr;
+  await fbSet(DB + '_comments/' + fKey(file), arr);
+  renderComments(file);
+  render();
+}
+function navLightbox(dir){
+  const n = visibleFiles().length;
+  openLightbox((lbIndex + dir + n) % n);
+}
+function closeLightbox(){ document.getElementById('lightbox').classList.remove('open'); }
+
+/* ===== EXPORT ===== */
+let exportIncluded = new Set();
+function getExportRows(){
+  return VIDEOS.filter(v=>approvedSet.has(v.file)).map(v=>({...v, comments: commentsByFile[fKey(v.file)] || []}));
+}
+function buildExportText(){
+  const rows = getExportRows().filter(r=>exportIncluded.has(r.file));
+  const lines = ['WHERE I LAND — VIDEO R1 APPROVED', 'Generated ' + new Date().toLocaleString(), '', rows.length + ' approved video(s)', '----------------------------------------', ''];
+  if(!rows.length) lines.push('Nothing checked for export yet.');
+  rows.forEach(r=>{
+    lines.push(r.file + '  (' + SECTION_NAME[r.section] + ', ' + r.aspect + ', ' + fmtDur(r.dur) + ')');
+    lines.push('  ' + r.air);
+    r.comments.forEach(c=>lines.push('  - ' + c.text));
+    lines.push('');
+  });
+  return lines.join('\n');
+}
+function refreshExport(){ document.getElementById('exportText').value = buildExportText(); renderExportVisualList(); }
+function renderExportVisualList(){
+  const rows = getExportRows();
+  const box = document.getElementById('exportVisualList');
+  if(!rows.length){ box.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--ink-soft);">No approved videos yet.</div>`; updateExportCount(); return; }
+  box.innerHTML = rows.map(r=>{
+    const checked = exportIncluded.has(r.file);
+    return `<div class="exportRow ${checked?'':'excluded'}" data-file="${escapeHtml(r.file)}">
+      <label class="exportCheck"><input type="checkbox" data-action="toggleInclude" ${checked?'checked':''}><span></span></label>
+      <img src="${r.thumb}" alt="">
+      <div class="exportFname mono">${escapeHtml(r.label)}</div>
+      ${r.comments.map(c=>`<div class="exportComment">${escapeHtml(c.text)}</div>`).join('')}
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-action="toggleInclude"]').forEach(cb=>cb.addEventListener('change', e=>{
+    const cell = e.target.closest('.exportRow'); const file = cell.dataset.file;
+    if(e.target.checked){ exportIncluded.add(file); cell.classList.remove('excluded'); }
+    else { exportIncluded.delete(file); cell.classList.add('excluded'); }
+    document.getElementById('exportText').value = buildExportText();
+    updateExportCount();
+  }));
+  updateExportCount();
+}
+function updateExportCount(){
+  const rows = getExportRows();
+  document.getElementById('exportCountLabel').textContent = rows.filter(r=>exportIncluded.has(r.file)).length + ' of ' + rows.length + ' checked';
+}
+function openExportModal(){
+  exportIncluded = new Set(getExportRows().map(r=>r.file));
+  refreshExport();
+  document.getElementById('exportModal').classList.add('open');
+}
+async function copyExportText(){
+  const text = document.getElementById('exportText').value;
+  try{
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById('copyExportBtn'); const o = btn.textContent;
+    btn.textContent = 'Copied!'; setTimeout(()=>{ btn.textContent = o; }, 1500);
+  }catch(e){ const ta = document.getElementById('exportText'); ta.select(); document.execCommand('copy'); }
+}
+function saveBlob(blob, name){
+  const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function downloadExportText(){
+  saveBlob(new Blob([document.getElementById('exportText').value], {type:'text/plain'}), 'bur-where-i-land-video-r1-approved-' + new Date().toISOString().slice(0,10) + '.txt');
+}
+function downloadVisualExport(){
+  const rows = getExportRows().filter(r=>exportIncluded.has(r.file));
+  const cells = rows.map(r=>`<div class="cell"><a href="${r.air}" target="_blank"><img src="${r.thumb}"></a>
+    <div class="fname">${escapeHtml(r.label)}</div><div class="meta">${escapeHtml(SECTION_NAME[r.section])} · ${r.aspect} · ${fmtDur(r.dur)}</div>
+    <a class="air" href="${r.air}" target="_blank">Open in Air</a>
+    ${r.comments.map(c=>`<div class="c">${escapeHtml(c.text)}</div>`).join('')}</div>`).join('');
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Where I Land - Video R1 Approved</title><style>
+  body{font-family:-apple-system,Helvetica,Arial,sans-serif;background:#F2EEE3;color:#211F1A;margin:0;padding:32px;}
+  h1{font-size:18px;margin:0 0 4px;} .sub{font-size:13px;color:#6E6A5E;margin-bottom:24px;}
+  .sheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
+  .cell{background:#fff;border:1px solid #DCD6C7;border-radius:4px;padding:10px;}
+  .cell img{width:100%;height:150px;object-fit:contain;background:#E6E1D4;display:block;margin-bottom:8px;border-radius:3px;}
+  .fname{font-size:12px;font-weight:700;margin-bottom:2px;} .meta{font-size:11px;color:#6E6A5E;margin-bottom:6px;}
+  .air{font-size:11px;font-weight:700;color:#64643A;display:inline-block;margin-bottom:6px;}
+  .c{font-size:11px;line-height:1.4;margin-bottom:3px;}
+  </style></head><body><h1>Where I Land - Video R1 Approved</h1>
+  <div class="sub">${rows.length} approved video(s) · exported ${new Date().toLocaleString()}</div>
+  <div class="sheet">${cells}</div></body></html>`;
+  saveBlob(new Blob([html], {type:'text/html'}), 'bur-where-i-land-video-r1-approved-' + new Date().toISOString().slice(0,10) + '.html');
+}
+
+init();
+</script>
+<script>
+// --- Update checker: detects when a newer version of this page has been deployed,
+// so nobody gets silently stuck on stale cached code after a future push. ---
+(function(){
+  let baseline = null;
+  async function check(){
+    try{
+      const res = await fetch(location.pathname, {method:'HEAD', cache:'no-store'});
+      const tag = res.headers.get('etag') || res.headers.get('last-modified');
+      if(!tag) return;
+      if(baseline === null){ baseline = tag; return; }
+      if(tag !== baseline){
+        showBanner();
+      }
+    }catch(e){ /* network hiccup, ignore */ }
+  }
+  function showBanner(){
+    if(document.getElementById('updateBanner')) return;
+    const bar = document.createElement('div');
+    bar.id = 'updateBanner';
+    bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:999;'+
+      'background:var(--ink);color:var(--paper);font-family:var(--font-body);font-size:13px;'+
+      'padding:12px 18px;display:flex;align-items:center;justify-content:center;gap:14px;'+
+      'box-shadow:0 -2px 10px rgba(0,0,0,0.15);';
+    bar.innerHTML = 'A newer version of this page is available.'+
+      '<button id="updateBannerBtn" style="background:var(--moss);color:#fff;border:none;'+
+      'padding:6px 14px;border-radius:6px;font-weight:600;cursor:pointer;font-family:Overpass,sans-serif;font-size:13px;">Reload</button>';
+    document.body.appendChild(bar);
+    document.getElementById('updateBannerBtn').addEventListener('click', ()=>location.reload());
+  }
+  check();
+  setInterval(check, 60000);
+})();
+</script>
+
+</body>
+</html>

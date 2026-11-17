@@ -32,6 +32,8 @@
   }
   .finalAssetsLink:hover{opacity:0.7;}
 
+  .trackLabel{font-size:11.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 10px;}
+  .rounds + .trackLabel{margin-top:40px;}
   .rounds{display:flex;flex-direction:column;}
   .round{display:flex;align-items:baseline;gap:18px;padding:var(--row-pad);border-top:1px solid var(--line);}
   .rounds .round:last-child{border-bottom:1px solid var(--line);}
@@ -153,14 +155,26 @@ function renderProjectStatus(theme){
 <div class="wrap">
   <div class="crumb"><a href="../../">Asset Review</a> / <a href="../">Burrow</a> / 26OCT BUR DEN</div>
   <h1>Where I Land — Denver</h1>
-  <p class="lede">Subject 01, the couple. Lifestyle and product photography, shot in Arvada on October 20–21, 2026.</p>
+  <p class="lede">Subject 01, the couple. Lifestyle and product photography and video, shot in Arvada on October 20–21, 2026.</p>
   <div id="projectStatusArea"></div>
+  <div class="trackLabel">Photo</div>
   <div class="rounds">
     <a class="round" href="main/">
       <span class="round-num">01</span>
       <span class="round-main">
         <div class="round-name">Main Review</div>
         <div class="round-desc">All 1,115 frames, sorted by shot-list scene, with selects, finals and shot-list coverage</div>
+      </span>
+      <span class="round-status">In review</span>
+    </a>
+  </div>
+  <div class="trackLabel">Video</div>
+  <div class="rounds">
+    <a class="round" href="video-r1/">
+      <span class="round-num">01</span>
+      <span class="round-main">
+        <div class="round-name">Video R1</div>
+        <div class="round-desc">60 videos — heroes, couch assembly, BTS, talent and furniture vignettes. Opens each video in Air to play</div>
       </span>
       <span class="round-status">In review</span>
     </a>
