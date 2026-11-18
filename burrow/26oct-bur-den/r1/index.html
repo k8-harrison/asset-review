@@ -307,7 +307,7 @@ function darkenHex(hex, amt){
 <div id="exportModal">
   <div class="exportCard">
     <h3>Export — 26OCT BUR DEN R1</h3>
-    <div class="sub" id="exportSub">Approved edits and their feedback — uncheck any already sent to the photographer.</div>
+    <div class="sub" id="exportSub">Every edit that's approved or has feedback — uncheck any already sent to the retoucher.</div>
     <div class="exportQuickRow">
       <span id="exportCountLabel"></span>
       <span class="exportQuickActions">
@@ -780,20 +780,20 @@ function closeLightbox(){
 let exportIncluded = new Set(); // files currently checked for this export session
 
 function getExportRows(){
-  return FILES.filter(f=>approvedSet.has(f))
-    .map(f=>({file: f, comments: commentsByFile[fKey(f)] || []}))
+  return FILES.filter(f=>approvedSet.has(f) || (commentsByFile[fKey(f)] || []).length)
+    .map(f=>({file: f, approved: approvedSet.has(f), label: frameLabel(f).replace(' \u2605',''), comments: commentsByFile[fKey(f)] || []}))
     .sort((a,b)=> a.file.localeCompare(b.file, undefined, {numeric:true}));
 }
 
 function buildExportText(){
   const rows = getExportRows().filter(r=>exportIncluded.has(r.file));
-  const heading = '26OCT BUR DEN — R1 APPROVED EDITS';
+  const heading = '26OCT BUR DEN — R1 EDITS: APPROVALS + FEEDBACK';
 
   const lines = [];
   lines.push(heading);
   lines.push('Generated ' + new Date().toLocaleString());
   lines.push('');
-  lines.push(rows.length + ' approved edit(s)');
+  lines.push(rows.length + ' edit(s) · ' + rows.filter(r=>r.approved).length + ' approved');
   lines.push('----------------------------------------');
   lines.push('');
 
@@ -802,10 +802,10 @@ function buildExportText(){
   }
 
   rows.forEach(r=>{
-    lines.push(r.file);
+    lines.push(r.label + ' · ' + r.file + (r.approved ? '  [APPROVED]' : ''));
     if(r.comments.length){
       r.comments.forEach(c=>{
-        lines.push('  - ' + c.text);
+        lines.push('  - ' + (c.name ? c.name + ': ' : '') + c.text);
       });
     }
     lines.push('');
@@ -818,7 +818,7 @@ function renderExportVisualList(){
   const rows = getExportRows();
   const container = document.getElementById('exportVisualList');
   if(rows.length === 0){
-    container.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--ink-soft);">No approved edits yet.</div>`;
+    container.innerHTML = `<div style="padding:14px;font-size:12px;color:var(--ink-soft);">No approved or commented edits yet.</div>`;
     return;
   }
   container.innerHTML = rows.map(r=>{
@@ -831,8 +831,8 @@ function renderExportVisualList(){
       </label>
       <img src="images/thumb/${r.file}">
       <div class="exportInfo">
-        <div class="exportFname mono">${escapeHtml(r.file)}</div>
-        ${r.comments.map(c=>`<div class="exportComment">${escapeHtml(c.text)}</div>`).join('')}
+        <div class="exportFname mono">${escapeHtml(r.label)} · ${escapeHtml(r.file)}${r.approved ? ' &#10003; Approved' : ''}</div>
+        ${r.comments.map(c=>`<div class="exportComment">${c.name ? '<b>' + escapeHtml(c.name) + ':</b> ' : ''}${escapeHtml(c.text)}</div>`).join('')}
       </div>
     </div>`;
   }).join('');
@@ -885,7 +885,7 @@ function downloadExportText(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26oct-bur-den-r1-approved-' + stamp + '.txt';
+  a.download = '26oct-bur-den-r1-edits-' + stamp + '.txt';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -916,17 +916,18 @@ async function downloadVisualExport(){
   for(const r of rows){
     const dataUrl = await imageToDataURL('images/thumb/' + r.file);
     const commentsHtml = r.comments.length
-      ? r.comments.map(c => `<div class="c">${escapeHtml(c.text)}</div>`).join('')
+      ? r.comments.map(c => `<div class="c">${c.name ? '<b>' + escapeHtml(c.name) + ':</b> ' : ''}${escapeHtml(c.text)}</div>`).join('')
       : '';
     rowsHtml.push(`
       <div class="cell">
         <img src="${dataUrl}">
-        <div class="fname">${escapeHtml(r.file)}</div>
+        <div class="fname">${escapeHtml(r.label)}${r.approved ? ' &#10003; Approved' : ''}</div>
+        <div class="fname" style="font-weight:400;">${escapeHtml(r.file)}</div>
         ${commentsHtml}
       </div>`);
   }
 
-  const heading = '26OCT BUR DEN - R1 Approved Edits';
+  const heading = '26OCT BUR DEN - R1 Edits: Approvals + Feedback';
   const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
 <title>${heading}</title>
@@ -942,7 +943,7 @@ async function downloadVisualExport(){
 </style></head>
 <body>
   <h1>${heading}</h1>
-  <div class="sub">${rows.length} approved edit(s) · exported ${new Date().toLocaleString()}</div>
+  <div class="sub">${rows.length} edit(s) · ${rows.filter(r=>r.approved).length} approved · exported ${new Date().toLocaleString()}</div>
   <div class="sheet">
   ${rowsHtml.join('')}
   </div>
@@ -953,7 +954,7 @@ async function downloadVisualExport(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26oct-bur-den-r1-approved-' + stamp + '.html';
+  a.download = '26oct-bur-den-r1-edits-' + stamp + '.html';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -998,7 +999,7 @@ async function downloadJpgZip(){
   const a = document.createElement('a');
   const stamp = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = '26oct-bur-den-r1-approved-' + stamp + '.zip';
+  a.download = '26oct-bur-den-r1-edits-' + stamp + '.zip';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
