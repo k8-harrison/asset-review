@@ -678,6 +678,7 @@ let currentSlot = '';
 let slotAssign = {};    // { imageId: slotId } shared
 let sceneOverride = {}; // { imageId: sceneId } shared, for frames moved to another scene
 let finalsTalentFilter = 'all';
+let finalsShowShortlist = false; // Finals tab shows only marked finals unless toggled
 let lbIndex = -1;
 let lbSourceList = [];
 
@@ -1518,7 +1519,7 @@ function renderFinals(){
   }
   baseList = applySlotFilter(baseList);
   let rows = baseList.map(img=>({img, names: selectorsFor(img.id)}))
-    .filter(r=>r.names.length>0 || finalSelects.has(r.img.id))
+    .filter(r=>finalsShowShortlist ? (r.names.length>0 || finalSelects.has(r.img.id)) : finalSelects.has(r.img.id))
     .sort(cmpExport);
 
   if(finalsTalentFilter === 'talent'){
@@ -1532,16 +1533,20 @@ function renderFinals(){
 
   if(rows.length===0){
     document.getElementById('emptyMsg').style.display='block';
-    document.getElementById('emptyMsg').textContent = 'Nothing matches this filter yet.';
-    container.innerHTML=''; container.style.display='none';
+    document.getElementById('emptyMsg').textContent = finalsShowShortlist ? 'Nothing matches this filter yet.' : 'No finals marked here yet. Switch to Shortlist to pick some.';
+    container.innerHTML = finalsModeToggleHtml(); container.style.display='flex';
+    bindFinalsModeToggle(container);
     return;
   }
   document.getElementById('emptyMsg').textContent = 'Nothing here yet.';
   container.style.display = 'flex';
   lbSourceList = rows.map(r=>r.img);
   container.innerHTML = `
+    ${finalsModeToggleHtml()}
     <div id="finalsIntro">
-      Browsing the team's shortlist (${rows.length} photos). Tap the star to mark a photo as a final pick.
+      ${finalsShowShortlist
+        ? `Browsing the team's shortlist (${rows.length} photos). Tap the star to mark a photo as a final pick.`
+        : `Showing only photos marked final (${rows.length}). Switch to Shortlist to mark more.`}
       Use Export → Final Selects to share just those with the photographer.
     </div>
     <div class="segmented" id="finalsTalentToggle" style="margin-bottom:14px;width:fit-content;">
@@ -1561,6 +1566,7 @@ function renderFinals(){
       <div class="fCaption"><div class="names"><b>Picked by:</b> ${r.names.join(', ')}</div><div class="batchTag" style="background:${BATCH_COLORS[sceneOf(r.img)] || 'var(--moss)'}">${batchShort(sceneOf(r.img))}${slotOf(r.img) ? ' · ' + escapeHtml(slotShort(sceneOf(r.img), slotOf(r.img))) : ''}</div></div>
     </div>`;
   }).join('');
+  bindFinalsModeToggle(container);
   container.querySelectorAll('#finalsTalentToggle button').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       finalsTalentFilter = btn.dataset.tf;
@@ -1574,6 +1580,21 @@ function renderFinals(){
     card.querySelector('[data-action="star"]').addEventListener('click', e=>{
       e.stopPropagation();
       toggleFinal(img.id);
+    });
+  });
+}
+
+function finalsModeToggleHtml(){
+  return `<div class="segmented" id="finalsModeToggle" style="margin-bottom:10px;width:fit-content;flex-basis:100%;">
+      <button data-fm="finals" class="${finalsShowShortlist?'':'active'}">&#9733; Finals only</button>
+      <button data-fm="shortlist" class="${finalsShowShortlist?'active':''}">Shortlist</button>
+    </div>`;
+}
+function bindFinalsModeToggle(container){
+  container.querySelectorAll('#finalsModeToggle button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      finalsShowShortlist = btn.dataset.fm === 'shortlist';
+      renderFinals();
     });
   });
 }
